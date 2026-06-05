@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Interview{% endblock %}
+{% block content %}
+<div class="interview-container">
+    <h1>Interview Assessment</h1>
+
+    <div class="candidate-card">
+        <h2>{{ session.snapshot.get("name", "—") }}</h2>
+        <p><strong>Position:</strong> {{ session.snapshot.get("current_position", "—") }}</p>
+        <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
+        <p><strong>Tech Stack:</strong> {{ session.snapshot.get("languages", "—") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</p>
+        <p><strong>Working Arrangement:</strong> {{ session.snapshot.get("working_arrangement", "—") }}</p>
+        <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} (current) / {{ session.snapshot.get("expected_salary", "—") }} (expected)</p>
+        <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
+    </div>
+
+    <hr>
+
+    <form method="post" action="/i/{{ session.token }}" id="interview-form">
+        <div class="question-block">
+            <h3>Comprehension Depth</h3>
+            <p class="example">Example: "Walk me through a problem you solved — not what you did, but how you figured out what the actual problem was."</p>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
+                    <input type="radio" name="q1" value="{{ i }}" required>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
+        </div>
+
+        <div class="question-block">
+            <h3>Execution Reliability</h3>
+            <p class="example">Example: "Tell me about something you committed to that got harder than expected. What happened?"</p>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
+                    <input type="radio" name="q2" value="{{ i }}" required>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
+        </div>
+
+        <div class="question-block">
+            <h3>Adaptive Range</h3>
+            <p class="example">Example: "Describe a moment when the plan stopped working. What did you do before you had a new one?"</p>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
+                    <input type="radio" name="q3" value="{{ i }}" required>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
+        </div>
+
+        <div class="question-block">
+            <h3>Signal Clarity</h3>
+            <p class="example">Example: "How would you explain what you do to someone with no background in it?"</p>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
+                    <input type="radio" name="q4" value="{{ i }}" required>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
+        </div>
+
+        <div class="question-block">
+            <h3>Gut Check</h3>
+            <p class="example">Example: "Regardless of everything above — would you work with this person?"</p>
+            <div class="rating-group gut-check">
+                <label class="rating-label">
+                    <input type="radio" name="q5" value="yes" required>
+                    <span>Yes</span>
+                </label>
+                <label class="rating-label">
+                    <input type="radio" name="q5" value="no" required>
+                    <span>No</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="question-block">
+            <h3>Additional Notes <span class="optional">(optional)</span></h3>
+            <textarea name="free_text" rows="4" placeholder="Anything that adds signal beyond the scores..."></textarea>
+        </div>
+
+        <button type="submit" class="btn submit-btn">Submit Assessment</button>
+    </form>
+</div>
+{% endblock %}

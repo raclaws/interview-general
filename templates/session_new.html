@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}New Session{% endblock %}
+{% block content %}
+<h1>Create Interview Session</h1>
+<div class="form-container" style="max-width: 600px;">
+    <form method="post" action="/session/new">
+        <div class="toggle-group">
+            <label class="toggle-label">
+                <input type="radio" name="entry_mode" value="nocodb" checked onchange="toggleMode(this.value)">
+                Search NocoDB
+            </label>
+            <label class="toggle-label">
+                <input type="radio" name="entry_mode" value="manual" onchange="toggleMode(this.value)">
+                Manual Entry
+            </label>
+        </div>
+
+        <div id="nocodb-section">
+            <label for="candidate_search">Candidate</label>
+            <input type="text" id="candidate_search" placeholder="Search by name..." autocomplete="off">
+            <div id="candidate_results"></div>
+            <input type="hidden" id="candidate_id" name="candidate_id">
+            <p id="candidate_selected" class="selected-hint"></p>
+        </div>
+
+        <div id="manual-section" style="display:none;">
+            <label for="manual_name">Candidate Name *</label>
+            <input type="text" id="manual_name" name="manual_name">
+
+            <label for="manual_position">Current Position</label>
+            <input type="text" id="manual_position" name="manual_position">
+
+            <label for="manual_yoe">Years of Experience</label>
+            <input type="text" id="manual_yoe" name="manual_yoe">
+
+            <label for="manual_languages">Programming Languages</label>
+            <input type="text" id="manual_languages" name="manual_languages" placeholder="e.g. Python, Java, Go">
+
+            <label for="manual_cloud">Cloud Expertise</label>
+            <input type="text" id="manual_cloud" name="manual_cloud" placeholder="e.g. AWS, GCP">
+
+            <label for="manual_tools">Other Tools</label>
+            <input type="text" id="manual_tools" name="manual_tools" placeholder="e.g. Docker, Kubernetes">
+
+            <label for="manual_working_arrangement">Working Arrangement</label>
+            <input type="text" id="manual_working_arrangement" name="manual_working_arrangement" placeholder="e.g. Remote, Hybrid, On-site">
+
+            <label for="manual_current_salary">Current Salary</label>
+            <input type="text" id="manual_current_salary" name="manual_current_salary">
+
+            <label for="manual_expected_salary">Expected Salary</label>
+            <input type="text" id="manual_expected_salary" name="manual_expected_salary">
+
+            <label for="manual_notice_period">Notice Period</label>
+            <input type="text" id="manual_notice_period" name="manual_notice_period">
+        </div>
+
+        <hr>
+
+        <label for="job_title">Job Title</label>
+        <input type="text" id="job_title" name="job_title" required>
+
+        <label for="round">Interview Round</label>
+        <select id="round" name="round" required>
+            <option value="">Select round</option>
+            <option value="1st">1st</option>
+            <option value="2nd">2nd</option>
+            <option value="3rd">3rd</option>
+            <option value="Final">Final</option>
+        </select>
+
+        <label for="interviewer_name">Interviewer Name</label>
+        <input type="text" id="interviewer_name" name="interviewer_name" required>
+
+        <label for="interview_date">Interview Date</label>
+        <input type="date" id="interview_date" name="interview_date">
+
+        <button type="submit">Create Session</button>
+    </form>
+</div>
+
+<script>
+function toggleMode(mode) {
+    document.getElementById("nocodb-section").style.display = mode === "nocodb" ? "block" : "none";
+    document.getElementById("manual-section").style.display = mode === "manual" ? "block" : "none";
+}
+
+const searchInput = document.getElementById("candidate_search");
+const resultsDiv = document.getElementById("candidate_results");
+const candidateIdInput = document.getElementById("candidate_id");
+const selectedHint = document.getElementById("candidate_selected");
+let debounce;
+
+searchInput.addEventListener("input", function() {
+    clearTimeout(debounce);
+    const q = this.value.trim();
+    if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
+    debounce = setTimeout(async () => {
+        const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
+        const data = await resp.json();
+        resultsDiv.innerHTML = data.map(c =>
+            `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}">
+                <strong>${c.name}</strong> <span>${c.position || ""}</span>
+            </div>`
+        ).join("");
+        resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
+            el.addEventListener("click", () => {
+                candidateIdInput.value = el.dataset.id;
+                selectedHint.textContent = `Selected: ${el.dataset.name}`;
+                resultsDiv.innerHTML = "";
+                searchInput.value = el.dataset.name;
+            });
+        });
+    }, 300);
+});
+</script>
+{% endblock %}

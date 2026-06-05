@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Interview Form{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    {% if admin is defined and admin %}
+    <nav>
+        <a href="/">Dashboard</a>
+        <a href="/settings">Settings</a>
+        <form method="post" action="/logout" style="display:inline">
+            <button type="submit" class="link-btn">Logout</button>
+        </form>
+    </nav>
+    {% endif %}
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Edit Session{% endblock %}
+{% block content %}
+<h1>Edit Session #{{ session.id }}</h1>
+<div class="form-container" style="max-width: 600px;">
+    <form method="post" action="/session/{{ session.id }}/edit">
+        <h2>Session Details</h2>
+
+        <label for="job_title">Job Title</label>
+        <input type="text" id="job_title" name="job_title" value="{{ session.job_title }}" required>
+
+        <label for="round">Interview Round</label>
+        <select id="round" name="round" required>
+            <option value="1st" {{ "selected" if session.round == "1st" }}>1st</option>
+            <option value="2nd" {{ "selected" if session.round == "2nd" }}>2nd</option>
+            <option value="3rd" {{ "selected" if session.round == "3rd" }}>3rd</option>
+            <option value="Final" {{ "selected" if session.round == "Final" }}>Final</option>
+        </select>
+
+        <label for="interviewer_name">Interviewer Name</label>
+        <input type="text" id="interviewer_name" name="interviewer_name" value="{{ session.interviewer_name }}" required>
+
+        <label for="interview_date">Interview Date</label>
+        <input type="date" id="interview_date" name="interview_date" value="{{ session.interview_date or '' }}">
+
+        {% if response %}
+        <hr>
+        <h2>Assessment Scores</h2>
+        <p class="hint">Editing scores will invalidate the cached summary. You'll need to regenerate it.</p>
+
+        <label for="edit_q1">Comprehension Depth (1–4)</label>
+        <input type="number" id="edit_q1" name="edit_q1" min="1" max="4" value="{{ response.q1 }}" required>
+
+        <label for="edit_q2">Execution Reliability (1–4)</label>
+        <input type="number" id="edit_q2" name="edit_q2" min="1" max="4" value="{{ response.q2 }}" required>
+
+        <label for="edit_q3">Adaptive Range (1–4)</label>
+        <input type="number" id="edit_q3" name="edit_q3" min="1" max="4" value="{{ response.q3 }}" required>
+
+        <label for="edit_q4">Signal Clarity (1–4)</label>
+        <input type="number" id="edit_q4" name="edit_q4" min="1" max="4" value="{{ response.q4 }}" required>
+
+        <label for="edit_q5">Gut Check</label>
+        <select id="edit_q5" name="edit_q5" required>
+            <option value="yes" {{ "selected" if response.q5 }}>Yes</option>
+            <option value="no" {{ "selected" if not response.q5 }}>No</option>
+        </select>
+
+        <label for="edit_free_text">Interviewer Notes</label>
+        <textarea id="edit_free_text" name="edit_free_text" rows="4">{{ response.free_text or '' }}</textarea>
+        {% endif %}
+
+        <button type="submit">Save Changes</button>
+    </form>
+</div>
+<a href="/session/{{ session.id }}">&larr; Back to Session</a>
+{% endblock %}

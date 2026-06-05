@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1>Interview Sessions</h1>
+<div class="actions">
+    <a href="/session/new" class="btn">New Session</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Candidate</th>
+            <th>Job Title</th>
+            <th>Round</th>
+            <th>Interviewer</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td>{{ s.id }}</td>
+            <td>{{ s.snapshot.get("name", "—") }}</td>
+            <td>{{ s.job_title }}</td>
+            <td>{{ s.round }}</td>
+            <td>{{ s.interviewer_name }}</td>
+            <td><span class="badge badge-{{ s.status }}">{{ s.status }}</span></td>
+            <td>{{ s.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
+            <td>
+                <a href="/session/{{ s.id }}">View</a>
+                {% if s.status == "pending" %}
+                | <a href="/i/{{ s.token }}" target="_blank">Link</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        {% if not sessions %}
+        <tr><td colspan="8">No sessions yet.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endblock %}

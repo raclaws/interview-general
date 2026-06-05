@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}Session Detail{% endblock %}
+{% block content %}
+<h1>Session #{{ session.id }}</h1>
+
+<div class="detail-grid">
+    <div class="detail-section">
+        <h2>Session Info</h2>
+        <p><strong>Job Title:</strong> {{ session.job_title }}</p>
+        <p><strong>Round:</strong> {{ session.round }}</p>
+        <p><strong>Interviewer:</strong> {{ session.interviewer_name }}</p>
+        <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
+        <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
+        <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
+        {% if session.status == "pending" %}
+        <p><strong>Link:</strong> <a href="/i/{{ session.token }}" target="_blank">/i/{{ session.token }}</a></p>
+        {% endif %}
+        <a href="/session/{{ session.id }}/edit" class="btn btn-secondary" style="margin-top: 0.75rem; display: inline-block;">Edit Session</a>
+    </div>
+
+    <div class="detail-section">
+        <h2>Candidate Snapshot</h2>
+        <p><strong>Name:</strong> {{ session.snapshot.get("name", "—") }}</p>
+        <p><strong>Position:</strong> {{ session.snapshot.get("current_position", "—") }}</p>
+        <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
+        <p><strong>Tech Stack:</strong> {{ session.snapshot.get("languages", "—") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</p>
+        <p><strong>Working Arrangement:</strong> {{ session.snapshot.get("working_arrangement", "—") }}</p>
+        <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} / {{ session.snapshot.get("expected_salary", "—") }}</p>
+        <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
+    </div>
+</div>
+
+{% if response %}
+<div class="detail-section results">
+    <h2>Assessment Results</h2>
+    <div class="scores-row">
+        <div class="score-card">
+            <div class="score-label">Comprehension</div>
+            <div class="score-value">{{ response.q1 }}/4</div>
+        </div>
+        <div class="score-card">
+            <div class="score-label">Execution</div>
+            <div class="score-value">{{ response.q2 }}/4</div>
+        </div>
+        <div class="score-card">
+            <div class="score-label">Adaptive</div>
+            <div class="score-value">{{ response.q3 }}/4</div>
+        </div>
+        <div class="score-card">
+            <div class="score-label">Clarity</div>
+            <div class="score-value">{{ response.q4 }}/4</div>
+        </div>
+        <div class="score-card">
+            <div class="score-label">Gut Check</div>
+            <div class="score-value">{{ "Yes" if response.q5 else "No" }}</div>
+        </div>
+    </div>
+
+    {% if response.free_text %}
+    <div class="note-block">
+        <h3>Interviewer Notes</h3>
+        <p>{{ response.free_text }}</p>
+    </div>
+    {% endif %}
+
+    <div class="summary-block">
+        <h3>AI Summary</h3>
+        {% if response.summary %}
+        <p>{{ response.summary }}</p>
+        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+            <form method="post" action="/session/{{ session.id }}/generate-summary">
+                <button type="submit" class="btn btn-secondary">Regenerate Summary</button>
+            </form>
+            <button type="button" class="btn btn-secondary" onclick="copyAsMarkdown()">Copy as Markdown</button>
+        </div>
+        {% else %}
+        <p class="no-summary">No summary generated yet.</p>
+        <form method="post" action="/session/{{ session.id }}/generate-summary">
+            <button type="submit" class="btn">Generate Summary</button>
+        </form>
+        {% endif %}
+    </div>
+
+    <p class="timestamp">Submitted: {{ response.submitted_at.strftime("%Y-%m-%d %H:%M") }}</p>
+</div>
+
+<script>
+function copyAsMarkdown() {
+    const name = "{{ session.snapshot.get('name', '—') }}";
+    const role = "{{ session.job_title }}";
+    const date = "{{ session.interview_date or session.created_at.strftime('%Y-%m-%d') }}";
+    const q1 = "{{ response.q1 }}";
+    const q2 = "{{ response.q2 }}";
+    const q3 = "{{ response.q3 }}";
+    const q4 = "{{ response.q4 }}";
+    const q5 = "{{ 'Y' if response.q5 else 'N' }}";
+    const summary = `{{ response.summary | replace('\n', '\\n') | replace("'", "\\'") }}`;
+    const freeText = `{{ (response.free_text or '') | replace('\n', '\\n') | replace("'", "\\'") }}`;
+
+    let md = `## ${name} — ${role} — ${date}\n`;
+    md += `Scores: ${q1}/${q2}/${q3}/${q4} | Proceed: ${q5}\n\n`;
+    md += `${summary}\n`;
+    if (freeText.trim()) {
+        md += `\n> ${freeText}\n`;
+    }
+
+    navigator.clipboard.writeText(md).then(() => {
+        const btn = event.target;
+        const orig = btn.textContent;
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = orig, 1500);
+    });
+}
+</script>
+{% else %}
+<div class="detail-section">
+    <p>Awaiting interviewer submission.</p>
+</div>
+{% endif %}
+
+<a href="/">&larr; Back to Dashboard</a>
+{% endblock %}
