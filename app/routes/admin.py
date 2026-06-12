@@ -45,6 +45,7 @@ async def session_new_submit(
     round: str = Form(...),
     interviewer_name: str = Form(...),
     interview_date: str = Form(""),
+    show_salary: str = Form(""),
     entry_mode: str = Form("nocodb"),
     manual_name: str = Form(""),
     manual_position: str = Form(""),
@@ -93,6 +94,7 @@ async def session_new_submit(
         round=round,
         interviewer_name=interviewer_name,
         interview_date=interview_date if interview_date.strip() else None,
+        show_salary=show_salary.lower() in ("on", "true", "1", "yes"),
         status="pending",
         created_at=datetime.utcnow(),
     )
@@ -174,6 +176,7 @@ async def session_edit_submit(
     round: str = Form(...),
     interviewer_name: str = Form(...),
     interview_date: str = Form(""),
+    show_salary: str = Form(""),
     edit_q1: int = Form(None),
     edit_q2: int = Form(None),
     edit_q3: int = Form(None),
@@ -191,6 +194,7 @@ async def session_edit_submit(
     session.round = round
     session.interviewer_name = interviewer_name
     session.interview_date = interview_date if interview_date.strip() else None
+    session.show_salary = show_salary.lower() in ("on", "true", "1", "yes")
     db.add(session)
 
     # Update response if submitted and edit fields provided

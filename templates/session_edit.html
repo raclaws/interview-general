@@ -23,6 +23,11 @@
         <label for="interview_date">Interview Date</label>
         <input type="date" id="interview_date" name="interview_date" value="{{ session.interview_date or '' }}">
 
+        <label class="checkbox-label">
+            <input type="checkbox" id="show_salary" name="show_salary" value="on" {{ "checked" if session.show_salary }}>
+            Show salary to interviewer
+        </label>
+
         {% if response %}
         <hr>
         <h2>Assessment Scores</h2>

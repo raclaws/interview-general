@@ -10,7 +10,9 @@
         <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
         <p><strong>Tech Stack:</strong> {{ session.snapshot.get("languages", "—") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</p>
         <p><strong>Working Arrangement:</strong> {{ session.snapshot.get("working_arrangement", "—") }}</p>
+        {% if session.show_salary %}
         <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} (current) / {{ session.snapshot.get("expected_salary", "—") }} (expected)</p>
+        {% endif %}
         <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
     </div>
 

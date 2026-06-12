@@ -23,6 +23,7 @@ class InterviewSession(SQLModel, table=True):
     round: str
     interviewer_name: str
     interview_date: Optional[str] = Field(default=None)
+    show_salary: bool = Field(default=False)
     status: str = Field(default="pending")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
