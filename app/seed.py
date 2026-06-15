@@ -178,8 +178,48 @@ def seed_templates(engine):
         ).first()
 
         hr_conditional_sections = [
+            # Conditional: Recommended path (Culture Fit)
             TemplateSection(
-                template_id=t3.id, order=2, title="Veto Flag",
+                template_id=t3.id, order=2, title="Ownership with Accountability",
+                description="Update sebelum diminta, bukan setelah ditagih · ada contoh peduli hasil end-to-end, bukan hanya bagiannya · menutup loop, tidak melempar masalah",
+                measurement_type="rating_1_4",
+                anchor_low="No Evidence", anchor_high="Exceed",
+                condition_section_id=rekomendasi_section.id,
+                condition_value="Recommended",
+            ),
+            TemplateSection(
+                template_id=t3.id, order=3, title="Maturity & Growth Mindset",
+                description="Defensif sebagai first response itu wajar — yang penting apa yang dilakukan setelahnya · jujur soal kapasitas · fokus solusi, bukan siapa yang salah",
+                measurement_type="rating_1_4",
+                anchor_low="No Evidence", anchor_high="Exceed",
+                condition_section_id=rekomendasi_section.id,
+                condition_value="Recommended",
+            ),
+            TemplateSection(
+                template_id=t3.id, order=4, title="Supportive & Collaborative",
+                description="Ada contoh membantu sebelum diminta · mengakui kontribusi orang lain · say thanks dan say sorry adalah kebiasaan",
+                measurement_type="rating_1_4",
+                anchor_low="No Evidence", anchor_high="Exceed",
+                condition_section_id=rekomendasi_section.id,
+                condition_value="Recommended",
+            ),
+            TemplateSection(
+                template_id=t3.id, order=5, title="Drive & Dream",
+                description="Kombinasi: Pilih 2",
+                measurement_type="multi_select",
+                max_selections=2,
+                options=json.dumps([
+                    "Survival - Visi masa depan sangat samar atau tidak ada. Semua motivasi ekstrinsik.",
+                    "Growth - Excited cerita hal baru yang dipelajari mandiri. Punya roadmap pengembangan diri.",
+                    "Impact - Jawaban pencapaian selalu dalam bahasa dampak, ada angka atau before-after.",
+                    "Ambition - Visi masa depan sangat spesifik soal posisi dan title. Excited cerita pencapaian yang diakui orang lain.",
+                ]),
+                condition_section_id=rekomendasi_section.id,
+                condition_value="Recommended",
+            ),
+            # Conditional: Skip/NOK path (Veto Flag)
+            TemplateSection(
+                template_id=t3.id, order=6, title="Veto Flag",
                 description="Pilih alasan utama jika Skip/NOK",
                 measurement_type="single_select",
                 options=json.dumps([
@@ -192,8 +232,9 @@ def seed_templates(engine):
                 condition_section_id=rekomendasi_section.id,
                 condition_value="Skip/NOK",
             ),
+            # Always shown
             TemplateSection(
-                template_id=t3.id, order=3, title="Catatan HR",
+                template_id=t3.id, order=7, title="Catatan HR",
                 description="",
                 measurement_type="short_text",
                 required=False,
