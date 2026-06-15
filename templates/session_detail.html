@@ -117,14 +117,6 @@
 </div>
 
 <script>
-function copyLink(token, btn) {
-    var url = window.location.origin + '/i/' + token;
-    navigator.clipboard.writeText(url).then(function() {
-        var orig = btn.textContent;
-        btn.textContent = "Copied!";
-        setTimeout(function() { btn.textContent = orig; }, 1500);
-    });
-}
 function copyAsMarkdown() {
     const name = "{{ session.snapshot.get('name', '—') }}";
     const role = "{{ session.job_title }}";
@@ -158,6 +150,34 @@ function copyAsMarkdown() {
     <p>Awaiting interviewer submissions.</p>
 </div>
 {% endif %}
+
+<script>
+function fallbackCopy(text, btn) {
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    var orig = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(function() { btn.textContent = orig; }, 1500);
+}
+function copyLink(token, btn) {
+    var url = window.location.origin + '/i/' + token;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(function() {
+            var orig = btn.textContent;
+            btn.textContent = "Copied!";
+            setTimeout(function() { btn.textContent = orig; }, 1500);
+        }).catch(function() { fallbackCopy(url, btn); });
+    } else {
+        fallbackCopy(url, btn);
+    }
+}
+</script>
 
 <a href="/">&larr; Back to Dashboard</a>
 {% endblock %}
