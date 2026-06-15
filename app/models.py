@@ -16,15 +16,14 @@ class InterviewSession(SQLModel, table=True):
     __tablename__ = "sessions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    token: str = Field(unique=True, index=True)
     candidate_id: Optional[int] = Field(default=None)
     candidate_snapshot: str  # JSON string
     job_title: str
     round: str
-    interviewer_name: str
     interview_date: Optional[str] = Field(default=None)
     show_salary: bool = Field(default=False)
     status: str = Field(default="pending")
+    aggregate_summary: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     @property
@@ -32,11 +31,21 @@ class InterviewSession(SQLModel, table=True):
         return json.loads(self.candidate_snapshot)
 
 
+class SessionInterviewer(SQLModel, table=True):
+    __tablename__ = "session_interviewers"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    session_id: int = Field(foreign_key="sessions.id")
+    interviewer_name: str
+    token: str = Field(unique=True, index=True)
+    status: str = Field(default="pending")
+
+
 class Response(SQLModel, table=True):
     __tablename__ = "responses"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    session_id: int = Field(foreign_key="sessions.id")
+    session_interviewer_id: int = Field(foreign_key="session_interviewers.id")
     q1: int
     q2: int
     q3: int

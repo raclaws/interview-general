@@ -8,13 +8,9 @@
         <h2>Session Info</h2>
         <p><strong>Job Title:</strong> {{ session.job_title }}</p>
         <p><strong>Round:</strong> {{ session.round }}</p>
-        <p><strong>Interviewer:</strong> {{ session.interviewer_name }}</p>
         <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
         <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
         <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
-        {% if session.status == "pending" %}
-        <p><strong>Link:</strong> <a href="/i/{{ session.token }}" target="_blank">/i/{{ session.token }}</a></p>
-        {% endif %}
         <a href="/session/{{ session.id }}/edit" class="btn btn-secondary" style="margin-top: 0.75rem; display: inline-block;">Edit Session</a>
     </div>
 
@@ -30,43 +26,80 @@
     </div>
 </div>
 
-{% if response %}
+<div class="detail-section">
+    <h2>Interviewers</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Link</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in interviewer_data %}
+            <tr>
+                <td>{{ item.interviewer.interviewer_name }}</td>
+                <td><span class="badge badge-{{ item.interviewer.status }}">{{ item.interviewer.status }}</span></td>
+                <td>
+                    {% if item.interviewer.status == "pending" %}
+                    <a href="/i/{{ item.interviewer.token }}" target="_blank">/i/{{ item.interviewer.token }}</a>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% set has_responses = interviewer_data | selectattr("response") | list %}
+{% if has_responses %}
 <div class="detail-section results">
     <h2>Assessment Results</h2>
-    <div class="scores-row">
-        <div class="score-card">
-            <div class="score-label">Comprehension</div>
-            <div class="score-value">{{ response.q1 }}/4</div>
-        </div>
-        <div class="score-card">
-            <div class="score-label">Execution</div>
-            <div class="score-value">{{ response.q2 }}/4</div>
-        </div>
-        <div class="score-card">
-            <div class="score-label">Adaptive</div>
-            <div class="score-value">{{ response.q3 }}/4</div>
-        </div>
-        <div class="score-card">
-            <div class="score-label">Clarity</div>
-            <div class="score-value">{{ response.q4 }}/4</div>
-        </div>
-        <div class="score-card">
-            <div class="score-label">Gut Check</div>
-            <div class="score-value">{{ "Yes" if response.q5 else "No" }}</div>
-        </div>
-    </div>
 
-    {% if response.free_text %}
-    <div class="note-block">
-        <h3>Interviewer Notes</h3>
-        <p>{{ response.free_text }}</p>
+    {% for item in interviewer_data %}
+    {% if item.response %}
+    <div class="interviewer-result">
+        <h3>{{ item.interviewer.interviewer_name }}</h3>
+        <div class="scores-row">
+            <div class="score-card">
+                <div class="score-label">Comprehension</div>
+                <div class="score-value">{{ item.response.q1 }}/4</div>
+            </div>
+            <div class="score-card">
+                <div class="score-label">Execution</div>
+                <div class="score-value">{{ item.response.q2 }}/4</div>
+            </div>
+            <div class="score-card">
+                <div class="score-label">Adaptive</div>
+                <div class="score-value">{{ item.response.q3 }}/4</div>
+            </div>
+            <div class="score-card">
+                <div class="score-label">Clarity</div>
+                <div class="score-value">{{ item.response.q4 }}/4</div>
+            </div>
+            <div class="score-card">
+                <div class="score-label">Gut Check</div>
+                <div class="score-value">{{ "Yes" if item.response.q5 else "No" }}</div>
+            </div>
+        </div>
+        {% if item.response.free_text %}
+        <div class="note-block">
+            <p class="hint"><em>{{ item.response.free_text }}</em></p>
+        </div>
+        {% endif %}
+        <p class="timestamp">Submitted: {{ item.response.submitted_at.strftime("%Y-%m-%d %H:%M") }}</p>
     </div>
     {% endif %}
+    {% endfor %}
 
+    <hr>
     <div class="summary-block">
         <h3>AI Summary</h3>
-        {% if response.summary %}
-        <p>{{ response.summary }}</p>
+        {% if session.aggregate_summary %}
+        <p>{{ session.aggregate_summary }}</p>
         <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
             <form method="post" action="/session/{{ session.id }}/generate-summary">
                 <button type="submit" class="btn btn-secondary">Regenerate Summary</button>
@@ -80,8 +113,6 @@
         </form>
         {% endif %}
     </div>
-
-    <p class="timestamp">Submitted: {{ response.submitted_at.strftime("%Y-%m-%d %H:%M") }}</p>
 </div>
 
 <script>
@@ -89,20 +120,15 @@ function copyAsMarkdown() {
     const name = "{{ session.snapshot.get('name', '—') }}";
     const role = "{{ session.job_title }}";
     const date = "{{ session.interview_date or session.created_at.strftime('%Y-%m-%d') }}";
-    const q1 = "{{ response.q1 }}";
-    const q2 = "{{ response.q2 }}";
-    const q3 = "{{ response.q3 }}";
-    const q4 = "{{ response.q4 }}";
-    const q5 = "{{ 'Y' if response.q5 else 'N' }}";
-    const summary = `{{ response.summary | replace('\n', '\\n') | replace("'", "\\'") }}`;
-    const freeText = `{{ (response.free_text or '') | replace('\n', '\\n') | replace("'", "\\'") }}`;
+    const summary = `{{ session.aggregate_summary | replace('\n', '\\n') | replace("'", "\\'") }}`;
 
-    let md = `## ${name} — ${role} — ${date}\n`;
-    md += `Scores: ${q1}/${q2}/${q3}/${q4} | Proceed: ${q5}\n\n`;
-    md += `${summary}\n`;
-    if (freeText.trim()) {
-        md += `\n> ${freeText}\n`;
-    }
+    let md = `## ${name} — ${role} — ${date}\n\n`;
+    {% for item in interviewer_data %}
+    {% if item.response %}
+    md += `**{{ item.interviewer.interviewer_name }}:** {{ item.response.q1 }}/{{ item.response.q2 }}/{{ item.response.q3 }}/{{ item.response.q4 }} | Proceed: {{ 'Y' if item.response.q5 else 'N' }}\n`;
+    {% endif %}
+    {% endfor %}
+    md += `\n${summary}\n`;
 
     navigator.clipboard.writeText(md).then(() => {
         const btn = event.target;
@@ -114,7 +140,7 @@ function copyAsMarkdown() {
 </script>
 {% else %}
 <div class="detail-section">
-    <p>Awaiting interviewer submission.</p>
+    <p>Awaiting interviewer submissions.</p>
 </div>
 {% endif %}
 

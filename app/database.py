@@ -9,7 +9,7 @@ engine = create_engine(DATABASE_URL, echo=False)
 
 
 def create_tables():
-    from app.models import AdminUser, InterviewSession, Response, Setting  # noqa
+    from app.models import AdminUser, InterviewSession, SessionInterviewer, Response, Setting  # noqa
     SQLModel.metadata.create_all(engine)
 
 

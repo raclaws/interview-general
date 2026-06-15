@@ -8,9 +8,9 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, InterviewSession, Response
+from app.models import AdminUser, InterviewSession, SessionInterviewer, Response
 from app.nocodb import search_candidates, fetch_candidate
-from app.llm import generate_summary, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
+from app.llm import generate_summary, generate_aggregate_summary, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
 router = APIRouter()
 
@@ -29,7 +29,15 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
     sessions = db.exec(
         select(InterviewSession).order_by(InterviewSession.created_at.desc())
     ).all()
-    return _render(request, "dashboard.html", {"sessions": sessions, "admin": admin})
+    session_data = []
+    for s in sessions:
+        interviewers = db.exec(
+            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
+        ).all()
+        total = len(interviewers)
+        completed = len([i for i in interviewers if i.status == "completed"])
+        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed})
+    return _render(request, "dashboard.html", {"session_data": session_data, "admin": admin})
 
 
 @router.get("/session/new", response_class=HTMLResponse)
@@ -43,7 +51,7 @@ async def session_new_submit(
     candidate_id: int = Form(None),
     job_title: str = Form(...),
     round: str = Form(...),
-    interviewer_name: str = Form(...),
+    interviewer_names: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
     entry_mode: str = Form("nocodb"),
@@ -85,14 +93,16 @@ async def session_new_submit(
         }
         candidate_id = None
 
-    token = _generate_token()
+    # Parse interviewer names (comma-separated)
+    names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
+    if not names:
+        return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
+
     session = InterviewSession(
-        token=token,
         candidate_id=candidate_id,
         candidate_snapshot=json.dumps(snapshot),
         job_title=job_title,
         round=round,
-        interviewer_name=interviewer_name,
         interview_date=interview_date if interview_date.strip() else None,
         show_salary=show_salary.lower() in ("on", "true", "1", "yes"),
         status="pending",
@@ -100,6 +110,18 @@ async def session_new_submit(
     )
     db.add(session)
     db.commit()
+    db.refresh(session)
+
+    for name in names:
+        interviewer = SessionInterviewer(
+            session_id=session.id,
+            interviewer_name=name,
+            token=_generate_token(),
+            status="pending",
+        )
+        db.add(interviewer)
+    db.commit()
+
     return RedirectResponse("/", status_code=303)
 
 
@@ -113,10 +135,21 @@ async def session_detail(
     session = db.get(InterviewSession, session_id)
     if not session:
         return HTMLResponse("Not found", status_code=404)
-    response = db.exec(
-        select(Response).where(Response.session_id == session.id)
-    ).first()
-    return _render(request, "session_detail.html", {"session": session, "response": response, "admin": admin})
+    interviewers = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
+    ).all()
+    # Fetch responses for each interviewer
+    interviewer_data = []
+    for iv in interviewers:
+        response = db.exec(
+            select(Response).where(Response.session_interviewer_id == iv.id)
+        ).first()
+        interviewer_data.append({"interviewer": iv, "response": response})
+    return _render(request, "session_detail.html", {
+        "session": session,
+        "interviewer_data": interviewer_data,
+        "admin": admin,
+    })
 
 
 @router.post("/session/{session_id}/generate-summary")
@@ -129,25 +162,52 @@ async def generate_session_summary(
     session = db.get(InterviewSession, session_id)
     if not session:
         return HTMLResponse("Not found", status_code=404)
-    response = db.exec(
-        select(Response).where(Response.session_id == session.id)
-    ).first()
-    if not response:
+
+    interviewers = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
+    ).all()
+
+    # Collect all responses
+    responses_data = []
+    for iv in interviewers:
+        response = db.exec(
+            select(Response).where(Response.session_interviewer_id == iv.id)
+        ).first()
+        if response:
+            responses_data.append({
+                "interviewer_name": iv.interviewer_name,
+                "q1": response.q1,
+                "q2": response.q2,
+                "q3": response.q3,
+                "q4": response.q4,
+                "q5": response.q5,
+                "free_text": response.free_text,
+            })
+
+    if not responses_data:
         return RedirectResponse(f"/session/{session_id}", status_code=303)
 
     snapshot = session.snapshot
-    summary = await generate_summary(
-        candidate_name=snapshot.get("name", "Unknown"),
-        job_title=session.job_title,
-        q1=response.q1,
-        q2=response.q2,
-        q3=response.q3,
-        q4=response.q4,
-        q5=response.q5,
-        free_text=response.free_text,
-    )
-    response.summary = summary
-    db.add(response)
+
+    if len(responses_data) == 1:
+        # Single evaluator — use original prompt
+        r = responses_data[0]
+        summary = await generate_summary(
+            candidate_name=snapshot.get("name", "Unknown"),
+            job_title=session.job_title,
+            q1=r["q1"], q2=r["q2"], q3=r["q3"], q4=r["q4"],
+            q5=r["q5"], free_text=r["free_text"],
+        )
+    else:
+        # Multiple evaluators — cross-evaluator prompt
+        summary = await generate_aggregate_summary(
+            candidate_name=snapshot.get("name", "Unknown"),
+            job_title=session.job_title,
+            responses=responses_data,
+        )
+
+    session.aggregate_summary = summary
+    db.add(session)
     db.commit()
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
@@ -162,10 +222,10 @@ async def session_edit_form(
     session = db.get(InterviewSession, session_id)
     if not session:
         return HTMLResponse("Not found", status_code=404)
-    response = db.exec(
-        select(Response).where(Response.session_id == session.id)
-    ).first()
-    return _render(request, "session_edit.html", {"session": session, "response": response, "admin": admin})
+    interviewers = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
+    ).all()
+    return _render(request, "session_edit.html", {"session": session, "interviewers": interviewers, "admin": admin})
 
 
 @router.post("/session/{session_id}/edit")
@@ -174,15 +234,9 @@ async def session_edit_submit(
     session_id: int,
     job_title: str = Form(...),
     round: str = Form(...),
-    interviewer_name: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
-    edit_q1: int = Form(None),
-    edit_q2: int = Form(None),
-    edit_q3: int = Form(None),
-    edit_q4: int = Form(None),
-    edit_q5: str = Form(None),
-    edit_free_text: str = Form(None),
+    new_interviewers: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -192,26 +246,25 @@ async def session_edit_submit(
 
     session.job_title = job_title
     session.round = round
-    session.interviewer_name = interviewer_name
     session.interview_date = interview_date if interview_date.strip() else None
     session.show_salary = show_salary.lower() in ("on", "true", "1", "yes")
     db.add(session)
 
-    # Update response if submitted and edit fields provided
-    if edit_q1 is not None:
-        response = db.exec(
-            select(Response).where(Response.session_id == session.id)
-        ).first()
-        if response:
-            response.q1 = edit_q1
-            response.q2 = edit_q2
-            response.q3 = edit_q3
-            response.q4 = edit_q4
-            response.q5 = edit_q5.lower() in ("yes", "true", "1") if edit_q5 else response.q5
-            if edit_free_text is not None:
-                response.free_text = edit_free_text if edit_free_text.strip() else None
-            response.summary = ""  # Invalidate cached summary
-            db.add(response)
+    # Add new interviewers if provided
+    if new_interviewers.strip():
+        names = [n.strip() for n in new_interviewers.split(",") if n.strip()]
+        for name in names:
+            interviewer = SessionInterviewer(
+                session_id=session.id,
+                interviewer_name=name,
+                token=_generate_token(),
+                status="pending",
+            )
+            db.add(interviewer)
+        # Reset session status if adding new interviewers
+        session.status = "pending"
+        session.aggregate_summary = ""
+        db.add(session)
 
     db.commit()
     return RedirectResponse(f"/session/{session_id}", status_code=303)
@@ -220,7 +273,6 @@ async def session_edit_submit(
 @router.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request, admin: AdminUser = Depends(get_current_admin)):
     base_url, api_key, model, system_prompt = get_llm_config()
-    # Mask API key for display
     masked_key = ("*" * (len(api_key) - 4) + api_key[-4:]) if len(api_key) > 4 else "*" * len(api_key)
     return _render(request, "settings.html", {
         "admin": admin,
@@ -242,7 +294,6 @@ async def settings_save(
     db: Session = Depends(get_session),
 ):
     set_setting("llm_base_url", llm_base_url)
-    # Only update API key if not all asterisks (user didn't change it)
     if llm_api_key and not all(c == "*" for c in llm_api_key):
         set_setting("llm_api_key", llm_api_key)
     set_setting("llm_model", llm_model)

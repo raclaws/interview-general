@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import InterviewSession, Response
+from app.models import InterviewSession, SessionInterviewer, Response
 
 router = APIRouter()
 
@@ -17,14 +17,15 @@ def _render(request: Request, name: str, context: dict = None):
 
 @router.get("/i/{token}", response_class=HTMLResponse)
 async def interview_form(request: Request, token: str, db: Session = Depends(get_session)):
-    session = db.exec(
-        select(InterviewSession).where(InterviewSession.token == token)
+    interviewer = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.token == token)
     ).first()
-    if not session:
+    if not interviewer:
         return HTMLResponse("Invalid or expired link.", status_code=404)
-    if session.status == "completed":
+    if interviewer.status == "completed":
         return RedirectResponse(f"/i/{token}/done", status_code=303)
-    return _render(request, "interview_form.html", {"session": session})
+    session = db.get(InterviewSession, interviewer.session_id)
+    return _render(request, "interview_form.html", {"session": session, "interviewer": interviewer})
 
 
 @router.post("/i/{token}")
@@ -39,16 +40,16 @@ async def interview_submit(
     free_text: str = Form(""),
     db: Session = Depends(get_session),
 ):
-    session = db.exec(
-        select(InterviewSession).where(InterviewSession.token == token)
+    interviewer = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.token == token)
     ).first()
-    if not session or session.status == "completed":
+    if not interviewer or interviewer.status == "completed":
         return HTMLResponse("This session has already been submitted.", status_code=400)
 
     q5_bool = q5.lower() in ("yes", "true", "1")
 
     response = Response(
-        session_id=session.id,
+        session_interviewer_id=interviewer.id,
         q1=q1,
         q2=q2,
         q3=q3,
@@ -59,17 +60,30 @@ async def interview_submit(
         summary="",
     )
     db.add(response)
-    session.status = "completed"
-    db.add(session)
+
+    # Mark interviewer as completed
+    interviewer.status = "completed"
+    db.add(interviewer)
+
+    # Check if all interviewers for this session are completed
+    session = db.get(InterviewSession, interviewer.session_id)
+    all_interviewers = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
+    ).all()
+    if all(iv.status == "completed" for iv in all_interviewers):
+        session.status = "completed"
+        db.add(session)
+
     db.commit()
     return RedirectResponse(f"/i/{token}/done", status_code=303)
 
 
 @router.get("/i/{token}/done", response_class=HTMLResponse)
 async def interview_done(request: Request, token: str, db: Session = Depends(get_session)):
-    session = db.exec(
-        select(InterviewSession).where(InterviewSession.token == token)
+    interviewer = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.token == token)
     ).first()
-    if not session:
+    if not interviewer:
         return HTMLResponse("Invalid link.", status_code=404)
+    session = db.get(InterviewSession, interviewer.session_id)
     return _render(request, "interview_done.html", {"session": session})

@@ -17,9 +17,6 @@
             <option value="Final" {{ "selected" if session.round == "Final" }}>Final</option>
         </select>
 
-        <label for="interviewer_name">Interviewer Name</label>
-        <input type="text" id="interviewer_name" name="interviewer_name" value="{{ session.interviewer_name }}" required>
-
         <label for="interview_date">Interview Date</label>
         <input type="date" id="interview_date" name="interview_date" value="{{ session.interview_date or '' }}">
 
@@ -28,32 +25,25 @@
             Show salary to interviewer
         </label>
 
-        {% if response %}
         <hr>
-        <h2>Assessment Scores</h2>
-        <p class="hint">Editing scores will invalidate the cached summary. You'll need to regenerate it.</p>
+        <h2>Current Interviewers</h2>
+        <table>
+            <thead>
+                <tr><th>Name</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                {% for iv in interviewers %}
+                <tr>
+                    <td>{{ iv.interviewer_name }}</td>
+                    <td><span class="badge badge-{{ iv.status }}">{{ iv.status }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
 
-        <label for="edit_q1">Comprehension Depth (1–4)</label>
-        <input type="number" id="edit_q1" name="edit_q1" min="1" max="4" value="{{ response.q1 }}" required>
-
-        <label for="edit_q2">Execution Reliability (1–4)</label>
-        <input type="number" id="edit_q2" name="edit_q2" min="1" max="4" value="{{ response.q2 }}" required>
-
-        <label for="edit_q3">Adaptive Range (1–4)</label>
-        <input type="number" id="edit_q3" name="edit_q3" min="1" max="4" value="{{ response.q3 }}" required>
-
-        <label for="edit_q4">Signal Clarity (1–4)</label>
-        <input type="number" id="edit_q4" name="edit_q4" min="1" max="4" value="{{ response.q4 }}" required>
-
-        <label for="edit_q5">Gut Check</label>
-        <select id="edit_q5" name="edit_q5" required>
-            <option value="yes" {{ "selected" if response.q5 }}>Yes</option>
-            <option value="no" {{ "selected" if not response.q5 }}>No</option>
-        </select>
-
-        <label for="edit_free_text">Interviewer Notes</label>
-        <textarea id="edit_free_text" name="edit_free_text" rows="4">{{ response.free_text or '' }}</textarea>
-        {% endif %}
+        <label for="new_interviewers">Add Interviewers</label>
+        <input type="text" id="new_interviewers" name="new_interviewers" placeholder="Comma-separated names to add">
+        <p class="hint">New interviewers get fresh token links. Existing ones are unchanged.</p>
 
         <button type="submit">Save Changes</button>
     </form>

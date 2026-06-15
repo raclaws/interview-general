@@ -1,0 +1,78 @@
+{
+ "$schema": ".substrate/schema.json",
+ "$version": "0.1.0",
+
+ "handoff": {
+ "id": "string | uuid",
+ "timestamp": "string | iso8601",
+ "layer_origin": "enum | spec | tasks | snippets | atomic",
+ "layer_target": "enum | spec | tasks | snippets | atomic | human",
+ "agent_role": "enum | planner | coordinator | implementer | resolver | summarizer",
+ "status": "enum | pending | active | blocked | done | failed"
+ },
+
+ "context": {
+ "project_id": "string",
+ "sprint_id": "string | null",
+ "token_budget": "integer",
+ "token_used": "integer",
+ "compression_applied": "boolean"
+ },
+
+ "payload": {
+ "type": "enum | decision | task | snippet | lookup | summary",
+ "ref": "string | filepath",
+ "content": "object | layer-specific schema below",
+ "dependencies": ["string | filepath"],
+ "invalidates": ["string | filepath | null"]
+ },
+
+ "reasoning": {
+ "confidence": "float | 0.0-1.0",
+ "rationale_ref": "string | filepath | null",
+ "assumptions": ["string"],
+ "flags": ["enum | needs_review | uncertain | blocking | breaking_change"]
+ },
+
+ "layer_schemas": {
+
+ "spec": {
+ "decision": "string",
+ "constraints": ["string"],
+ "rationale": "string | filepath",
+ "affects": ["string | component_id"]
+ },
+
+ "tasks": {
+ "title": "string",
+ "acceptance_criteria": ["string"],
+ "blocked_by": ["string | task_id | null"],
+ "sprint": "string | null",
+ "effort": "enum | small | medium | large"
+ },
+
+ "snippets": {
+ "pattern": "string",
+ "inputs": ["string | typed"],
+ "outputs": ["string | typed"],
+ "side_effects": "boolean",
+ "tested": "boolean"
+ },
+
+ "atomic": {
+ "key": "string",
+ "value": "string | number | boolean",
+ "environment": "enum | dev | staging | prod | all",
+ "sensitive": "boolean"
+ }
+
+ },
+
+ "meta": {
+ "taxonomy_version": "string",
+ "substrate_version": "string",
+ "human_review_required": "boolean",
+ "notes": "string | null"
+ }
+
+}

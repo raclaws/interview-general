@@ -185,3 +185,64 @@ interview-general/
 ├── requirements.txt
 └── WIKI.md
 ```
+
+---
+
+## Notes: Cloudflare Free Deployment
+
+The simplest free deployment path is **Cloudflare Tunnel** — no code changes, free HTTPS, DDoS protection.
+
+### How it works
+- App runs on any machine (local PC, VPS, Raspberry Pi)
+- `cloudflared` creates a secure tunnel from your machine to Cloudflare's edge
+- You get a public URL with HTTPS — either `*.trycloudflare.com` (temporary) or your own domain
+
+### Quick start (temporary URL, no account needed)
+
+```bash
+# Install cloudflared
+# Windows: winget install cloudflare.cloudflared
+# Linux: curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
+
+# Start the app
+uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# In another terminal — instant public URL
+cloudflared tunnel --url http://localhost:8000
+```
+
+This gives you a `https://random-words.trycloudflare.com` URL immediately. Good for testing/demos.
+
+### Persistent setup (own domain, free Cloudflare account)
+
+```bash
+# Login to Cloudflare
+cloudflared tunnel login
+
+# Create a named tunnel
+cloudflared tunnel create interview-general
+
+# Configure (creates ~/.cloudflared/config.yml)
+cat > ~/.cloudflared/config.yml << 'EOF'
+tunnel: <TUNNEL_ID>
+credentials-file: ~/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  - hostname: interview.yourdomain.com
+    service: http://localhost:8000
+  - service: http_status:404
+EOF
+
+# Add DNS record (CNAME to tunnel)
+cloudflared tunnel route dns interview-general interview.yourdomain.com
+
+# Run as service
+cloudflared service install
+cloudflared service start
+```
+
+### Why this over Workers/Pages
+- FastAPI is Python — Workers run JS/WASM (would require full rewrite)
+- D1 is SQLite-compatible but Workers API is different from SQLModel
+- Tunnel requires zero code changes — app stays exactly as-is
+- Free tier includes: HTTPS, DDoS protection, caching, analytics
