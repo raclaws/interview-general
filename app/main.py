@@ -19,6 +19,8 @@ app = FastAPI(title="Interview Form Summarizer")
 async def auth_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
         return RedirectResponse("/login", status_code=303)
+    if exc.status_code == 404:
+        return templates.TemplateResponse(request, "404.html", status_code=404)
     raise exc
 
 BASE_DIR = Path(__file__).resolve().parent.parent
