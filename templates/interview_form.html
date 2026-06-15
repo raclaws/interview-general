@@ -126,9 +126,18 @@ function handleConditionChange(sectionId, value) {
     document.querySelectorAll('[data-condition-section="' + sectionId + '"]').forEach(function(el) {
         if (el.dataset.conditionValue === value) {
             el.style.display = 'block';
+            // Restore required on inputs
+            el.querySelectorAll('[data-was-required]').forEach(function(inp) {
+                inp.setAttribute('required', '');
+                inp.removeAttribute('data-was-required');
+            });
         } else {
             el.style.display = 'none';
-            // Clear inputs when hiding
+            // Remove required from hidden inputs and clear them
+            el.querySelectorAll('input[required], textarea[required], select[required]').forEach(function(inp) {
+                inp.removeAttribute('required');
+                inp.setAttribute('data-was-required', 'true');
+            });
             el.querySelectorAll('input, textarea').forEach(function(inp) {
                 if (inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
                 else inp.value = '';
@@ -144,5 +153,15 @@ function handleMultiSelect(checkbox, max) {
         checkbox.checked = false;
     }
 }
+
+// On page load, strip required from hidden conditional sections
+document.querySelectorAll('[data-condition-section]').forEach(function(el) {
+    if (el.style.display === 'none') {
+        el.querySelectorAll('input[required], textarea[required], select[required]').forEach(function(inp) {
+            inp.removeAttribute('required');
+            inp.setAttribute('data-was-required', 'true');
+        });
+    }
+});
 </script>
 {% endblock %}
