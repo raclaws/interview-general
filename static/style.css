@@ -50,8 +50,10 @@ nav .link-btn {
     color: #9ca3af;
     cursor: pointer;
     font-size: 0.85rem;
+    font-weight: 500;
     margin-left: auto;
     transition: color 0.15s;
+    padding: 0;
 }
 nav .link-btn:hover { color: #fff; }
 
@@ -104,6 +106,15 @@ button[type="submit"], .submit-btn {
     transition: background 0.15s, transform 0.1s;
 }
 button[type="submit"]:hover, .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+nav button[type="submit"] {
+    all: unset;
+    color: #9ca3af;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: color 0.15s;
+}
+nav button[type="submit"]:hover { color: #fff; }
 
 /* Cards */
 .card {
