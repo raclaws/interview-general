@@ -67,13 +67,14 @@ async def session_new_form(request: Request, admin: AdminUser = Depends(get_curr
 async def session_new_submit(
     request: Request,
     candidate_id: int = Form(None),
-    job_title: str = Form(...),
+    job_title: str = Form(""),
     round: str = Form(...),
     interviewer_names: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
     template_id: int = Form(...),
     position: str = Form(""),
+    position_other: str = Form(""),
     business_unit: str = Form(""),
     entry_mode: str = Form("nocodb"),
     manual_name: str = Form(""),
@@ -95,6 +96,9 @@ async def session_new_submit(
         snapshot = await fetch_candidate(candidate_id)
         if not snapshot:
             return RedirectResponse("/session/new?error=candidate_not_found", status_code=303)
+        # Pull job_title from snapshot if not provided
+        if not job_title.strip():
+            job_title = snapshot.get("current_position", "")
     else:
         if not manual_name.strip():
             return RedirectResponse("/session/new?error=name_required", status_code=303)
@@ -114,6 +118,9 @@ async def session_new_submit(
         }
         candidate_id = None
 
+    # Handle "Other" position
+    final_position = position_other.strip() if position == "Other" and position_other.strip() else position.strip()
+
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
@@ -122,9 +129,9 @@ async def session_new_submit(
         template_id=template_id,
         candidate_id=candidate_id,
         candidate_snapshot=json.dumps(snapshot),
-        job_title=job_title,
+        job_title=job_title.strip() if job_title.strip() else "N/A",
         round=round,
-        position=position.strip() if position.strip() else None,
+        position=final_position if final_position else None,
         business_unit=business_unit.strip() if business_unit.strip() else None,
         interview_date=interview_date if interview_date.strip() else None,
         show_salary=show_salary.lower() in ("on", "true", "1", "yes"),
