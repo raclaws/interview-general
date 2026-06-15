@@ -247,6 +247,23 @@ async def generate_session_summary(
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
+@router.post("/session/{session_id}/cancel")
+async def cancel_session(
+    request: Request,
+    session_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    session = db.get(InterviewSession, session_id)
+    if not session:
+        return HTMLResponse("Not found", status_code=404)
+    if session.status == "pending":
+        session.status = "cancelled"
+        db.add(session)
+        db.commit()
+    return RedirectResponse(f"/session/{session_id}", status_code=303)
+
+
 @router.get("/session/{session_id}/edit", response_class=HTMLResponse)
 async def session_edit_form(
     request: Request,
@@ -337,6 +354,21 @@ async def template_detail(
         select(TemplateSection).where(TemplateSection.template_id == template.id).order_by(TemplateSection.order)
     ).all()
     return _render(request, "template_detail.html", {"template": template, "sections": sections, "admin": admin})
+
+
+@router.post("/templates/{template_id}/set-default")
+async def set_default_template(
+    request: Request,
+    template_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    all_templates = db.exec(select(Template)).all()
+    for t in all_templates:
+        t.is_default = (t.id == template_id)
+        db.add(t)
+    db.commit()
+    return RedirectResponse("/templates", status_code=303)
 
 
 @router.get("/settings", response_class=HTMLResponse)

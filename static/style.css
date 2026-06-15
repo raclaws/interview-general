@@ -56,6 +56,7 @@ th { background: #f9f9f9; font-weight: 600; }
 }
 .badge-pending { background: #fff3cd; color: #856404; }
 .badge-completed { background: #d4edda; color: #155724; }
+.badge-cancelled { background: #f8d7da; color: #721c24; }
 
 .form-container { max-width: 500px; margin: 0 auto; background: #fff; padding: 2rem; }
 .form-container h1 { text-align: center; }
@@ -153,6 +154,10 @@ button[type="submit"], .submit-btn {
 .select-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; }
 .select-label { display: flex; align-items: flex-start; gap: 0.4rem; cursor: pointer; font-size: 0.875rem; padding: 0.3rem 0; }
 .select-label input { margin-top: 0.15rem; }
+.btn-danger { background: #dc3545; color: #fff; padding: 0.4rem 0.75rem; border: none; cursor: pointer; font-size: 0.8rem; width: auto; }
+.btn-copy { background: #eee; color: #333; padding: 0.2rem 0.5rem; border: 1px solid #ccc; cursor: pointer; font-size: 0.7rem; margin-left: 0.4rem; border-radius: 3px; }
+.consent-block { background: #f9f9f9; border: 1px solid #ddd; padding: 1rem; margin: 1.5rem 0; border-radius: 4px; }
+.consent-block ul { margin: 0.5rem 0 0 1.2rem; font-size: 0.8rem; line-height: 1.6; }
 .toggle-group { display: flex; gap: 1.5rem; margin-bottom: 1rem; padding: 0.75rem 0; border-bottom: 1px solid #eee; }
 .toggle-label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.875rem; font-weight: 500; }
 .checkbox-label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.875rem; margin-top: 1rem; }

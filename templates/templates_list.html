@@ -17,7 +17,15 @@
         <tr>
             <td>{{ item.template.name }}</td>
             <td>{{ item.section_count }}</td>
-            <td>{{ "Yes" if item.template.is_default else "—" }}</td>
+            <td>
+                {% if item.template.is_default %}
+                <span class="badge badge-completed">Default</span>
+                {% else %}
+                <form method="post" action="/templates/{{ item.template.id }}/set-default" style="display:inline;">
+                    <button type="submit" class="btn btn-secondary">Set as Default</button>
+                </form>
+                {% endif %}
+            </td>
             <td><a href="/templates/{{ item.template.id }}">View</a></td>
         </tr>
         {% endfor %}

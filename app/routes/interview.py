@@ -26,6 +26,8 @@ async def interview_form(request: Request, token: str, db: Session = Depends(get
         return RedirectResponse(f"/i/{token}/done", status_code=303)
 
     session = db.get(InterviewSession, interviewer.session_id)
+    if session.status == "cancelled":
+        return HTMLResponse("This session has been cancelled.", status_code=410)
     template = db.get(Template, session.template_id) if session.template_id else None
     sections = []
     if session.template_id:
@@ -54,6 +56,8 @@ async def interview_submit(
         return HTMLResponse("This session has already been submitted.", status_code=400)
 
     session = db.get(InterviewSession, interviewer.session_id)
+    if session.status == "cancelled":
+        return HTMLResponse("This session has been cancelled.", status_code=410)
     sections = []
     if session.template_id:
         sections = db.exec(
