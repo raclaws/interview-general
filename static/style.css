@@ -339,11 +339,12 @@ textarea { resize: vertical; min-height: 80px; }
 .score-card {
     text-align: center;
     padding: 0.75rem 1rem;
-    background: var(--bg-muted);
+    background: var(--bg-card);
     border-radius: var(--radius-sm);
-    min-width: 90px;
-    flex: 1;
+    min-width: 80px;
+    flex: 0 1 auto;
     border-top: 3px solid var(--accent);
+    box-shadow: var(--shadow-sm);
 }
 .score-label { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.03em; }
 .score-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
@@ -358,6 +359,9 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .interviewer-result:last-child { margin-bottom: 0; }
 .interviewer-result h3 { margin-bottom: 0.75rem; }
+.detail-field { margin-top: 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--border); }
+.detail-field-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-muted); margin-bottom: 0.2rem; }
+.detail-field-value { font-size: 0.875rem; color: var(--text-primary); line-height: 1.5; }
 
 /* Note & summary blocks */
 .note-block, .summary-block { margin-bottom: 1rem; }

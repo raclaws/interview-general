@@ -78,7 +78,7 @@
         <h3>{{ item.interviewer.interviewer_name }}</h3>
         <div class="scores-row">
             {% for section in sections %}
-            {% if item.scores.get(section.id) %}
+            {% if item.scores.get(section.id) and section.measurement_type in ["rating_1_4", "single_select"] and item.scores.get(section.id)|length < 30 %}
             <div class="score-card">
                 <div class="score-label">{{ section.title }}</div>
                 <div class="score-value">{{ item.scores.get(section.id, "—") }}</div>
@@ -86,6 +86,14 @@
             {% endif %}
             {% endfor %}
         </div>
+        {% for section in sections %}
+        {% if item.scores.get(section.id) and (section.measurement_type in ["long_text", "short_text", "multi_select"] or (section.measurement_type == "single_select" and item.scores.get(section.id)|length >= 30)) %}
+        <div class="detail-field">
+            <div class="detail-field-label">{{ section.title }}</div>
+            <div class="detail-field-value">{{ item.scores.get(section.id, "—") }}</div>
+        </div>
+        {% endif %}
+        {% endfor %}
         {% if item.response.free_text %}
         <div class="note-block">
             <p class="hint"><em>{{ item.response.free_text }}</em></p>
