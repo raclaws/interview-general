@@ -57,8 +57,31 @@
 
         <hr>
 
+        <label for="template_id">Interview Template</label>
+        <select id="template_id" name="template_id" required>
+            {% for t in templates %}
+            <option value="{{ t.id }}" {% if t.is_default %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+
         <label for="job_title">Job Title</label>
         <input type="text" id="job_title" name="job_title" required>
+
+        <label for="position">Position Applied</label>
+        <select id="position" name="position">
+            <option value="">— Select —</option>
+            {% for p in positions %}
+            <option value="{{ p }}">{{ p }}</option>
+            {% endfor %}
+        </select>
+
+        <label for="business_unit">Business Unit</label>
+        <select id="business_unit" name="business_unit">
+            <option value="">— Select —</option>
+            {% for bu in business_units %}
+            <option value="{{ bu }}">{{ bu }}</option>
+            {% endfor %}
+        </select>
 
         <label for="round">Interview Round</label>
         <select id="round" name="round" required>

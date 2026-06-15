@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Templates{% endblock %}
+{% block content %}
+<h1>Interview Templates</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Sections</th>
+            <th>Default</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in template_data %}
+        <tr>
+            <td>{{ item.template.name }}</td>
+            <td>{{ item.section_count }}</td>
+            <td>{{ "Yes" if item.template.is_default else "—" }}</td>
+            <td><a href="/templates/{{ item.template.id }}">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

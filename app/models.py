@@ -12,14 +12,50 @@ class AdminUser(SQLModel, table=True):
     hashed_password: str
 
 
+class Template(SQLModel, table=True):
+    __tablename__ = "templates"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True)
+    is_default: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TemplateSection(SQLModel, table=True):
+    __tablename__ = "template_sections"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    template_id: int = Field(foreign_key="templates.id")
+    order: int
+    title: str
+    description: Optional[str] = None
+    measurement_type: str  # rating_1_4, single_select, multi_select, short_text, long_text
+    options: Optional[str] = None  # JSON list of option strings
+    anchor_low: Optional[str] = None
+    anchor_high: Optional[str] = None
+    max_selections: Optional[int] = None
+    required: bool = Field(default=True)
+    condition_section_id: Optional[int] = None
+    condition_value: Optional[str] = None
+
+    @property
+    def options_list(self) -> list[str]:
+        if self.options:
+            return json.loads(self.options)
+        return []
+
+
 class InterviewSession(SQLModel, table=True):
     __tablename__ = "sessions"
 
     id: Optional[int] = Field(default=None, primary_key=True)
+    template_id: Optional[int] = Field(default=None, foreign_key="templates.id")
     candidate_id: Optional[int] = Field(default=None)
     candidate_snapshot: str  # JSON string
     job_title: str
     round: str
+    position: Optional[str] = None
+    business_unit: Optional[str] = None
     interview_date: Optional[str] = Field(default=None)
     show_salary: bool = Field(default=False)
     status: str = Field(default="pending")
@@ -46,14 +82,18 @@ class Response(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     session_interviewer_id: int = Field(foreign_key="session_interviewers.id")
-    q1: int
-    q2: int
-    q3: int
-    q4: int
-    q5: bool
     free_text: Optional[str] = None
     submitted_at: datetime = Field(default_factory=datetime.utcnow)
     summary: str = ""
+
+
+class ResponseScore(SQLModel, table=True):
+    __tablename__ = "response_scores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    response_id: int = Field(foreign_key="responses.id")
+    section_id: int = Field(foreign_key="template_sections.id")
+    value: str = ""
 
 
 class Setting(SQLModel, table=True):

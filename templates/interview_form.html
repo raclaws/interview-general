@@ -3,6 +3,9 @@
 {% block content %}
 <div class="interview-container">
     <h1>Interview Assessment</h1>
+    {% if template %}
+    <p class="template-badge">{{ template.name }}</p>
+    {% endif %}
 
     <div class="candidate-card">
         <h2>{{ session.snapshot.get("name", "—") }}</h2>
@@ -14,81 +17,77 @@
         <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} (current) / {{ session.snapshot.get("expected_salary", "—") }} (expected)</p>
         {% endif %}
         <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
+        {% if session.position %}
+        <p><strong>Position Applied:</strong> {{ session.position }}</p>
+        {% endif %}
+        {% if session.business_unit %}
+        <p><strong>Business Unit:</strong> {{ session.business_unit }}</p>
+        {% endif %}
     </div>
 
     <hr>
 
-    <form method="post" action="/i/{{ session.token }}" id="interview-form">
-        <div class="question-block">
-            <h3>Comprehension Depth</h3>
-            <p class="example">Example: "Walk me through a problem you solved — not what you did, but how you figured out what the actual problem was."</p>
+    <form method="post" action="/i/{{ interviewer.token }}" id="interview-form">
+        {% for section in sections %}
+        <div class="question-block" id="section-block-{{ section.id }}"
+            {% if section.condition_section_id %}
+            data-condition-section="{{ section.condition_section_id }}"
+            data-condition-value="{{ section.condition_value }}"
+            style="display:none;"
+            {% endif %}
+        >
+            <h3>{{ section.order }}. {{ section.title }}{% if section.required %} *{% endif %}</h3>
+            {% if section.description %}
+            <p class="example">{{ section.description }}</p>
+            {% endif %}
+
+            {% if section.measurement_type == "rating_1_4" %}
             <div class="rating-group">
                 {% for i in range(1, 5) %}
-                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
-                    <input type="radio" name="q1" value="{{ i }}" required>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
-        </div>
-
-        <div class="question-block">
-            <h3>Execution Reliability</h3>
-            <p class="example">Example: "Tell me about something you committed to that got harder than expected. What happened?"</p>
-            <div class="rating-group">
-                {% for i in range(1, 5) %}
-                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
-                    <input type="radio" name="q2" value="{{ i }}" required>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
-        </div>
-
-        <div class="question-block">
-            <h3>Adaptive Range</h3>
-            <p class="example">Example: "Describe a moment when the plan stopped working. What did you do before you had a new one?"</p>
-            <div class="rating-group">
-                {% for i in range(1, 5) %}
-                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
-                    <input type="radio" name="q3" value="{{ i }}" required>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
-        </div>
-
-        <div class="question-block">
-            <h3>Signal Clarity</h3>
-            <p class="example">Example: "How would you explain what you do to someone with no background in it?"</p>
-            <div class="rating-group">
-                {% for i in range(1, 5) %}
-                <label class="rating-label" title="{% if i == 1 %}Clear no, would not proceed under any reframe{% elif i == 2 %}Significant gaps, would need strong compensating signal{% elif i == 3 %}Meets bar, proceed with normal weight{% elif i == 4 %}Strong signal, prioritize{% endif %}">
-                    <input type="radio" name="q4" value="{{ i }}" required>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = Clear no &nbsp;|&nbsp; 2 = Gaps, needs compensation &nbsp;|&nbsp; 3 = Meets bar &nbsp;|&nbsp; 4 = Strong signal</div>
-        </div>
-
-        <div class="question-block">
-            <h3>Gut Check</h3>
-            <p class="example">Example: "Regardless of everything above — would you work with this person?"</p>
-            <div class="rating-group gut-check">
                 <label class="rating-label">
-                    <input type="radio" name="q5" value="yes" required>
-                    <span>Yes</span>
+                    <input type="radio" name="section_{{ section.id }}" value="{{ i }}" {% if section.required %}required{% endif %}>
+                    <span>{{ i }}</span>
                 </label>
-                <label class="rating-label">
-                    <input type="radio" name="q5" value="no" required>
-                    <span>No</span>
-                </label>
+                {% endfor %}
             </div>
+            <div class="anchor-hint">
+                1 = {{ section.anchor_low or "Low" }} &nbsp;|&nbsp; 4 = {{ section.anchor_high or "High" }}
+            </div>
+
+            {% elif section.measurement_type == "single_select" %}
+            <div class="select-group">
+                {% for opt in section.options_list %}
+                <label class="select-label">
+                    <input type="radio" name="section_{{ section.id }}" value="{{ opt }}" {% if section.required %}required{% endif %}
+                        onchange="handleConditionChange({{ section.id }}, '{{ opt }}')">
+                    <span>{{ opt }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            {% elif section.measurement_type == "multi_select" %}
+            {% if section.max_selections %}
+            <p class="hint">Select at most {{ section.max_selections }} options.</p>
+            {% endif %}
+            <div class="select-group">
+                {% for opt in section.options_list %}
+                <label class="select-label">
+                    <input type="checkbox" name="section_{{ section.id }}" value="{{ opt }}"
+                        onchange="handleMultiSelect(this, {{ section.max_selections or 99 }})">
+                    <span>{{ opt }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            {% elif section.measurement_type == "short_text" %}
+            <input type="text" name="section_{{ section.id }}" {% if section.required %}required{% endif %}>
+
+            {% elif section.measurement_type == "long_text" %}
+            <textarea name="section_{{ section.id }}" rows="4" {% if section.required %}required{% endif %}></textarea>
+
+            {% endif %}
         </div>
+        {% endfor %}
 
         <div class="question-block">
             <h3>Additional Notes <span class="optional">(optional)</span></h3>
@@ -98,4 +97,29 @@
         <button type="submit" class="btn submit-btn">Submit Assessment</button>
     </form>
 </div>
+
+<script>
+function handleConditionChange(sectionId, value) {
+    document.querySelectorAll('[data-condition-section="' + sectionId + '"]').forEach(function(el) {
+        if (el.dataset.conditionValue === value) {
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+            // Clear inputs when hiding
+            el.querySelectorAll('input, textarea').forEach(function(inp) {
+                if (inp.type === 'radio' || inp.type === 'checkbox') inp.checked = false;
+                else inp.value = '';
+            });
+        }
+    });
+}
+
+function handleMultiSelect(checkbox, max) {
+    var name = checkbox.name;
+    var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+    if (checked.length > max) {
+        checkbox.checked = false;
+    }
+}
+</script>
 {% endblock %}

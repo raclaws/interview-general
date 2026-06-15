@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Template: {{ template.name }}{% endblock %}
+{% block content %}
+<h1>{{ template.name }}</h1>
+<p>{% if template.is_default %}<span class="badge badge-completed">Default</span>{% endif %}</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Type</th>
+            <th>Options</th>
+            <th>Condition</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for s in sections %}
+        <tr>
+            <td>{{ s.order }}</td>
+            <td>
+                {{ s.title }}
+                {% if s.description %}<br><small class="hint">{{ s.description }}</small>{% endif %}
+            </td>
+            <td>{{ s.measurement_type }}</td>
+            <td>
+                {% if s.measurement_type == "rating_1_4" %}
+                {{ s.anchor_low }} → {{ s.anchor_high }}
+                {% elif s.measurement_type in ["single_select", "multi_select"] %}
+                {{ s.options_list | join(", ") | truncate(60) }}
+                {% else %}
+                —
+                {% endif %}
+            </td>
+            <td>
+                {% if s.condition_section_id %}
+                If section #{{ s.condition_section_id }} = "{{ s.condition_value }}"
+                {% else %}
+                —
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="/templates">&larr; Back to Templates</a>
+{% endblock %}

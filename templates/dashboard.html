@@ -12,6 +12,7 @@
             <th>ID</th>
             <th>Candidate</th>
             <th>Job Title</th>
+            <th>Template</th>
             <th>Round</th>
             <th>Progress</th>
             <th>Status</th>
@@ -25,6 +26,7 @@
             <td>{{ item.session.id }}</td>
             <td>{{ item.session.snapshot.get("name", "—") }}</td>
             <td>{{ item.session.job_title }}</td>
+            <td>{{ item.template.name if item.template else "—" }}</td>
             <td>{{ item.session.round }}</td>
             <td>{{ item.completed }}/{{ item.total }} submitted</td>
             <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
@@ -35,7 +37,7 @@
         </tr>
         {% endfor %}
         {% if not session_data %}
-        <tr><td colspan="8">No sessions yet.</td></tr>
+        <tr><td colspan="9">No sessions yet.</td></tr>
         {% endif %}
     </tbody>
 </table>

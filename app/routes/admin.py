@@ -8,11 +8,22 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, InterviewSession, SessionInterviewer, Response
+from app.models import AdminUser, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection
 from app.nocodb import search_candidates, fetch_candidate
-from app.llm import generate_summary, generate_aggregate_summary, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
+from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
 router = APIRouter()
+
+POSITIONS = [
+    "Data Analyst", "Data Engineer", "Data Scientist",
+    "Machine Learning Engineer / AI Engineer", "Data Quality Control",
+    "Data Governance", "Fullstack Developer", "QA Engineer",
+    "Project Manager", "CRM StrategistC", "CRM Operation",
+    "CRM Assistant", "Account Manager", "Business Analyst",
+    "Digital Marketing", "Design Graphic", "Other"
+]
+
+BUSINESS_UNITS = ["Markethac", "APEX", "EXONIA", "1011", "R&D", "Group Support", "LUPIN"]
 
 
 def _generate_token() -> str:
@@ -36,13 +47,20 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         ).all()
         total = len(interviewers)
         completed = len([i for i in interviewers if i.status == "completed"])
-        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed})
+        template = db.get(Template, s.template_id) if s.template_id else None
+        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template})
     return _render(request, "dashboard.html", {"session_data": session_data, "admin": admin})
 
 
 @router.get("/session/new", response_class=HTMLResponse)
-async def session_new_form(request: Request, admin: AdminUser = Depends(get_current_admin)):
-    return _render(request, "session_new.html", {"admin": admin})
+async def session_new_form(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    templates = db.exec(select(Template).order_by(Template.name)).all()
+    return _render(request, "session_new.html", {
+        "admin": admin,
+        "templates": templates,
+        "positions": POSITIONS,
+        "business_units": BUSINESS_UNITS,
+    })
 
 
 @router.post("/session/new")
@@ -54,6 +72,9 @@ async def session_new_submit(
     interviewer_names: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
+    template_id: int = Form(...),
+    position: str = Form(""),
+    business_unit: str = Form(""),
     entry_mode: str = Form("nocodb"),
     manual_name: str = Form(""),
     manual_position: str = Form(""),
@@ -93,16 +114,18 @@ async def session_new_submit(
         }
         candidate_id = None
 
-    # Parse interviewer names (comma-separated)
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
 
     session = InterviewSession(
+        template_id=template_id,
         candidate_id=candidate_id,
         candidate_snapshot=json.dumps(snapshot),
         job_title=job_title,
         round=round,
+        position=position.strip() if position.strip() else None,
+        business_unit=business_unit.strip() if business_unit.strip() else None,
         interview_date=interview_date if interview_date.strip() else None,
         show_salary=show_salary.lower() in ("on", "true", "1", "yes"),
         status="pending",
@@ -135,18 +158,36 @@ async def session_detail(
     session = db.get(InterviewSession, session_id)
     if not session:
         return HTMLResponse("Not found", status_code=404)
+
+    template = db.get(Template, session.template_id) if session.template_id else None
+    sections = []
+    if session.template_id:
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == session.template_id).order_by(TemplateSection.order)
+        ).all()
+
     interviewers = db.exec(
         select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
     ).all()
-    # Fetch responses for each interviewer
+
     interviewer_data = []
     for iv in interviewers:
         response = db.exec(
             select(Response).where(Response.session_interviewer_id == iv.id)
         ).first()
-        interviewer_data.append({"interviewer": iv, "response": response})
+        scores = {}
+        if response:
+            score_rows = db.exec(
+                select(ResponseScore).where(ResponseScore.response_id == response.id)
+            ).all()
+            for sr in score_rows:
+                scores[sr.section_id] = sr.value
+        interviewer_data.append({"interviewer": iv, "response": response, "scores": scores})
+
     return _render(request, "session_detail.html", {
         "session": session,
+        "template": template,
+        "sections": sections,
         "interviewer_data": interviewer_data,
         "admin": admin,
     })
@@ -163,24 +204,29 @@ async def generate_session_summary(
     if not session:
         return HTMLResponse("Not found", status_code=404)
 
+    sections = []
+    if session.template_id:
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == session.template_id).order_by(TemplateSection.order)
+        ).all()
+
     interviewers = db.exec(
         select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
     ).all()
 
-    # Collect all responses
     responses_data = []
     for iv in interviewers:
         response = db.exec(
             select(Response).where(Response.session_interviewer_id == iv.id)
         ).first()
         if response:
+            score_rows = db.exec(
+                select(ResponseScore).where(ResponseScore.response_id == response.id)
+            ).all()
+            scores = {sr.section_id: sr.value for sr in score_rows}
             responses_data.append({
                 "interviewer_name": iv.interviewer_name,
-                "q1": response.q1,
-                "q2": response.q2,
-                "q3": response.q3,
-                "q4": response.q4,
-                "q5": response.q5,
+                "scores": scores,
                 "free_text": response.free_text,
             })
 
@@ -188,23 +234,12 @@ async def generate_session_summary(
         return RedirectResponse(f"/session/{session_id}", status_code=303)
 
     snapshot = session.snapshot
-
-    if len(responses_data) == 1:
-        # Single evaluator — use original prompt
-        r = responses_data[0]
-        summary = await generate_summary(
-            candidate_name=snapshot.get("name", "Unknown"),
-            job_title=session.job_title,
-            q1=r["q1"], q2=r["q2"], q3=r["q3"], q4=r["q4"],
-            q5=r["q5"], free_text=r["free_text"],
-        )
-    else:
-        # Multiple evaluators — cross-evaluator prompt
-        summary = await generate_aggregate_summary(
-            candidate_name=snapshot.get("name", "Unknown"),
-            job_title=session.job_title,
-            responses=responses_data,
-        )
+    summary = await generate_summary_dynamic(
+        candidate_name=snapshot.get("name", "Unknown"),
+        job_title=session.job_title,
+        sections=sections,
+        responses_data=responses_data,
+    )
 
     session.aggregate_summary = summary
     db.add(session)
@@ -225,7 +260,13 @@ async def session_edit_form(
     interviewers = db.exec(
         select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
     ).all()
-    return _render(request, "session_edit.html", {"session": session, "interviewers": interviewers, "admin": admin})
+    return _render(request, "session_edit.html", {
+        "session": session,
+        "interviewers": interviewers,
+        "admin": admin,
+        "positions": POSITIONS,
+        "business_units": BUSINESS_UNITS,
+    })
 
 
 @router.post("/session/{session_id}/edit")
@@ -236,6 +277,8 @@ async def session_edit_submit(
     round: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
+    position: str = Form(""),
+    business_unit: str = Form(""),
     new_interviewers: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
@@ -248,9 +291,10 @@ async def session_edit_submit(
     session.round = round
     session.interview_date = interview_date if interview_date.strip() else None
     session.show_salary = show_salary.lower() in ("on", "true", "1", "yes")
+    session.position = position.strip() if position.strip() else None
+    session.business_unit = business_unit.strip() if business_unit.strip() else None
     db.add(session)
 
-    # Add new interviewers if provided
     if new_interviewers.strip():
         names = [n.strip() for n in new_interviewers.split(",") if n.strip()]
         for name in names:
@@ -261,13 +305,38 @@ async def session_edit_submit(
                 status="pending",
             )
             db.add(interviewer)
-        # Reset session status if adding new interviewers
         session.status = "pending"
         session.aggregate_summary = ""
         db.add(session)
 
     db.commit()
     return RedirectResponse(f"/session/{session_id}", status_code=303)
+
+
+@router.get("/templates", response_class=HTMLResponse)
+async def templates_list(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    templates = db.exec(select(Template).order_by(Template.name)).all()
+    template_data = []
+    for t in templates:
+        sections = db.exec(select(TemplateSection).where(TemplateSection.template_id == t.id)).all()
+        template_data.append({"template": t, "section_count": len(sections)})
+    return _render(request, "templates_list.html", {"template_data": template_data, "admin": admin})
+
+
+@router.get("/templates/{template_id}", response_class=HTMLResponse)
+async def template_detail(
+    request: Request,
+    template_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    template = db.get(Template, template_id)
+    if not template:
+        return HTMLResponse("Not found", status_code=404)
+    sections = db.exec(
+        select(TemplateSection).where(TemplateSection.template_id == template.id).order_by(TemplateSection.order)
+    ).all()
+    return _render(request, "template_detail.html", {"template": template, "sections": sections, "admin": admin})
 
 
 @router.get("/settings", response_class=HTMLResponse)

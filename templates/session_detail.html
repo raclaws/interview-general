@@ -6,7 +6,14 @@
 <div class="detail-grid">
     <div class="detail-section">
         <h2>Session Info</h2>
+        <p><strong>Template:</strong> {{ template.name if template else "—" }}</p>
         <p><strong>Job Title:</strong> {{ session.job_title }}</p>
+        {% if session.position %}
+        <p><strong>Position:</strong> {{ session.position }}</p>
+        {% endif %}
+        {% if session.business_unit %}
+        <p><strong>Business Unit:</strong> {{ session.business_unit }}</p>
+        {% endif %}
         <p><strong>Round:</strong> {{ session.round }}</p>
         <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
         <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
@@ -64,26 +71,14 @@
     <div class="interviewer-result">
         <h3>{{ item.interviewer.interviewer_name }}</h3>
         <div class="scores-row">
+            {% for section in sections %}
+            {% if item.scores.get(section.id) %}
             <div class="score-card">
-                <div class="score-label">Comprehension</div>
-                <div class="score-value">{{ item.response.q1 }}/4</div>
+                <div class="score-label">{{ section.title }}</div>
+                <div class="score-value">{{ item.scores.get(section.id, "—") }}</div>
             </div>
-            <div class="score-card">
-                <div class="score-label">Execution</div>
-                <div class="score-value">{{ item.response.q2 }}/4</div>
-            </div>
-            <div class="score-card">
-                <div class="score-label">Adaptive</div>
-                <div class="score-value">{{ item.response.q3 }}/4</div>
-            </div>
-            <div class="score-card">
-                <div class="score-label">Clarity</div>
-                <div class="score-value">{{ item.response.q4 }}/4</div>
-            </div>
-            <div class="score-card">
-                <div class="score-label">Gut Check</div>
-                <div class="score-value">{{ "Yes" if item.response.q5 else "No" }}</div>
-            </div>
+            {% endif %}
+            {% endfor %}
         </div>
         {% if item.response.free_text %}
         <div class="note-block">
@@ -125,7 +120,13 @@ function copyAsMarkdown() {
     let md = `## ${name} — ${role} — ${date}\n\n`;
     {% for item in interviewer_data %}
     {% if item.response %}
-    md += `**{{ item.interviewer.interviewer_name }}:** {{ item.response.q1 }}/{{ item.response.q2 }}/{{ item.response.q3 }}/{{ item.response.q4 }} | Proceed: {{ 'Y' if item.response.q5 else 'N' }}\n`;
+    md += `**{{ item.interviewer.interviewer_name }}:**\n`;
+    {% for section in sections %}
+    {% if item.scores.get(section.id) %}
+    md += `  {{ section.title }}: {{ item.scores.get(section.id, "") }}\n`;
+    {% endif %}
+    {% endfor %}
+    md += `\n`;
     {% endif %}
     {% endfor %}
     md += `\n${summary}\n`;

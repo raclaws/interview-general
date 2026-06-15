@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import InterviewSession, SessionInterviewer, Response
+from app.models import InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection
 
 router = APIRouter()
 
@@ -24,20 +24,27 @@ async def interview_form(request: Request, token: str, db: Session = Depends(get
         return HTMLResponse("Invalid or expired link.", status_code=404)
     if interviewer.status == "completed":
         return RedirectResponse(f"/i/{token}/done", status_code=303)
+
     session = db.get(InterviewSession, interviewer.session_id)
-    return _render(request, "interview_form.html", {"session": session, "interviewer": interviewer})
+    template = db.get(Template, session.template_id) if session.template_id else None
+    sections = []
+    if session.template_id:
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == session.template_id).order_by(TemplateSection.order)
+        ).all()
+
+    return _render(request, "interview_form.html", {
+        "session": session,
+        "interviewer": interviewer,
+        "template": template,
+        "sections": sections,
+    })
 
 
 @router.post("/i/{token}")
 async def interview_submit(
     request: Request,
     token: str,
-    q1: int = Form(...),
-    q2: int = Form(...),
-    q3: int = Form(...),
-    q4: int = Form(...),
-    q5: str = Form(...),
-    free_text: str = Form(""),
     db: Session = Depends(get_session),
 ):
     interviewer = db.exec(
@@ -46,27 +53,44 @@ async def interview_submit(
     if not interviewer or interviewer.status == "completed":
         return HTMLResponse("This session has already been submitted.", status_code=400)
 
-    q5_bool = q5.lower() in ("yes", "true", "1")
+    session = db.get(InterviewSession, interviewer.session_id)
+    sections = []
+    if session.template_id:
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == session.template_id).order_by(TemplateSection.order)
+        ).all()
 
+    form_data = await request.form()
+
+    free_text = form_data.get("free_text", "")
     response = Response(
         session_interviewer_id=interviewer.id,
-        q1=q1,
-        q2=q2,
-        q3=q3,
-        q4=q4,
-        q5=q5_bool,
-        free_text=free_text if free_text.strip() else None,
+        free_text=free_text.strip() if free_text.strip() else None,
         submitted_at=datetime.utcnow(),
         summary="",
     )
     db.add(response)
+    db.commit()
+    db.refresh(response)
 
-    # Mark interviewer as completed
+    for section in sections:
+        key = f"section_{section.id}"
+        if section.measurement_type == "multi_select":
+            values = form_data.getlist(key)
+            value = ",".join(values) if values else ""
+        else:
+            value = form_data.get(key, "")
+
+        score = ResponseScore(
+            response_id=response.id,
+            section_id=section.id,
+            value=value if value else "",
+        )
+        db.add(score)
+
     interviewer.status = "completed"
     db.add(interviewer)
 
-    # Check if all interviewers for this session are completed
-    session = db.get(InterviewSession, interviewer.session_id)
     all_interviewers = db.exec(
         select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
     ).all()
