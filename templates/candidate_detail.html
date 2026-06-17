@@ -1,0 +1,95 @@
+{% extends "base_app.html" %}
+{% block title %}{{ candidate.name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ candidate.name }}</h1>
+    <a href="/candidate/{{ candidate.id }}/edit" class="btn-ghost">Edit</a>
+</div>
+
+<div class="candidate-card">
+    <p><strong>Email:</strong> {{ candidate.email }}</p>
+    {% if candidate.phone %}<p><strong>Phone:</strong> {{ candidate.phone }}</p>{% endif %}
+    {% if candidate.current_position %}<p><strong>Position:</strong> {{ candidate.current_position }}</p>{% endif %}
+    {% if candidate.yoe %}<p><strong>Experience:</strong> {{ candidate.yoe }}</p>{% endif %}
+    {% if candidate.languages %}<p><strong>Languages:</strong> {{ candidate.languages }}</p>{% endif %}
+    {% if candidate.cloud %}<p><strong>Cloud:</strong> {{ candidate.cloud }}</p>{% endif %}
+    {% if candidate.tools %}<p><strong>Tools:</strong> {{ candidate.tools }}</p>{% endif %}
+    {% if candidate.working_arrangement %}<p><strong>Working Arrangement:</strong> {{ candidate.working_arrangement }}</p>{% endif %}
+    {% if candidate.current_salary %}<p><strong>Current Salary:</strong> {{ candidate.current_salary }}</p>{% endif %}
+    {% if candidate.expected_salary %}<p><strong>Expected Salary:</strong> {{ candidate.expected_salary }}</p>{% endif %}
+    {% if candidate.notice_period %}<p><strong>Notice Period:</strong> {{ candidate.notice_period }}</p>{% endif %}
+</div>
+
+<hr>
+
+<h2>Pipeline</h2>
+
+<div id="pipeline-section">
+    {% include "partials/pipeline_list.html" %}
+</div>
+
+<details class="add-pipeline-form" style="margin-top: 1rem;">
+    <summary class="btn-ghost">+ Add Pipeline Entry</summary>
+    <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
+          hx-post="/candidate/{{ candidate.id }}/pipeline"
+          hx-target="#pipeline-section"
+          hx-swap="innerHTML"
+          style="margin-top: 0.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+            <div>
+                <label for="pl-position">Position</label>
+                <input type="text" id="pl-position" name="position" placeholder="e.g. Data Engineer">
+            </div>
+            <div>
+                <label for="pl-bu">Business Unit</label>
+                <input type="text" id="pl-bu" name="business_unit" placeholder="e.g. APEX">
+            </div>
+        </div>
+        <label for="pl-stage">Stage</label>
+        <select id="pl-stage" name="stage">
+            {% for s in stages %}
+            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+            {% endfor %}
+        </select>
+        <label for="pl-notes">Notes</label>
+        <textarea id="pl-notes" name="notes" rows="2" placeholder="Optional notes..."></textarea>
+        <button type="submit" class="btn" style="margin-top: 0.5rem;">Add</button>
+    </form>
+</details>
+
+<hr>
+
+<h2>Interview Sessions</h2>
+
+{% if session_data %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Job Title</th>
+            <th>Round</th>
+            <th>Progress</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in session_data %}
+        <tr>
+            <td>{{ item.session.id }}</td>
+            <td>{{ item.session.job_title }}</td>
+            <td>{{ item.session.round }}</td>
+            <td>{{ item.completed }}/{{ item.total }}</td>
+            <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
+            <td>{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
+            <td><a href="/session/{{ item.session.id }}" class="btn-ghost">View</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No interview sessions linked to this candidate.</p>
+{% endif %}
+
+{% endblock %}

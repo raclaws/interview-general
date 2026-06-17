@@ -1,0 +1,39 @@
+{% for p in pipelines %}
+<div class="pipeline-entry" style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+            <strong>{{ p.position or "—" }}</strong>
+            {% if p.business_unit %}<span class="hint"> · {{ p.business_unit }}</span>{% endif %}
+        </div>
+        <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
+              hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
+              hx-target="#pipeline-section"
+              hx-swap="innerHTML"
+              style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
+                {% for s in stages %}
+                <option value="{{ s }}" {% if p.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    {% if p.notes %}
+    <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>
+    {% endif %}
+    <details style="margin-top: 0.25rem;">
+        <summary class="hint" style="cursor: pointer; font-size: 0.8rem;">Edit notes</summary>
+        <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/notes"
+              hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/notes"
+              hx-target="#pipeline-section"
+              hx-swap="innerHTML"
+              style="margin-top: 0.25rem;">
+            <textarea name="notes" rows="2" style="width: 100%;">{{ p.notes or "" }}</textarea>
+            <button type="submit" class="btn-ghost" style="margin-top: 0.25rem;">Save</button>
+        </form>
+    </details>
+    <p class="hint" style="margin-top: 0.25rem; font-size: 0.75rem;">Updated {{ p.updated_at.strftime("%Y-%m-%d %H:%M") }}</p>
+</div>
+{% endfor %}
+{% if not pipelines %}
+<p class="hint">No pipeline entries yet.</p>
+{% endif %}

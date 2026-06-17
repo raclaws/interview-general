@@ -15,6 +15,9 @@
                 <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
                     <span class="sidebar-icon">◻</span> Dashboard
                 </a>
+                <a href="/candidates" class="{% if '/candidate' in request.url.path %}active{% endif %}">
+                    <span class="sidebar-icon">👤</span> Candidates
+                </a>
                 <a href="/templates" class="{% if '/templates' in request.url.path %}active{% endif %}">
                     <span class="sidebar-icon">☰</span> Templates
                 </a>

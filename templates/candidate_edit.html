@@ -1,0 +1,49 @@
+{% extends "base_app.html" %}
+{% block title %}Edit {{ candidate.name }}{% endblock %}
+{% block content %}
+<h1>Edit Candidate</h1>
+<div class="form-container" style="max-width: 600px;">
+    <form method="post" action="/candidate/{{ candidate.id }}/edit">
+        <label for="name">Name *</label>
+        <input type="text" id="name" name="name" value="{{ candidate.name }}" required>
+
+        <label for="email">Email *</label>
+        <input type="email" id="email" name="email" value="{{ candidate.email }}" required>
+
+        <label for="phone">Phone</label>
+        <input type="text" id="phone" name="phone" value="{{ candidate.phone or '' }}">
+
+        <label for="current_position">Current Position</label>
+        <input type="text" id="current_position" name="current_position" value="{{ candidate.current_position or '' }}">
+
+        <label for="yoe">Years of Experience</label>
+        <input type="text" id="yoe" name="yoe" value="{{ candidate.yoe or '' }}">
+
+        <label for="languages">Programming Languages</label>
+        <input type="text" id="languages" name="languages" value="{{ candidate.languages or '' }}">
+
+        <label for="cloud">Cloud Expertise</label>
+        <input type="text" id="cloud" name="cloud" value="{{ candidate.cloud or '' }}">
+
+        <label for="tools">Other Tools</label>
+        <input type="text" id="tools" name="tools" value="{{ candidate.tools or '' }}">
+
+        <label for="working_arrangement">Working Arrangement</label>
+        <input type="text" id="working_arrangement" name="working_arrangement" value="{{ candidate.working_arrangement or '' }}">
+
+        <label for="current_salary">Current Salary</label>
+        <input type="text" id="current_salary" name="current_salary" value="{{ candidate.current_salary or '' }}">
+
+        <label for="expected_salary">Expected Salary</label>
+        <input type="text" id="expected_salary" name="expected_salary" value="{{ candidate.expected_salary or '' }}">
+
+        <label for="notice_period">Notice Period</label>
+        <input type="text" id="notice_period" name="notice_period" value="{{ candidate.notice_period or '' }}">
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Save Changes</button>
+            <a href="/candidate/{{ candidate.id }}" class="btn-ghost">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

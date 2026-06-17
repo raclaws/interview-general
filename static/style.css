@@ -263,6 +263,22 @@ tr:hover td { background: #f9fafb; }
 .badge-pending { background: #fef3c7; color: #92400e; }
 .badge-completed { background: #d1fae5; color: #065f46; }
 .badge-cancelled { background: #fee2e2; color: #991b1b; }
+.badge-screening { background: #e0e7ff; color: #3730a3; }
+.badge-test { background: #ede9fe; color: #5b21b6; }
+.badge-interview { background: #dbeafe; color: #1e40af; }
+.badge-offer { background: #fef9c3; color: #854d0e; }
+.badge-hired { background: #d1fae5; color: #065f46; }
+.badge-rejected { background: #fee2e2; color: #991b1b; }
+.badge-withdrawn { background: #f3f4f6; color: #4b5563; }
+.badge-on_hold { background: #fef3c7; color: #92400e; }
+
+.inline-select {
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+}
 
 /* Actions row */
 .actions { margin-bottom: 1.25rem; }

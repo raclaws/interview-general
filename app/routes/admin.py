@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
@@ -78,6 +78,7 @@ async def session_new_submit(
     business_unit: str = Form(""),
     entry_mode: str = Form("nocodb"),
     manual_name: str = Form(""),
+    manual_email: str = Form(""),
     manual_position: str = Form(""),
     manual_yoe: str = Form(""),
     manual_languages: str = Form(""),
@@ -105,7 +106,7 @@ async def session_new_submit(
         snapshot = {
             "name": manual_name.strip(),
             "phone": "",
-            "email": "",
+            "email": manual_email.strip(),
             "current_position": manual_position.strip(),
             "yoe": manual_yoe.strip(),
             "languages": manual_languages.strip(),
@@ -121,13 +122,70 @@ async def session_new_submit(
     # Handle "Other" position
     final_position = position_other.strip() if position == "Other" and position_other.strip() else position.strip()
 
+    # Upsert candidate record
+    candidate_record = None
+    email = snapshot.get("email", "").strip()
+    if email:
+        candidate_record = db.exec(
+            select(Candidate).where(Candidate.email == email)
+        ).first()
+    if candidate_record:
+        candidate_record.name = snapshot.get("name", candidate_record.name)
+        candidate_record.phone = snapshot.get("phone") or candidate_record.phone
+        candidate_record.current_position = snapshot.get("current_position") or candidate_record.current_position
+        candidate_record.yoe = snapshot.get("yoe") or candidate_record.yoe
+        candidate_record.languages = snapshot.get("languages") or candidate_record.languages
+        candidate_record.cloud = snapshot.get("cloud") or candidate_record.cloud
+        candidate_record.tools = snapshot.get("tools") or candidate_record.tools
+        candidate_record.working_arrangement = snapshot.get("working_arrangement") or candidate_record.working_arrangement
+        candidate_record.current_salary = snapshot.get("current_salary") or candidate_record.current_salary
+        candidate_record.expected_salary = snapshot.get("expected_salary") or candidate_record.expected_salary
+        candidate_record.notice_period = snapshot.get("notice_period") or candidate_record.notice_period
+        candidate_record.updated_at = datetime.utcnow()
+        db.add(candidate_record)
+        db.commit()
+        db.refresh(candidate_record)
+    elif snapshot.get("name", "").strip():
+        candidate_record = Candidate(
+            name=snapshot.get("name", "").strip(),
+            email=email or f"{secrets.token_hex(4)}@placeholder.local",
+            phone=snapshot.get("phone") or None,
+            nocodb_id=candidate_id,
+            current_position=snapshot.get("current_position") or None,
+            yoe=snapshot.get("yoe") or None,
+            languages=snapshot.get("languages") or None,
+            cloud=snapshot.get("cloud") or None,
+            tools=snapshot.get("tools") or None,
+            working_arrangement=snapshot.get("working_arrangement") or None,
+            current_salary=snapshot.get("current_salary") or None,
+            expected_salary=snapshot.get("expected_salary") or None,
+            notice_period=snapshot.get("notice_period") or None,
+        )
+        db.add(candidate_record)
+        db.commit()
+        db.refresh(candidate_record)
+
+    # Create pipeline entry if we have a candidate
+    pipeline_record = None
+    if candidate_record:
+        pipeline_record = CandidatePipeline(
+            candidate_id=candidate_record.id,
+            position=final_position or None,
+            business_unit=business_unit.strip() if business_unit.strip() else None,
+            stage="interview",
+        )
+        db.add(pipeline_record)
+        db.commit()
+        db.refresh(pipeline_record)
+
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
 
     session = InterviewSession(
         template_id=template_id,
-        candidate_id=candidate_id,
+        candidate_id=candidate_record.id if candidate_record else None,
+        pipeline_id=pipeline_record.id if pipeline_record else None,
         candidate_snapshot=json.dumps(snapshot),
         job_title=job_title.strip() if job_title.strip() else "N/A",
         round=round,
