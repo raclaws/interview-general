@@ -133,6 +133,18 @@ button[type="submit"]:hover, .submit-btn:hover { background: var(--accent-hover)
     font-size: 0.8rem;
     font-weight: 500;
 }
+/* Ensure .btn-secondary always overrides submit styling */
+button.btn-secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    width: auto;
+    margin-top: 0;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+button.btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
 nav button[type="submit"] {
     all: unset;
     color: #9ca3af;
