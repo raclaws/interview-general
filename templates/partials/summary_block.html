@@ -1,25 +1,5 @@
 {% if session.aggregate_summary %}
 <p>{{ session.aggregate_summary }}</p>
-<div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-    <form method="post" action="/session/{{ session.id }}/generate-summary"
-          hx-post="/session/{{ session.id }}/generate-summary"
-          hx-target="#summary-container"
-          hx-swap="innerHTML"
-          hx-indicator="#summary-spinner">
-        <button type="submit" class="btn btn-secondary">Regenerate Summary</button>
-    </form>
-    <button type="button" class="btn btn-secondary" onclick="copyAsMarkdown()">Copy as Markdown</button>
-</div>
 {% else %}
-<p class="no-summary">No summary generated yet.</p>
-<form method="post" action="/session/{{ session.id }}/generate-summary"
-      hx-post="/session/{{ session.id }}/generate-summary"
-      hx-target="#summary-container"
-      hx-swap="innerHTML"
-      hx-indicator="#summary-spinner">
-    <button type="submit" class="btn">Generate Summary</button>
-</form>
+<p class="no-summary">No summary generated yet. Click "Generate Summary" above.</p>
 {% endif %}
-<div id="summary-spinner" class="htmx-indicator">
-    <p style="color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem;">Generating summary... this may take a moment.</p>
-</div>

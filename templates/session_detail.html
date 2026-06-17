@@ -73,7 +73,20 @@
 {% set has_responses = interviewer_data | selectattr("response") | list %}
 {% if has_responses %}
 <div class="detail-section results">
-    <h2>Assessment Results</h2>
+    <div class="page-header" style="margin-bottom: 1rem;">
+        <h2 style="margin-bottom: 0;">Assessment Results</h2>
+        <div class="action-row" style="margin-top: 0; gap: 0.5rem;">
+            <form method="post" action="/session/{{ session.id }}/generate-summary"
+                  hx-post="/session/{{ session.id }}/generate-summary"
+                  hx-target="#summary-container"
+                  hx-swap="innerHTML"
+                  hx-indicator="#summary-spinner"
+                  style="display:inline;">
+                <button type="submit" class="btn btn-secondary">{% if session.aggregate_summary %}Regenerate{% else %}Generate Summary{% endif %}</button>
+            </form>
+            <button type="button" class="btn btn-secondary" onclick="copyAsMarkdown()">Copy as Markdown</button>
+        </div>
+    </div>
 
     {% for item in interviewer_data %}
     {% if item.response %}
@@ -106,13 +119,19 @@
     </div>
     {% endif %}
     {% endfor %}
+</div>
 
-    <hr>
-    <div class="summary-block">
-        <h3>AI Summary</h3>
-        <div id="summary-container">
-        {% include "partials/summary_block.html" %}
-        </div>
+<div class="detail-section">
+    <h2>AI Summary</h2>
+    <div id="summary-container">
+        {% if session.aggregate_summary %}
+        <p>{{ session.aggregate_summary }}</p>
+        {% else %}
+        <p class="no-summary">No summary generated yet. Click "Generate Summary" above.</p>
+        {% endif %}
+    </div>
+    <div id="summary-spinner" class="htmx-indicator">
+        <p style="color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem;">Generating summary... this may take a moment.</p>
     </div>
 </div>
 
