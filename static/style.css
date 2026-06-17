@@ -75,10 +75,12 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
     transition: background 0.15s, transform 0.1s;
 }
 .btn:hover { background: var(--accent-hover); color: #fff; text-decoration: none; transform: translateY(-1px); }
-.btn-secondary { background: #6b7280; }
-.btn-secondary:hover { background: #4b5563; }
+.btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
 .btn-danger { background: #dc2626; }
 .btn-danger:hover { background: #b91c1c; }
+.btn-ghost { background: none; border: none; color: var(--accent); padding: 0; font-size: 0.85rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
 .btn-copy {
     background: var(--bg-muted);
     color: var(--text-secondary);
@@ -91,6 +93,22 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
     transition: background 0.15s;
 }
 .btn-copy:hover { background: var(--border); }
+
+/* Page header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+.page-header h1 { margin-bottom: 0; }
+
+/* Action row */
+.action-row { display: flex; gap: 0.5rem; align-items: center; margin-top: 1rem; }
+
+/* Form actions */
+.form-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
+.form-actions .btn { width: auto; padding: 0.65rem 1.5rem; }
 
 button[type="submit"], .submit-btn {
     margin-top: 1.5rem;
@@ -115,6 +133,7 @@ nav button[type="submit"] {
     transition: color 0.15s;
 }
 nav button[type="submit"]:hover { color: #fff; }
+.form-actions button[type="submit"] { width: auto; margin-top: 0; }
 
 /* Cards */
 .card {
@@ -393,4 +412,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     table { display: block; overflow-x: auto; }
     .rating-group { gap: 0.4rem; }
     .rating-label { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+    .page-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+    .form-actions { justify-content: stretch; }
+    .form-actions button[type="submit"] { width: 100%; }
 }

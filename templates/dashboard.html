@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<h1>Interview Sessions</h1>
-<div class="actions">
+<div class="page-header">
+    <h1>Interview Sessions</h1>
     <a href="/session/new" class="btn">New Session</a>
 </div>
 
@@ -32,7 +32,7 @@
             <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
             <td>{{ item.session.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
             <td>
-                <a href="/session/{{ item.session.id }}">View</a>
+                <a href="/session/{{ item.session.id }}" class="btn-ghost">View</a>
             </td>
         </tr>
         {% endfor %}

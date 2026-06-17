@@ -18,12 +18,6 @@
         <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
         <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
         <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
-        <a href="/session/{{ session.id }}/edit" class="btn btn-secondary" style="margin-top: 0.75rem; display: inline-block;">Edit Session</a>
-        {% if session.status == "pending" %}
-        <form method="post" action="/session/{{ session.id }}/cancel" style="display:inline; margin-left: 0.5rem;" onsubmit="return confirm('Are you sure you want to cancel this session? This cannot be undone.');">
-            <button type="submit" class="btn btn-danger">Cancel Session</button>
-        </form>
-        {% endif %}
     </div>
 
     <div class="detail-section">
@@ -36,6 +30,15 @@
         <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} / {{ session.snapshot.get("expected_salary", "—") }}</p>
         <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
     </div>
+</div>
+
+<div class="action-row">
+    <a href="/session/{{ session.id }}/edit" class="btn btn-secondary">Edit Session</a>
+    {% if session.status == "pending" %}
+    <form method="post" action="/session/{{ session.id }}/cancel" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this session? This cannot be undone.');">
+        <button type="submit" class="btn btn-danger">Cancel Session</button>
+    </form>
+    {% endif %}
 </div>
 
 <div class="detail-section">
@@ -185,5 +188,5 @@ function copyLink(token, btn) {
 }
 </script>
 
-<a href="/">&larr; Back to Dashboard</a>
+<a href="/" class="btn-ghost">&larr; Back to Dashboard</a>
 {% endblock %}

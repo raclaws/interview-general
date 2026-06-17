@@ -45,8 +45,10 @@
         <input type="text" id="new_interviewers" name="new_interviewers" placeholder="Comma-separated names to add">
         <p class="hint">New interviewers get fresh token links. Existing ones are unchanged.</p>
 
-        <button type="submit">Save Changes</button>
+        <div class="form-actions">
+            <button type="submit">Save Changes</button>
+        </div>
     </form>
 </div>
-<a href="/session/{{ session.id }}">&larr; Back to Session</a>
+<a href="/session/{{ session.id }}" class="btn-ghost">&larr; Back to Session</a>
 {% endblock %}
