@@ -125,6 +125,14 @@ button[type="submit"], .submit-btn {
     transition: background 0.15s, transform 0.1s;
 }
 button[type="submit"]:hover, .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+/* Override for buttons inside action groups — never full-width */
+.action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
+    width: auto;
+    margin-top: 0;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
 nav button[type="submit"] {
     all: unset;
     color: #9ca3af;
