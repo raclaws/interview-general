@@ -22,6 +22,92 @@ def _render(request: Request, name: str, context: dict = None):
     return request.app.state.templates.TemplateResponse(request, name, ctx)
 
 
+def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
+    """Build full context needed by partials/pipeline_list.html."""
+    candidate = db.get(Candidate, candidate_id)
+    pipelines = db.exec(
+        select(CandidatePipeline)
+        .where(CandidatePipeline.candidate_id == candidate_id)
+        .order_by(CandidatePipeline.updated_at.desc())
+    ).all()
+
+    pipeline_scores = {}
+    for p in pipelines:
+        p_sessions = db.exec(
+            select(InterviewSession).where(
+                InterviewSession.pipeline_id == p.id,
+                InterviewSession.status == "completed",
+            )
+        ).all()
+        hr_total = 0
+        culture_total = 0
+        hr_count = 0
+        culture_count = 0
+        for s in p_sessions:
+            template = db.get(Template, s.template_id) if s.template_id else None
+            if not template:
+                continue
+            is_hr = template.name == "HR Interview"
+            is_culture = template.name == "Culture Alignment"
+            if not is_hr and not is_culture:
+                continue
+            ivs = db.exec(
+                select(SessionInterviewer).where(
+                    SessionInterviewer.session_id == s.id,
+                    SessionInterviewer.status == "completed",
+                )
+            ).all()
+            for iv in ivs:
+                resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
+                if not resp:
+                    continue
+                scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
+                sections = db.exec(select(TemplateSection).where(TemplateSection.template_id == template.id)).all()
+                section_map = {sec.id: sec for sec in sections}
+                iv_total = 0
+                for sr in scores:
+                    sec = section_map.get(sr.section_id)
+                    if sec and sec.measurement_type == "rating_1_4" and sr.value:
+                        try:
+                            iv_total += int(sr.value)
+                        except ValueError:
+                            pass
+                if is_hr:
+                    hr_total += iv_total
+                    hr_count += 1
+                elif is_culture:
+                    culture_total += iv_total
+                    culture_count += 1
+        pipeline_scores[p.id] = {
+            "hr_avg": round(hr_total / hr_count, 1) if hr_count else 0,
+            "culture_avg": round(culture_total / culture_count, 1) if culture_count else 0,
+        }
+
+    pipeline_sessions = {}
+    sessions = db.exec(
+        select(InterviewSession)
+        .where(InterviewSession.candidate_id == candidate_id)
+        .order_by(InterviewSession.created_at.desc())
+    ).all()
+    for s in sessions:
+        ivs = db.exec(
+            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
+        ).all()
+        total = len(ivs)
+        completed = len([i for i in ivs if i.status == "completed"])
+        entry = {"session": s, "total": total, "completed": completed}
+        pid = s.pipeline_id or 0
+        pipeline_sessions.setdefault(pid, []).append(entry)
+
+    return {
+        "pipelines": pipelines,
+        "candidate": candidate,
+        "stages": PIPELINE_STAGES,
+        "pipeline_scores": pipeline_scores,
+        "pipeline_sessions": pipeline_sessions,
+    }
+
+
 @router.get("/candidates", response_class=HTMLResponse)
 async def candidates_list(
     request: Request,
@@ -247,16 +333,7 @@ async def pipeline_create(
 
     if request.headers.get("HX-Request"):
         db.refresh(pipeline)
-        pipelines = db.exec(
-            select(CandidatePipeline)
-            .where(CandidatePipeline.candidate_id == candidate.id)
-            .order_by(CandidatePipeline.updated_at.desc())
-        ).all()
-        return _render(request, "partials/pipeline_list.html", {
-            "pipelines": pipelines,
-            "candidate": candidate,
-            "stages": PIPELINE_STAGES,
-        })
+        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
@@ -281,17 +358,7 @@ async def pipeline_update_stage(
         db.commit()
 
     if request.headers.get("HX-Request"):
-        pipelines = db.exec(
-            select(CandidatePipeline)
-            .where(CandidatePipeline.candidate_id == candidate_id)
-            .order_by(CandidatePipeline.updated_at.desc())
-        ).all()
-        candidate = db.get(Candidate, candidate_id)
-        return _render(request, "partials/pipeline_list.html", {
-            "pipelines": pipelines,
-            "candidate": candidate,
-            "stages": PIPELINE_STAGES,
-        })
+        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
@@ -315,17 +382,7 @@ async def pipeline_update_notes(
     db.commit()
 
     if request.headers.get("HX-Request"):
-        pipelines = db.exec(
-            select(CandidatePipeline)
-            .where(CandidatePipeline.candidate_id == candidate_id)
-            .order_by(CandidatePipeline.updated_at.desc())
-        ).all()
-        candidate = db.get(Candidate, candidate_id)
-        return _render(request, "partials/pipeline_list.html", {
-            "pipelines": pipelines,
-            "candidate": candidate,
-            "stages": PIPELINE_STAGES,
-        })
+        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
@@ -346,17 +403,7 @@ async def pipeline_delete(
     db.commit()
 
     if request.headers.get("HX-Request"):
-        pipelines = db.exec(
-            select(CandidatePipeline)
-            .where(CandidatePipeline.candidate_id == candidate_id)
-            .order_by(CandidatePipeline.updated_at.desc())
-        ).all()
-        candidate = db.get(Candidate, candidate_id)
-        return _render(request, "partials/pipeline_list.html", {
-            "pipelines": pipelines,
-            "candidate": candidate,
-            "stages": PIPELINE_STAGES,
-        })
+        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
