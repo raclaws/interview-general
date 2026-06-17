@@ -12,6 +12,68 @@ class AdminUser(SQLModel, table=True):
     hashed_password: str
 
 
+class Candidate(SQLModel, table=True):
+    __tablename__ = "candidates"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    email: str = Field(unique=True, index=True)
+    phone: Optional[str] = None
+    nocodb_id: Optional[int] = None
+    current_position: Optional[str] = None
+    yoe: Optional[str] = None
+    languages: Optional[str] = None
+    cloud: Optional[str] = None
+    tools: Optional[str] = None
+    working_arrangement: Optional[str] = None
+    current_salary: Optional[str] = None
+    expected_salary: Optional[str] = None
+    notice_period: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    def to_snapshot(self) -> dict:
+        return {
+            "name": self.name,
+            "phone": self.phone or "",
+            "email": self.email,
+            "current_position": self.current_position or "",
+            "yoe": self.yoe or "",
+            "languages": self.languages or "",
+            "cloud": self.cloud or "",
+            "tools": self.tools or "",
+            "working_arrangement": self.working_arrangement or "",
+            "current_salary": self.current_salary or "",
+            "expected_salary": self.expected_salary or "",
+            "notice_period": self.notice_period or "",
+        }
+
+
+PIPELINE_STAGES = [
+    "screening",
+    "test",
+    "interview",
+    "offer",
+    "hired",
+    "rejected",
+    "withdrawn",
+    "on_hold",
+]
+
+
+class CandidatePipeline(SQLModel, table=True):
+    __tablename__ = "candidate_pipelines"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    candidate_id: int = Field(foreign_key="candidates.id")
+    business_unit: Optional[str] = None
+    position: Optional[str] = None
+    stage: str = Field(default="screening")
+    notes: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
 class Template(SQLModel, table=True):
     __tablename__ = "templates"
 
@@ -29,8 +91,8 @@ class TemplateSection(SQLModel, table=True):
     order: int
     title: str
     description: Optional[str] = None
-    measurement_type: str  # rating_1_4, single_select, multi_select, short_text, long_text
-    options: Optional[str] = None  # JSON list of option strings
+    measurement_type: str
+    options: Optional[str] = None
     anchor_low: Optional[str] = None
     anchor_high: Optional[str] = None
     max_selections: Optional[int] = None
@@ -50,12 +112,11 @@ class InterviewSession(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     template_id: Optional[int] = Field(default=None, foreign_key="templates.id")
-    candidate_id: Optional[int] = Field(default=None)
-    candidate_snapshot: str  # JSON string
+    candidate_id: Optional[int] = Field(default=None, foreign_key="candidates.id")
+    pipeline_id: Optional[int] = Field(default=None, foreign_key="candidate_pipelines.id")
+    candidate_snapshot: str  # JSON string — frozen at creation time
     job_title: str
     round: str
-    position: Optional[str] = None
-    business_unit: Optional[str] = None
     interview_date: Optional[str] = Field(default=None)
     show_salary: bool = Field(default=False)
     status: str = Field(default="pending")

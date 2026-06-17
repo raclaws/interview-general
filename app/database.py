@@ -9,7 +9,7 @@ engine = create_engine(DATABASE_URL, echo=False)
 
 
 def create_tables():
-    from app.models import AdminUser, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection  # noqa
     SQLModel.metadata.create_all(engine)
     from app.seed import seed_templates
     seed_templates(engine)
