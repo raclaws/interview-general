@@ -66,6 +66,7 @@ class CandidatePipeline(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     candidate_id: int = Field(foreign_key="candidates.id")
+    display_name: Optional[str] = None
     business_unit: Optional[str] = None
     position: Optional[str] = None
     stage: str = Field(default="screening")

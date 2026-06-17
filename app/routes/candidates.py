@@ -216,10 +216,27 @@ async def pipeline_create(
     if not candidate:
         return HTMLResponse("Not found", status_code=404)
 
+    pos = position.strip() or None
+    bu = business_unit.strip() or None
+
+    # Auto-generate display_name: Position MMYY #N — BU
+    mmyy = datetime.utcnow().strftime("%m%y")
+    existing = db.exec(
+        select(CandidatePipeline).where(
+            CandidatePipeline.candidate_id == candidate.id,
+            CandidatePipeline.position == pos,
+            CandidatePipeline.business_unit == bu,
+        )
+    ).all()
+    same_month = [p for p in existing if p.created_at.strftime("%m%y") == mmyy]
+    seq = len(same_month) + 1
+    display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
+
     pipeline = CandidatePipeline(
         candidate_id=candidate.id,
-        position=position.strip() or None,
-        business_unit=business_unit.strip() or None,
+        display_name=display_name,
+        position=pos,
+        business_unit=bu,
         stage=stage if stage in PIPELINE_STAGES else "screening",
         notes=notes.strip() or None,
         created_at=datetime.utcnow(),

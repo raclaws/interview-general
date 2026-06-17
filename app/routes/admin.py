@@ -178,10 +178,26 @@ async def session_new_submit(
     if pipeline_id:
         pipeline_record = db.get(CandidatePipeline, pipeline_id)
     elif candidate_record:
+        pos = final_position or None
+        bu = business_unit.strip() if business_unit.strip() else None
+        # Auto-generate display_name: Position MMYY #N — BU
+        mmyy = datetime.utcnow().strftime("%m%y")
+        existing_pipelines = db.exec(
+            select(CandidatePipeline).where(
+                CandidatePipeline.candidate_id == candidate_record.id,
+                CandidatePipeline.position == pos,
+                CandidatePipeline.business_unit == bu,
+            )
+        ).all()
+        same_month = [p for p in existing_pipelines if p.created_at.strftime("%m%y") == mmyy]
+        seq = len(same_month) + 1
+        display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
+
         pipeline_record = CandidatePipeline(
             candidate_id=candidate_record.id,
-            position=final_position or None,
-            business_unit=business_unit.strip() if business_unit.strip() else None,
+            display_name=display_name,
+            position=pos,
+            business_unit=bu,
             stage="interview",
         )
         db.add(pipeline_record)
@@ -205,17 +221,8 @@ async def session_new_submit(
     if not names:
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
 
-    # Auto-differentiate job title: append #{n} — Mon YYYY
-    base_title = job_title.strip() if job_title.strip() else "N/A"
-    if pipeline_record and existing_sessions:
-        seq = len(existing_sessions) + 1
-        month_year = datetime.utcnow().strftime("%b %Y")
-        auto_title = f"{base_title} #{seq} — {month_year}"
-    elif pipeline_record:
-        month_year = datetime.utcnow().strftime("%b %Y")
-        auto_title = f"{base_title} #1 — {month_year}"
-    else:
-        auto_title = base_title
+    # Job title is plain — no auto-differentiation (pipeline name handles that)
+    auto_title = job_title.strip() if job_title.strip() else "N/A"
 
     session = InterviewSession(
         template_id=template_id,
