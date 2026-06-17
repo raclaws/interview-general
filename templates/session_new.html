@@ -4,6 +4,25 @@
 <h1>Create Interview Session</h1>
 <div class="form-container" style="max-width: 600px;">
     <form method="post" action="/session/new">
+        {% if prefill_candidate %}
+        <input type="hidden" name="entry_mode" value="manual">
+        <input type="hidden" name="manual_name" value="{{ prefill_candidate.name }}">
+        <input type="hidden" name="manual_email" value="{{ prefill_candidate.email }}">
+        <input type="hidden" name="manual_position" value="{{ prefill_candidate.current_position or '' }}">
+        <input type="hidden" name="manual_yoe" value="{{ prefill_candidate.yoe or '' }}">
+        <input type="hidden" name="manual_languages" value="{{ prefill_candidate.languages or '' }}">
+        <input type="hidden" name="manual_cloud" value="{{ prefill_candidate.cloud or '' }}">
+        <input type="hidden" name="manual_tools" value="{{ prefill_candidate.tools or '' }}">
+        <input type="hidden" name="manual_working_arrangement" value="{{ prefill_candidate.working_arrangement or '' }}">
+        <input type="hidden" name="manual_current_salary" value="{{ prefill_candidate.current_salary or '' }}">
+        <input type="hidden" name="manual_expected_salary" value="{{ prefill_candidate.expected_salary or '' }}">
+        <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
+
+        <div class="candidate-card" style="margin-bottom: 1rem;">
+            <h3>{{ prefill_candidate.name }}</h3>
+            <p class="hint">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</p>
+        </div>
+        {% else %}
         <div class="toggle-group">
             <label class="toggle-label">
                 <input type="radio" name="entry_mode" value="nocodb" checked onchange="toggleMode(this.value)">
@@ -57,6 +76,7 @@
             <label for="manual_notice_period">Notice Period</label>
             <input type="text" id="manual_notice_period" name="manual_notice_period">
         </div>
+        {% endif %}
 
         <hr>
 

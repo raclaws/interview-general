@@ -53,13 +53,17 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
 
 
 @router.get("/session/new", response_class=HTMLResponse)
-async def session_new_form(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+async def session_new_form(request: Request, candidate_id: int = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template).order_by(Template.name)).all()
+    prefill_candidate = None
+    if candidate_id:
+        prefill_candidate = db.get(Candidate, candidate_id)
     return _render(request, "session_new.html", {
         "admin": admin,
         "templates": templates,
         "positions": POSITIONS,
         "business_units": BUSINESS_UNITS,
+        "prefill_candidate": prefill_candidate,
     })
 
 

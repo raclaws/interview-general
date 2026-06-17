@@ -8,8 +8,9 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
-    SessionInterviewer, PIPELINE_STAGES,
+    SessionInterviewer, Template, PIPELINE_STAGES,
 )
+from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
 router = APIRouter()
 
@@ -73,12 +74,17 @@ async def candidate_detail(
         completed = len([i for i in interviewers if i.status == "completed"])
         session_data.append({"session": s, "total": total, "completed": completed})
 
+    templates = db.exec(select(Template).order_by(Template.name)).all()
+
     return _render(request, "candidate_detail.html", {
         "candidate": candidate,
         "pipelines": pipelines,
         "session_data": session_data,
         "admin": admin,
         "stages": PIPELINE_STAGES,
+        "positions": POSITIONS,
+        "business_units": BUSINESS_UNITS,
+        "templates": templates,
     })
 
 

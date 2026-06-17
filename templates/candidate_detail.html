@@ -3,7 +3,10 @@
 {% block content %}
 <div class="page-header">
     <h1>{{ candidate.name }}</h1>
-    <a href="/candidate/{{ candidate.id }}/edit" class="btn-ghost">Edit</a>
+    <div>
+        <a href="/session/new?candidate_id={{ candidate.id }}" class="btn">+ Add Interview</a>
+        <a href="/candidate/{{ candidate.id }}/edit" class="btn-ghost">Edit</a>
+    </div>
 </div>
 
 <div class="candidate-card">
@@ -37,12 +40,22 @@
           style="margin-top: 0.5rem;">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
             <div>
-                <label for="pl-position">Position</label>
-                <input type="text" id="pl-position" name="position" placeholder="e.g. Data Engineer">
+                <label for="pl-position">Position *</label>
+                <select id="pl-position" name="position" required>
+                    <option value="">— Select —</option>
+                    {% for p in positions %}
+                    <option value="{{ p }}">{{ p }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div>
-                <label for="pl-bu">Business Unit</label>
-                <input type="text" id="pl-bu" name="business_unit" placeholder="e.g. APEX">
+                <label for="pl-bu">Business Unit *</label>
+                <select id="pl-bu" name="business_unit" required>
+                    <option value="">— Select —</option>
+                    {% for bu in business_units %}
+                    <option value="{{ bu }}">{{ bu }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         <label for="pl-stage">Stage</label>
