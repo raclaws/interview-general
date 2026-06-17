@@ -125,6 +125,15 @@
 </div>
 
 <script>
+// Loading state for summary generation buttons
+document.querySelectorAll('form[action*="generate-summary"]').forEach(function(form) {
+    form.addEventListener('submit', function() {
+        var btn = this.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = "Generating...";
+        btn.style.opacity = "0.7";
+    });
+});
 function copyAsMarkdown() {
     const name = "{{ session.snapshot.get('name', '—') }}";
     const role = "{{ session.job_title }}";

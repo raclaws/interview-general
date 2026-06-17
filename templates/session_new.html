@@ -114,6 +114,13 @@
 </div>
 
 <script>
+// Submit button feedback for session creation
+document.querySelector('form[action="/session/new"]').addEventListener('submit', function() {
+    var btn = this.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = "Creating...";
+    btn.style.opacity = "0.7";
+});
 function toggleMode(mode) {
     document.getElementById("nocodb-section").style.display = mode === "nocodb" ? "block" : "none";
     document.getElementById("manual-section").style.display = mode === "manual" ? "block" : "none";
