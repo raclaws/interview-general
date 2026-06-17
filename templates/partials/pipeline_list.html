@@ -30,11 +30,13 @@
     </div>
     {% if pipeline_scores and pipeline_scores.get(p.id) %}
     {% set sc = pipeline_scores[p.id] %}
+    {% if sc.hr_avg or sc.culture_avg %}
     <div style="margin-top: 0.5rem; display: flex; gap: 1rem; font-size: 0.8rem;">
-        <span class="badge badge-interview">HR: {{ sc.hr_total }}/12</span>
-        <span class="badge badge-screening">Culture: {{ sc.culture_total }}/16</span>
-        <span class="hint">Total: {{ sc.hr_total + sc.culture_total }}/28</span>
+        <span class="badge badge-interview">HR: {{ sc.hr_avg }}/12</span>
+        <span class="badge badge-screening">Culture: {{ sc.culture_avg }}/16</span>
+        <span class="hint">Total: {{ "%.1f"|format(sc.hr_avg + sc.culture_avg) }}/28</span>
     </div>
+    {% endif %}
     {% endif %}
     {% if p.notes %}
     <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>

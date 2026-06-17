@@ -1,105 +1,153 @@
 {% extends "base_app.html" %}
 {% block title %}Scorecard — {{ candidate.name }}{% endblock %}
 {% block content %}
-<h1>Scorecard</h1>
+<div class="page-header">
+    <h1>Scorecard</h1>
+    <a href="/candidate/{{ candidate.id }}" class="btn-ghost">← Back</a>
+</div>
 <p class="hint">{{ candidate.name }} · {{ pipeline.position or "—" }} · {{ pipeline.business_unit or "—" }}</p>
 
-<form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score">
-
-    <h2>HR Score <span class="hint">(max 12)</span></h2>
-    <div class="score-grid">
-        {% for dim in hr_dimensions %}
-        <div class="score-item">
-            <label>{{ dim.label }}</label>
-            <div class="rating-group">
-                {% for i in range(1, 5) %}
-                <label class="rating-label">
-                    <input type="radio" name="hr_{{ dim.key }}" value="{{ i }}" required
-                        {% if score and score.hr_scores_dict.get(dim.key) == i|string %}checked{% endif %}>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = No Evidence | 4 = Exceed</div>
-        </div>
-        {% endfor %}
+<div style="display: flex; gap: 1.5rem; margin: 1rem 0; flex-wrap: wrap;">
+    <div class="score-summary-card">
+        <span class="score-big">{{ "%.1f"|format(hr_total) }}</span>
+        <span class="score-label">/ 12 HR</span>
     </div>
+    <div class="score-summary-card">
+        <span class="score-big">{{ "%.1f"|format(culture_total) }}</span>
+        <span class="score-label">/ 16 Culture</span>
+    </div>
+    <div class="score-summary-card">
+        <span class="score-big">{{ "%.1f"|format(hr_total + culture_total) }}</span>
+        <span class="score-label">/ 28 Total</span>
+    </div>
+</div>
 
-    <div class="score-item" style="margin-top: 1rem;">
-        <label>Drive & Dream <span class="hint">(pick 2)</span></label>
-        <div class="select-group">
-            {% set hr_drive_list = (score.hr_drive_dream | default('[]', true)) if score else '[]' %}
-            {% for opt in drive_dream_options %}
-            <label class="select-label">
-                <input type="checkbox" name="hr_drive_dream" value="{{ opt }}"
-                    onchange="handleMaxSelect(this, 'hr_drive_dream', 2)"
-                    {% if opt in hr_drive_list %}checked{% endif %}>
-                <span>{{ opt }}</span>
-            </label>
+<hr>
+
+<h2>HR Score</h2>
+
+{% if hr_data %}
+<table class="score-table">
+    <thead>
+        <tr>
+            <th>Interviewer</th>
+            {% for dim in hr_dimensions %}
+            <th>{{ dim.label }}</th>
             {% endfor %}
-        </div>
-    </div>
-
-    <div class="score-item" style="margin-top: 1rem;">
-        <label for="hr_notes">HR Notes</label>
-        <textarea name="hr_notes" rows="4" placeholder="Additional HR observations...">{{ score.hr_notes or "" if score else "" }}</textarea>
-    </div>
-
-    <hr>
-
-    <h2>Culture Score <span class="hint">(max 16)</span></h2>
-    <div class="score-grid">
-        {% for dim in culture_dimensions %}
-        <div class="score-item">
-            <label>{{ dim.label }}</label>
-            <div class="rating-group">
-                {% for i in range(1, 5) %}
-                <label class="rating-label">
-                    <input type="radio" name="culture_{{ dim.key }}" value="{{ i }}" required
-                        {% if score and score.culture_scores_dict.get(dim.key) == i|string %}checked{% endif %}>
-                    <span>{{ i }}</span>
-                </label>
-                {% endfor %}
-            </div>
-            <div class="anchor-hint">1 = No Evidence | 4 = Exceed</div>
-        </div>
-        {% endfor %}
-    </div>
-
-    <div class="score-item" style="margin-top: 1rem;">
-        <label>Drive & Dream <span class="hint">(pick 2)</span></label>
-        <div class="select-group">
-            {% set culture_drive_list = (score.culture_drive_dream | default('[]', true)) if score else '[]' %}
-            {% for opt in drive_dream_options %}
-            <label class="select-label">
-                <input type="checkbox" name="culture_drive_dream" value="{{ opt }}"
-                    onchange="handleMaxSelect(this, 'culture_drive_dream', 2)"
-                    {% if opt in culture_drive_list %}checked{% endif %}>
-                <span>{{ opt }}</span>
-            </label>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in hr_data %}
+        <tr>
+            <td>{{ entry.name }}</td>
+            {% set ns = namespace(total=0) %}
+            {% for dim in hr_dimensions %}
+            {% set val = entry.scores.get(dim.key, 0) %}
+            <td>{{ val or "—" }}</td>
+            {% set ns.total = ns.total + (val or 0) %}
             {% endfor %}
-        </div>
-    </div>
+            <td><strong>{{ ns.total }}</strong></td>
+        </tr>
+        {% endfor %}
+        <tr class="avg-row">
+            <td><strong>Average</strong></td>
+            {% set ns = namespace(total=0) %}
+            {% for dim in hr_dimensions %}
+            <td><strong>{{ hr_avg.get(dim.key, 0) }}</strong></td>
+            {% set ns.total = ns.total + hr_avg.get(dim.key, 0) %}
+            {% endfor %}
+            <td><strong>{{ "%.1f"|format(ns.total) }}</strong></td>
+        </tr>
+    </tbody>
+</table>
 
-    <div class="score-item" style="margin-top: 1rem;">
-        <label for="culture_notes">Culture Notes</label>
-        <textarea name="culture_notes" rows="4" placeholder="Additional culture observations...">{{ score.culture_notes or "" if score else "" }}</textarea>
-    </div>
+{% if hr_data[0].drive_dream %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">Drive & Dream:</strong>
+    {% for entry in hr_data %}
+    <p class="hint" style="margin: 0.25rem 0;">{{ entry.name }}: {{ entry.drive_dream | join(", ") if entry.drive_dream else "—" }}</p>
+    {% endfor %}
+</div>
+{% endif %}
 
-    <hr>
+{% if hr_data | selectattr("free_text") | list %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">Notes:</strong>
+    {% for entry in hr_data %}
+    {% if entry.free_text %}
+    <p class="hint" style="margin: 0.25rem 0;"><strong>{{ entry.name }}:</strong> {{ entry.free_text }}</p>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
 
-    <div class="form-actions">
-        <button type="submit" class="btn">Save Scorecard</button>
-        <a href="/candidate/{{ candidate.id }}" class="btn-ghost">Cancel</a>
-    </div>
-</form>
+{% else %}
+<p class="hint">No completed HR sessions for this pipeline.</p>
+{% endif %}
 
-<script>
-function handleMaxSelect(checkbox, name, max) {
-    var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
-    if (checked.length > max) {
-        checkbox.checked = false;
-    }
-}
-</script>
+<hr>
+
+<h2>Culture Score</h2>
+
+{% if culture_data %}
+<table class="score-table">
+    <thead>
+        <tr>
+            <th>Interviewer</th>
+            {% for dim in culture_dimensions %}
+            <th>{{ dim.label }}</th>
+            {% endfor %}
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in culture_data %}
+        <tr>
+            <td>{{ entry.name }}</td>
+            {% set ns = namespace(total=0) %}
+            {% for dim in culture_dimensions %}
+            {% set val = entry.scores.get(dim.key, 0) %}
+            <td>{{ val or "—" }}</td>
+            {% set ns.total = ns.total + (val or 0) %}
+            {% endfor %}
+            <td><strong>{{ ns.total }}</strong></td>
+        </tr>
+        {% endfor %}
+        <tr class="avg-row">
+            <td><strong>Average</strong></td>
+            {% set ns = namespace(total=0) %}
+            {% for dim in culture_dimensions %}
+            <td><strong>{{ culture_avg.get(dim.key, 0) }}</strong></td>
+            {% set ns.total = ns.total + culture_avg.get(dim.key, 0) %}
+            {% endfor %}
+            <td><strong>{{ "%.1f"|format(ns.total) }}</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+{% if culture_data[0].drive_dream %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">Drive & Dream:</strong>
+    {% for entry in culture_data %}
+    <p class="hint" style="margin: 0.25rem 0;">{{ entry.name }}: {{ entry.drive_dream | join(", ") if entry.drive_dream else "—" }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if culture_data | selectattr("free_text") | list %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">Notes:</strong>
+    {% for entry in culture_data %}
+    {% if entry.free_text %}
+    <p class="hint" style="margin: 0.25rem 0;"><strong>{{ entry.name }}:</strong> {{ entry.free_text }}</p>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% else %}
+<p class="hint">No completed Culture sessions for this pipeline.</p>
+{% endif %}
+
 {% endblock %}

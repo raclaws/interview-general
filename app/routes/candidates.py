@@ -9,7 +9,7 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
-    SessionInterviewer, Template, PipelineScore,
+    SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS,
 )
 from app.routes.admin import POSITIONS, BUSINESS_UNITS
@@ -63,11 +63,56 @@ async def candidate_detail(
 
     pipeline_scores = {}
     for p in pipelines:
-        score = db.exec(
-            select(PipelineScore).where(PipelineScore.pipeline_id == p.id)
-        ).first()
-        if score:
-            pipeline_scores[p.id] = score
+        # Compute scores from completed sessions
+        p_sessions = db.exec(
+            select(InterviewSession).where(
+                InterviewSession.pipeline_id == p.id,
+                InterviewSession.status == "completed",
+            )
+        ).all()
+        hr_total = 0
+        culture_total = 0
+        hr_count = 0
+        culture_count = 0
+        for s in p_sessions:
+            template = db.get(Template, s.template_id) if s.template_id else None
+            if not template:
+                continue
+            is_hr = template.name == "HR Interview"
+            is_culture = template.name == "Culture Alignment"
+            if not is_hr and not is_culture:
+                continue
+            ivs = db.exec(
+                select(SessionInterviewer).where(
+                    SessionInterviewer.session_id == s.id,
+                    SessionInterviewer.status == "completed",
+                )
+            ).all()
+            for iv in ivs:
+                resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
+                if not resp:
+                    continue
+                scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
+                sections = db.exec(select(TemplateSection).where(TemplateSection.template_id == template.id)).all()
+                section_map = {sec.id: sec for sec in sections}
+                iv_total = 0
+                for sr in scores:
+                    sec = section_map.get(sr.section_id)
+                    if sec and sec.measurement_type == "rating_1_4" and sr.value:
+                        try:
+                            iv_total += int(sr.value)
+                        except ValueError:
+                            pass
+                if is_hr:
+                    hr_total += iv_total
+                    hr_count += 1
+                elif is_culture:
+                    culture_total += iv_total
+                    culture_count += 1
+        pipeline_scores[p.id] = {
+            "hr_avg": round(hr_total / hr_count, 1) if hr_count else 0,
+            "culture_avg": round(culture_total / culture_count, 1) if culture_count else 0,
+        }
 
     sessions = db.exec(
         select(InterviewSession)
@@ -297,7 +342,7 @@ async def pipeline_delete(
 
 
 @router.get("/candidate/{candidate_id}/pipeline/{pipeline_id}/score", response_class=HTMLResponse)
-async def pipeline_score_form(
+async def pipeline_score_view(
     request: Request,
     candidate_id: int,
     pipeline_id: int,
@@ -309,76 +354,117 @@ async def pipeline_score_form(
     if not candidate or not pipeline or pipeline.candidate_id != candidate_id:
         return HTMLResponse("Not found", status_code=404)
 
-    existing = db.exec(
-        select(PipelineScore).where(PipelineScore.pipeline_id == pipeline_id)
-    ).first()
+    # Map section titles to dimension keys
+    HR_TITLE_MAP = {
+        "Ownership with Accountability": "ownership_accountability",
+        "Maturity & Growth Mindset": "maturity_growth",
+        "Supportive & Collaborative": "supportive_collaborative",
+    }
+    CULTURE_TITLE_MAP = {
+        "Execution Excellence": "execution_excellence",
+        "Learn Fast, Adapt Faster": "learn_adapt",
+        "Impact Over Activity": "impact_over_activity",
+        "Clarity & Structured Thinking": "clarity_structured",
+    }
+
+    # Find all completed sessions for this pipeline
+    sessions = db.exec(
+        select(InterviewSession).where(
+            InterviewSession.pipeline_id == pipeline_id,
+            InterviewSession.status == "completed",
+        )
+    ).all()
+
+    # Collect per-interviewer scores
+    hr_data = []  # [{name, scores: {key: val}, drive_dream: []}]
+    culture_data = []
+
+    for session in sessions:
+        template = db.get(Template, session.template_id) if session.template_id else None
+        if not template:
+            continue
+
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == template.id)
+        ).all()
+        section_map = {s.id: s for s in sections}
+
+        interviewers = db.exec(
+            select(SessionInterviewer).where(
+                SessionInterviewer.session_id == session.id,
+                SessionInterviewer.status == "completed",
+            )
+        ).all()
+
+        is_hr = template.name == "HR Interview"
+        is_culture = template.name == "Culture Alignment"
+
+        for iv in interviewers:
+            response = db.exec(
+                select(Response).where(Response.session_interviewer_id == iv.id)
+            ).first()
+            if not response:
+                continue
+
+            score_rows = db.exec(
+                select(ResponseScore).where(ResponseScore.response_id == response.id)
+            ).all()
+
+            scores = {}
+            drive_dream = []
+            for sr in score_rows:
+                section = section_map.get(sr.section_id)
+                if not section:
+                    continue
+
+                title_map = HR_TITLE_MAP if is_hr else CULTURE_TITLE_MAP if is_culture else {}
+                dim_key = title_map.get(section.title)
+
+                if dim_key and sr.value:
+                    try:
+                        scores[dim_key] = int(sr.value)
+                    except ValueError:
+                        pass
+
+                if section.title == "Drive & Dream" and sr.value:
+                    drive_dream = [v.strip() for v in sr.value.split(",") if v.strip()]
+
+            entry = {
+                "name": iv.interviewer_name,
+                "scores": scores,
+                "drive_dream": drive_dream,
+                "free_text": response.free_text,
+            }
+
+            if is_hr:
+                hr_data.append(entry)
+            elif is_culture:
+                culture_data.append(entry)
+
+    # Compute averages
+    def compute_avg(data_list, dimensions):
+        avg = {}
+        for dim in dimensions:
+            values = [d["scores"].get(dim["key"], 0) for d in data_list if d["scores"].get(dim["key"])]
+            avg[dim["key"]] = round(sum(values) / len(values), 1) if values else 0
+        return avg
+
+    hr_avg = compute_avg(hr_data, HR_DIMENSIONS)
+    culture_avg = compute_avg(culture_data, CULTURE_DIMENSIONS)
+    hr_total = sum(hr_avg.values())
+    culture_total = sum(culture_avg.values())
 
     return _render(request, "pipeline_score.html", {
         "candidate": candidate,
         "pipeline": pipeline,
-        "score": existing,
         "hr_dimensions": HR_DIMENSIONS,
         "culture_dimensions": CULTURE_DIMENSIONS,
         "drive_dream_options": DRIVE_DREAM_OPTIONS,
+        "hr_data": hr_data,
+        "culture_data": culture_data,
+        "hr_avg": hr_avg,
+        "culture_avg": culture_avg,
+        "hr_total": hr_total,
+        "culture_total": culture_total,
         "admin": admin,
     })
-
-
-@router.post("/candidate/{candidate_id}/pipeline/{pipeline_id}/score")
-async def pipeline_score_submit(
-    request: Request,
-    candidate_id: int,
-    pipeline_id: int,
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_session),
-):
-    candidate = db.get(Candidate, candidate_id)
-    pipeline = db.get(CandidatePipeline, pipeline_id)
-    if not candidate or not pipeline or pipeline.candidate_id != candidate_id:
-        return HTMLResponse("Not found", status_code=404)
-
-    form_data = await request.form()
-
-    hr_scores = {}
-    for dim in HR_DIMENSIONS:
-        hr_scores[dim["key"]] = form_data.get(f"hr_{dim['key']}", "")
-
-    culture_scores = {}
-    for dim in CULTURE_DIMENSIONS:
-        culture_scores[dim["key"]] = form_data.get(f"culture_{dim['key']}", "")
-
-    hr_drive = form_data.getlist("hr_drive_dream")
-    culture_drive = form_data.getlist("culture_drive_dream")
-
-    hr_notes = form_data.get("hr_notes", "").strip()
-    culture_notes = form_data.get("culture_notes", "").strip()
-
-    existing = db.exec(
-        select(PipelineScore).where(PipelineScore.pipeline_id == pipeline_id)
-    ).first()
-
-    if existing:
-        existing.hr_scores = json_mod.dumps(hr_scores)
-        existing.culture_scores = json_mod.dumps(culture_scores)
-        existing.hr_drive_dream = json_mod.dumps(hr_drive)
-        existing.culture_drive_dream = json_mod.dumps(culture_drive)
-        existing.hr_notes = hr_notes or None
-        existing.culture_notes = culture_notes or None
-        existing.scored_by = admin.username
-        existing.scored_at = datetime.utcnow()
-        db.add(existing)
-    else:
-        score = PipelineScore(
-            pipeline_id=pipeline_id,
-            hr_scores=json_mod.dumps(hr_scores),
-            culture_scores=json_mod.dumps(culture_scores),
-            hr_drive_dream=json_mod.dumps(hr_drive),
-            culture_drive_dream=json_mod.dumps(culture_drive),
-            hr_notes=hr_notes or None,
-            culture_notes=culture_notes or None,
-            scored_by=admin.username,
-        )
-        db.add(score)
-
-    db.commit()
-    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
