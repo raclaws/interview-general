@@ -38,6 +38,34 @@
     </div>
     {% endif %}
     {% endif %}
+    {% if pipeline_sessions and pipeline_sessions.get(p.id) %}
+    <div style="margin-top: 0.5rem;">
+        <table style="width: 100%; font-size: 0.8rem;">
+            <thead>
+                <tr>
+                    <th>Round</th>
+                    <th>Template</th>
+                    <th>Progress</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pipeline_sessions[p.id] %}
+                <tr>
+                    <td>{{ item.session.round }}</td>
+                    <td>{{ item.session.job_title }}</td>
+                    <td>{{ item.completed }}/{{ item.total }}</td>
+                    <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
+                    <td>{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
+                    <td><a href="/session/{{ item.session.id }}" class="btn-ghost" style="font-size: 0.75rem;">View</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
     {% if p.notes %}
     <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>
     {% endif %}

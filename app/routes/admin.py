@@ -48,7 +48,8 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         total = len(interviewers)
         completed = len([i for i in interviewers if i.status == "completed"])
         template = db.get(Template, s.template_id) if s.template_id else None
-        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template})
+        pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
+        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline})
     return _render(request, "dashboard.html", {"session_data": session_data, "admin": admin})
 
 

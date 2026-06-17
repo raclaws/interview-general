@@ -120,14 +120,17 @@ async def candidate_detail(
         .order_by(InterviewSession.created_at.desc())
     ).all()
 
-    session_data = []
+    # Group sessions by pipeline_id
+    pipeline_sessions = {}
     for s in sessions:
-        interviewers = db.exec(
+        ivs = db.exec(
             select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
         ).all()
-        total = len(interviewers)
-        completed = len([i for i in interviewers if i.status == "completed"])
-        session_data.append({"session": s, "total": total, "completed": completed})
+        total = len(ivs)
+        completed = len([i for i in ivs if i.status == "completed"])
+        entry = {"session": s, "total": total, "completed": completed}
+        pid = s.pipeline_id or 0
+        pipeline_sessions.setdefault(pid, []).append(entry)
 
     templates = db.exec(select(Template).order_by(Template.name)).all()
 
@@ -135,7 +138,7 @@ async def candidate_detail(
         "candidate": candidate,
         "pipelines": pipelines,
         "pipeline_scores": pipeline_scores,
-        "session_data": session_data,
+        "pipeline_sessions": pipeline_sessions,
         "admin": admin,
         "stages": PIPELINE_STAGES,
         "positions": POSITIONS,

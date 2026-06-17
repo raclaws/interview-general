@@ -32,11 +32,12 @@
             <th class="sortable" data-col="0">ID</th>
             <th class="sortable" data-col="1">Candidate</th>
             <th class="sortable" data-col="2">Job Title</th>
-            <th class="sortable" data-col="3">Template</th>
-            <th class="sortable" data-col="4">Round</th>
+            <th class="sortable" data-col="3">Pipeline</th>
+            <th class="sortable" data-col="4">Template</th>
+            <th class="sortable" data-col="5">Round</th>
             <th>Progress</th>
-            <th class="sortable" data-col="6">Status</th>
-            <th class="sortable" data-col="7">Created</th>
+            <th class="sortable" data-col="7">Status</th>
+            <th class="sortable" data-col="8">Created</th>
             <th></th>
         </tr>
     </thead>
@@ -46,6 +47,7 @@
             <td>{{ item.session.id }}</td>
             <td>{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</td>
             <td>{{ item.session.job_title }}</td>
+            <td>{% if item.pipeline %}{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% else %}—{% endif %}</td>
             <td>{{ item.template.name if item.template else "—" }}</td>
             <td>{{ item.session.round }}</td>
             <td>{{ item.completed }}/{{ item.total }} submitted</td>
@@ -57,7 +59,7 @@
         </tr>
         {% endfor %}
         {% if not session_data %}
-        <tr class="empty-row"><td colspan="9">No sessions yet.</td></tr>
+        <tr class="empty-row"><td colspan="10">No sessions yet.</td></tr>
         {% endif %}
     </tbody>
 </table>
