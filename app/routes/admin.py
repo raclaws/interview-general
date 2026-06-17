@@ -174,6 +174,7 @@ async def session_new_submit(
 
     # Create or link pipeline entry
     pipeline_record = None
+    existing_sessions = []
     if pipeline_id:
         pipeline_record = db.get(CandidatePipeline, pipeline_id)
     elif candidate_record:
@@ -204,12 +205,24 @@ async def session_new_submit(
     if not names:
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
 
+    # Auto-differentiate job title: append #{n} — Mon YYYY
+    base_title = job_title.strip() if job_title.strip() else "N/A"
+    if pipeline_record and existing_sessions:
+        seq = len(existing_sessions) + 1
+        month_year = datetime.utcnow().strftime("%b %Y")
+        auto_title = f"{base_title} #{seq} — {month_year}"
+    elif pipeline_record:
+        month_year = datetime.utcnow().strftime("%b %Y")
+        auto_title = f"{base_title} #1 — {month_year}"
+    else:
+        auto_title = base_title
+
     session = InterviewSession(
         template_id=template_id,
         candidate_id=candidate_record.id if candidate_record else None,
         pipeline_id=pipeline_record.id if pipeline_record else None,
         candidate_snapshot=json.dumps(snapshot),
-        job_title=job_title.strip() if job_title.strip() else "N/A",
+        job_title=auto_title,
         round=round,
         position=final_position if final_position else None,
         business_unit=business_unit.strip() if business_unit.strip() else None,
