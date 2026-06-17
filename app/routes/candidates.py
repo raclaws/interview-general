@@ -399,6 +399,14 @@ async def pipeline_delete(
     if not pipeline or pipeline.candidate_id != candidate_id:
         return HTMLResponse("Not found", status_code=404)
 
+    # Detach sessions linked to this pipeline before deleting
+    linked_sessions = db.exec(
+        select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_id)
+    ).all()
+    for s in linked_sessions:
+        s.pipeline_id = None
+        db.add(s)
+
     db.delete(pipeline)
     db.commit()
 
