@@ -4,7 +4,7 @@
 
 A lightweight self-hosted webapp for generating on-demand interview assessment sessions. Admin creates a session with candidate context from NocoDB, shares a token link with the interviewer, and AI summarizes the submission.
 
-**Status:** P-A (Pre-Alpha)
+**Status:** P-B (Production Beta)
 
 ---
 
@@ -57,11 +57,11 @@ python -m app.mcp_server
 ## Core Flow
 
 1. Admin logs in (`/login`)
-2. Admin creates session (`/session/new`) — searches NocoDB for candidate, fills job title + round + interviewer name
-3. App generates a shareable token link
-4. Interviewer opens `/i/[token]` — sees candidate context (read-only), rates 5 dimensions, submits
-5. App generates AI summary, stores everything in SQLite
-6. Admin views results at `/session/[id]`
+2. Admin creates session (`/session/new`) — searches NocoDB or manual entry, selects template, fills job title + round + interviewer names
+3. App generates unique token links per interviewer
+4. Interviewers open `/i/[token]` — see candidate context (read-only), fill template-based sections, submit
+5. Admin views results at `/session/[id]`, generates AI summary on demand
+6. AI auto-switches: single-eval for 1 interviewer, cross-eval for 2+
 
 ---
 
@@ -70,33 +70,45 @@ python -m app.mcp_server
 | Route | Access | Purpose |
 |-------|--------|---------|
 | `/login` | Public | Admin login |
-| `/` | Admin | Dashboard — list sessions, create new |
-| `/session/new` | Admin | Create session form with candidate picker |
-| `/session/[id]` | Admin | View results, scores, AI summary |
+| `/` | Admin | Dashboard — list sessions with progress |
+| `/session/new` | Admin | Create session (template picker, multiple interviewers) |
+| `/session/[id]` | Admin | View results, scores side-by-side, AI summary |
+| `/session/[id]/edit` | Admin | Edit session details, add interviewers |
+| `/templates` | Admin | List/manage interview templates |
+| `/templates/[id]` | Admin | View template sections |
+| `/settings` | Admin | LLM config + system prompt |
 | `/i/[token]` | Public (token-gated) | Interview assessment form |
 | `/i/[token]/done` | Public | Post-submit confirmation |
 | `/api/candidates?q=` | Admin | Candidate search JSON endpoint |
 
 ---
 
-## Assessment Dimensions
+## Templates & Measurement Types
 
-| # | Dimension | Type | Description |
-|---|-----------|------|-------------|
-| Q1 | Comprehension Depth | 1–4 rating | How they locate the actual problem |
-| Q2 | Execution Reliability | 1–4 rating | How they close loops under pressure |
-| Q3 | Adaptive Range | 1–4 rating | How they operate before a new plan exists |
-| Q4 | Signal Clarity | 1–4 rating | How legible their thinking is to others |
-| Q5 | Gut Check | Yes/No | Would you work with this person? |
+Assessment forms are template-driven. 3 seeded templates:
+- **Default** — 5 sections (4 ratings + 1 yes/no gut check)
+- **Culture Alignment** — 14 sections (7 single-select + 4 ratings + 1 multi-select + 1 single-select + 1 long text)
+- **HR Interview** — 7 sections with conditional logic (Recommended → Culture Fit ratings, Skip/NOK → Veto Flag)
 
-### Anchor Scale (Q1–Q4)
+Measurement types:
+- `rating_1_4` — radio 1-4 with custom anchors
+- `single_select` — radio, custom options
+- `multi_select` — checkboxes with max selections
+- `short_text` — single line input
+- `long_text` — textarea
 
-| Score | Meaning |
-|-------|---------|
-| 1 | Clear no, would not proceed under any reframe |
-| 2 | Significant gaps, would need strong compensating signal |
-| 3 | Meets bar, proceed with normal weight |
-| 4 | Strong signal, prioritize |
+Conditional sections: shown/hidden based on another section's value (JS-driven).
+
+---
+
+## UI
+
+- **Sidebar navigation** — fixed left panel (admin pages only), charcoal bg, teal active state
+- **Public pages** — standalone clean layout (no sidebar)
+- **Design system** — monochrome + teal (#0d9488) accent, card-based, compact buttons
+- **HTMX** — partial page updates for LLM summary generation (no full reload)
+- **Perceived performance** — loading states on all submit buttons, HTMX indicators
+- **Responsive** — mobile sidebar collapses to hamburger
 
 ---
 
