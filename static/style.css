@@ -294,6 +294,38 @@ tr:hover td { background: #f9fafb; }
     background: #fee2e2;
 }
 
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--bg, #fff);
+    border: 1px solid var(--border, #e5e7eb);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    min-width: 200px;
+    z-index: 100;
+    padding: 0.25rem 0;
+}
+.dropdown-menu.show { display: block; }
+.dropdown-menu a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    text-decoration: none;
+    color: inherit;
+}
+.dropdown-menu a:hover { background: #f3f4f6; }
+
+.score-grid {
+    display: grid;
+    gap: 1rem;
+}
+.score-item label {
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
 /* Actions row */
 .actions { margin-bottom: 1.25rem; }
 

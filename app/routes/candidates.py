@@ -1,3 +1,4 @@
+import json as json_mod
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request, Form
@@ -8,7 +9,8 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
-    SessionInterviewer, Template, PIPELINE_STAGES,
+    SessionInterviewer, Template, PipelineScore,
+    PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS,
 )
 from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
@@ -59,6 +61,14 @@ async def candidate_detail(
         .order_by(CandidatePipeline.updated_at.desc())
     ).all()
 
+    pipeline_scores = {}
+    for p in pipelines:
+        score = db.exec(
+            select(PipelineScore).where(PipelineScore.pipeline_id == p.id)
+        ).first()
+        if score:
+            pipeline_scores[p.id] = score
+
     sessions = db.exec(
         select(InterviewSession)
         .where(InterviewSession.candidate_id == candidate.id)
@@ -79,6 +89,7 @@ async def candidate_detail(
     return _render(request, "candidate_detail.html", {
         "candidate": candidate,
         "pipelines": pipelines,
+        "pipeline_scores": pipeline_scores,
         "session_data": session_data,
         "admin": admin,
         "stages": PIPELINE_STAGES,
@@ -282,4 +293,92 @@ async def pipeline_delete(
             "stages": PIPELINE_STAGES,
         })
 
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
+@router.get("/candidate/{candidate_id}/pipeline/{pipeline_id}/score", response_class=HTMLResponse)
+async def pipeline_score_form(
+    request: Request,
+    candidate_id: int,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    candidate = db.get(Candidate, candidate_id)
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not candidate or not pipeline or pipeline.candidate_id != candidate_id:
+        return HTMLResponse("Not found", status_code=404)
+
+    existing = db.exec(
+        select(PipelineScore).where(PipelineScore.pipeline_id == pipeline_id)
+    ).first()
+
+    return _render(request, "pipeline_score.html", {
+        "candidate": candidate,
+        "pipeline": pipeline,
+        "score": existing,
+        "hr_dimensions": HR_DIMENSIONS,
+        "culture_dimensions": CULTURE_DIMENSIONS,
+        "drive_dream_options": DRIVE_DREAM_OPTIONS,
+        "admin": admin,
+    })
+
+
+@router.post("/candidate/{candidate_id}/pipeline/{pipeline_id}/score")
+async def pipeline_score_submit(
+    request: Request,
+    candidate_id: int,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    candidate = db.get(Candidate, candidate_id)
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not candidate or not pipeline or pipeline.candidate_id != candidate_id:
+        return HTMLResponse("Not found", status_code=404)
+
+    form_data = await request.form()
+
+    hr_scores = {}
+    for dim in HR_DIMENSIONS:
+        hr_scores[dim["key"]] = form_data.get(f"hr_{dim['key']}", "")
+
+    culture_scores = {}
+    for dim in CULTURE_DIMENSIONS:
+        culture_scores[dim["key"]] = form_data.get(f"culture_{dim['key']}", "")
+
+    hr_drive = form_data.getlist("hr_drive_dream")
+    culture_drive = form_data.getlist("culture_drive_dream")
+
+    hr_notes = form_data.get("hr_notes", "").strip()
+    culture_notes = form_data.get("culture_notes", "").strip()
+
+    existing = db.exec(
+        select(PipelineScore).where(PipelineScore.pipeline_id == pipeline_id)
+    ).first()
+
+    if existing:
+        existing.hr_scores = json_mod.dumps(hr_scores)
+        existing.culture_scores = json_mod.dumps(culture_scores)
+        existing.hr_drive_dream = json_mod.dumps(hr_drive)
+        existing.culture_drive_dream = json_mod.dumps(culture_drive)
+        existing.hr_notes = hr_notes or None
+        existing.culture_notes = culture_notes or None
+        existing.scored_by = admin.username
+        existing.scored_at = datetime.utcnow()
+        db.add(existing)
+    else:
+        score = PipelineScore(
+            pipeline_id=pipeline_id,
+            hr_scores=json_mod.dumps(hr_scores),
+            culture_scores=json_mod.dumps(culture_scores),
+            hr_drive_dream=json_mod.dumps(hr_drive),
+            culture_drive_dream=json_mod.dumps(culture_drive),
+            hr_notes=hr_notes or None,
+            culture_notes=culture_notes or None,
+            scored_by=admin.username,
+        )
+        db.add(score)
+
+    db.commit()
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)

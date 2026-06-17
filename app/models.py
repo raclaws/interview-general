@@ -163,3 +163,55 @@ class Setting(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     key: str = Field(unique=True, index=True)
     value: str = ""
+
+
+DRIVE_DREAM_OPTIONS = [
+    "Survival - Visi masa depan sangat samar atau tidak ada. Semua motivasi ekstrinsik.",
+    "Growth - Excited cerita hal baru yang dipelajari mandiri. Punya roadmap pengembangan diri.",
+    "Impact - Jawaban pencapaian selalu dalam bahasa dampak, ada angka atau before-after.",
+    "Ambition - Visi masa depan sangat spesifik soal posisi dan title. Excited cerita pencapaian yang diakui orang lain.",
+]
+
+HR_DIMENSIONS = [
+    {"key": "ownership_accountability", "label": "Ownership with Accountability"},
+    {"key": "maturity_growth", "label": "Maturity & Growth Mindset"},
+    {"key": "supportive_collaborative", "label": "Supportive & Collaborative"},
+]
+
+CULTURE_DIMENSIONS = [
+    {"key": "execution_excellence", "label": "Execution Excellence"},
+    {"key": "learn_adapt", "label": "Learn Fast, Adapt Faster"},
+    {"key": "impact_over_activity", "label": "Impact Over Activity"},
+    {"key": "clarity_structured", "label": "Clarity & Structured Thinking"},
+]
+
+
+class PipelineScore(SQLModel, table=True):
+    __tablename__ = "pipeline_scores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pipeline_id: int = Field(foreign_key="candidate_pipelines.id", unique=True)
+    hr_scores: str = ""
+    culture_scores: str = ""
+    hr_drive_dream: str = ""
+    culture_drive_dream: str = ""
+    hr_notes: Optional[str] = None
+    culture_notes: Optional[str] = None
+    scored_by: Optional[str] = None
+    scored_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @property
+    def hr_scores_dict(self) -> dict:
+        return json.loads(self.hr_scores) if self.hr_scores else {}
+
+    @property
+    def culture_scores_dict(self) -> dict:
+        return json.loads(self.culture_scores) if self.culture_scores else {}
+
+    @property
+    def hr_total(self) -> int:
+        return sum(int(v) for v in self.hr_scores_dict.values() if v)
+
+    @property
+    def culture_total(self) -> int:
+        return sum(int(v) for v in self.culture_scores_dict.values() if v)

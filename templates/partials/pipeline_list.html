@@ -17,6 +17,7 @@
                     {% endfor %}
                 </select>
             </form>
+            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-ghost" style="font-size: 0.75rem;">Score</a>
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-target="#pipeline-section"
@@ -27,6 +28,14 @@
             </form>
         </div>
     </div>
+    {% if pipeline_scores and pipeline_scores.get(p.id) %}
+    {% set sc = pipeline_scores[p.id] %}
+    <div style="margin-top: 0.5rem; display: flex; gap: 1rem; font-size: 0.8rem;">
+        <span class="badge badge-interview">HR: {{ sc.hr_total }}/12</span>
+        <span class="badge badge-screening">Culture: {{ sc.culture_total }}/16</span>
+        <span class="hint">Total: {{ sc.hr_total + sc.culture_total }}/28</span>
+    </div>
+    {% endif %}
     {% if p.notes %}
     <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>
     {% endif %}

@@ -4,7 +4,18 @@
 <div class="page-header">
     <h1>{{ candidate.name }}</h1>
     <div>
+        {% if pipelines %}
+        <div class="dropdown" style="display: inline-block; position: relative;">
+            <button class="btn" onclick="this.nextElementSibling.classList.toggle('show')">+ Add Interview ▾</button>
+            <div class="dropdown-menu">
+                {% for p in pipelines %}
+                <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ p.id }}">{{ p.position or "—" }} · {{ p.business_unit or "—" }}</a>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
         <a href="/session/new?candidate_id={{ candidate.id }}" class="btn">+ Add Interview</a>
+        {% endif %}
         <a href="/candidate/{{ candidate.id }}/edit" class="btn-ghost">Edit</a>
     </div>
 </div>
@@ -28,7 +39,9 @@
 <h2>Pipeline</h2>
 
 <div id="pipeline-section">
+    {% with pipeline_scores=pipeline_scores %}
     {% include "partials/pipeline_list.html" %}
+    {% endwith %}
 </div>
 
 <details class="add-pipeline-form" style="margin-top: 1rem;">

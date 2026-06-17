@@ -17,6 +17,9 @@
         <input type="hidden" name="manual_current_salary" value="{{ prefill_candidate.current_salary or '' }}">
         <input type="hidden" name="manual_expected_salary" value="{{ prefill_candidate.expected_salary or '' }}">
         <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
+        {% if prefill_pipeline_id %}
+        <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
+        {% endif %}
 
         <div class="candidate-card" style="margin-bottom: 1rem;">
             <h3>{{ prefill_candidate.name }}</h3>

@@ -28,7 +28,7 @@ def _migrate():
 
 
 def create_tables():
-    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore  # noqa
     SQLModel.metadata.create_all(engine)
     _migrate()
     from app.seed import seed_templates

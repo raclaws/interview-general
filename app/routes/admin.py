@@ -53,7 +53,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
 
 
 @router.get("/session/new", response_class=HTMLResponse)
-async def session_new_form(request: Request, candidate_id: int = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+async def session_new_form(request: Request, candidate_id: int = None, pipeline_id: int = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template).order_by(Template.name)).all()
     prefill_candidate = None
     if candidate_id:
@@ -64,6 +64,7 @@ async def session_new_form(request: Request, candidate_id: int = None, admin: Ad
         "positions": POSITIONS,
         "business_units": BUSINESS_UNITS,
         "prefill_candidate": prefill_candidate,
+        "prefill_pipeline_id": pipeline_id,
     })
 
 
@@ -71,6 +72,7 @@ async def session_new_form(request: Request, candidate_id: int = None, admin: Ad
 async def session_new_submit(
     request: Request,
     candidate_id: int = Form(None),
+    pipeline_id: int = Form(None),
     job_title: str = Form(""),
     round: str = Form(...),
     interviewer_names: str = Form(...),
@@ -169,9 +171,11 @@ async def session_new_submit(
         db.commit()
         db.refresh(candidate_record)
 
-    # Create pipeline entry if we have a candidate
+    # Create or link pipeline entry
     pipeline_record = None
-    if candidate_record:
+    if pipeline_id:
+        pipeline_record = db.get(CandidatePipeline, pipeline_id)
+    elif candidate_record:
         pipeline_record = CandidatePipeline(
             candidate_id=candidate_record.id,
             position=final_position or None,
@@ -181,6 +185,19 @@ async def session_new_submit(
         db.add(pipeline_record)
         db.commit()
         db.refresh(pipeline_record)
+
+    # Validate session limits per pipeline
+    if pipeline_record:
+        existing_sessions = db.exec(
+            select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_record.id)
+        ).all()
+        if len(existing_sessions) >= 4:
+            return RedirectResponse("/session/new?error=max_sessions_reached", status_code=303)
+        hr_template = db.exec(select(Template).where(Template.name == "HR Interview")).first()
+        if hr_template and template_id == hr_template.id:
+            hr_count = len([s for s in existing_sessions if s.template_id == hr_template.id])
+            if hr_count >= 1:
+                return RedirectResponse("/session/new?error=hr_limit_reached", status_code=303)
 
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:

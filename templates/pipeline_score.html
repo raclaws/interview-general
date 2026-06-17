@@ -1,0 +1,105 @@
+{% extends "base_app.html" %}
+{% block title %}Scorecard — {{ candidate.name }}{% endblock %}
+{% block content %}
+<h1>Scorecard</h1>
+<p class="hint">{{ candidate.name }} · {{ pipeline.position or "—" }} · {{ pipeline.business_unit or "—" }}</p>
+
+<form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score">
+
+    <h2>HR Score <span class="hint">(max 12)</span></h2>
+    <div class="score-grid">
+        {% for dim in hr_dimensions %}
+        <div class="score-item">
+            <label>{{ dim.label }}</label>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label">
+                    <input type="radio" name="hr_{{ dim.key }}" value="{{ i }}" required
+                        {% if score and score.hr_scores_dict.get(dim.key) == i|string %}checked{% endif %}>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = No Evidence | 4 = Exceed</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="score-item" style="margin-top: 1rem;">
+        <label>Drive & Dream <span class="hint">(pick 2)</span></label>
+        <div class="select-group">
+            {% set hr_drive_list = (score.hr_drive_dream | default('[]', true)) if score else '[]' %}
+            {% for opt in drive_dream_options %}
+            <label class="select-label">
+                <input type="checkbox" name="hr_drive_dream" value="{{ opt }}"
+                    onchange="handleMaxSelect(this, 'hr_drive_dream', 2)"
+                    {% if opt in hr_drive_list %}checked{% endif %}>
+                <span>{{ opt }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="score-item" style="margin-top: 1rem;">
+        <label for="hr_notes">HR Notes</label>
+        <textarea name="hr_notes" rows="4" placeholder="Additional HR observations...">{{ score.hr_notes or "" if score else "" }}</textarea>
+    </div>
+
+    <hr>
+
+    <h2>Culture Score <span class="hint">(max 16)</span></h2>
+    <div class="score-grid">
+        {% for dim in culture_dimensions %}
+        <div class="score-item">
+            <label>{{ dim.label }}</label>
+            <div class="rating-group">
+                {% for i in range(1, 5) %}
+                <label class="rating-label">
+                    <input type="radio" name="culture_{{ dim.key }}" value="{{ i }}" required
+                        {% if score and score.culture_scores_dict.get(dim.key) == i|string %}checked{% endif %}>
+                    <span>{{ i }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="anchor-hint">1 = No Evidence | 4 = Exceed</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="score-item" style="margin-top: 1rem;">
+        <label>Drive & Dream <span class="hint">(pick 2)</span></label>
+        <div class="select-group">
+            {% set culture_drive_list = (score.culture_drive_dream | default('[]', true)) if score else '[]' %}
+            {% for opt in drive_dream_options %}
+            <label class="select-label">
+                <input type="checkbox" name="culture_drive_dream" value="{{ opt }}"
+                    onchange="handleMaxSelect(this, 'culture_drive_dream', 2)"
+                    {% if opt in culture_drive_list %}checked{% endif %}>
+                <span>{{ opt }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="score-item" style="margin-top: 1rem;">
+        <label for="culture_notes">Culture Notes</label>
+        <textarea name="culture_notes" rows="4" placeholder="Additional culture observations...">{{ score.culture_notes or "" if score else "" }}</textarea>
+    </div>
+
+    <hr>
+
+    <div class="form-actions">
+        <button type="submit" class="btn">Save Scorecard</button>
+        <a href="/candidate/{{ candidate.id }}" class="btn-ghost">Cancel</a>
+    </div>
+</form>
+
+<script>
+function handleMaxSelect(checkbox, name, max) {
+    var checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+    if (checked.length > max) {
+        checkbox.checked = false;
+    }
+}
+</script>
+{% endblock %}
