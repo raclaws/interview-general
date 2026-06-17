@@ -252,3 +252,34 @@ async def pipeline_update_notes(
         })
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
+@router.post("/candidate/{candidate_id}/pipeline/{pipeline_id}/delete")
+async def pipeline_delete(
+    request: Request,
+    candidate_id: int,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline or pipeline.candidate_id != candidate_id:
+        return HTMLResponse("Not found", status_code=404)
+
+    db.delete(pipeline)
+    db.commit()
+
+    if request.headers.get("HX-Request"):
+        pipelines = db.exec(
+            select(CandidatePipeline)
+            .where(CandidatePipeline.candidate_id == candidate_id)
+            .order_by(CandidatePipeline.updated_at.desc())
+        ).all()
+        candidate = db.get(Candidate, candidate_id)
+        return _render(request, "partials/pipeline_list.html", {
+            "pipelines": pipelines,
+            "candidate": candidate,
+            "stages": PIPELINE_STAGES,
+        })
+
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)

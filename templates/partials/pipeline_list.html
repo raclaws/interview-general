@@ -5,17 +5,27 @@
             <strong>{{ p.position or "—" }}</strong>
             {% if p.business_unit %}<span class="hint"> · {{ p.business_unit }}</span>{% endif %}
         </div>
-        <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
-              hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
-              hx-target="#pipeline-section"
-              hx-swap="innerHTML"
-              style="display: inline-flex; align-items: center; gap: 0.25rem;">
-            <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
-                {% for s in stages %}
-                <option value="{{ s }}" {% if p.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
-                {% endfor %}
-            </select>
-        </form>
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
+                  hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
+                  hx-target="#pipeline-section"
+                  hx-swap="innerHTML"
+                  style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
+                    {% for s in stages %}
+                    <option value="{{ s }}" {% if p.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
+                  hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
+                  hx-target="#pipeline-section"
+                  hx-swap="innerHTML"
+                  hx-confirm="Remove this pipeline entry?"
+                  style="display: inline;">
+                <button type="submit" class="btn-danger-sm" title="Remove pipeline entry">✕</button>
+            </form>
+        </div>
     </div>
     {% if p.notes %}
     <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>

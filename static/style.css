@@ -280,6 +280,20 @@ tr:hover td { background: #f9fafb; }
     background: var(--bg);
 }
 
+.btn-danger-sm {
+    background: none;
+    border: 1px solid #fee2e2;
+    color: #991b1b;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    cursor: pointer;
+    line-height: 1;
+}
+.btn-danger-sm:hover {
+    background: #fee2e2;
+}
+
 /* Actions row */
 .actions { margin-bottom: 1.25rem; }
 

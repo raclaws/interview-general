@@ -22,8 +22,7 @@
             <h3>{{ prefill_candidate.name }}</h3>
             <p class="hint">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</p>
         </div>
-        {% else %}
-        <div class="toggle-group">
+        {% else %}        <div class="toggle-group">
             <label class="toggle-label">
                 <input type="radio" name="entry_mode" value="nocodb" checked onchange="toggleMode(this.value)">
                 Search NocoDB
@@ -88,7 +87,7 @@
         </select>
 
         <label for="job_title">Job Title</label>
-        <input type="text" id="job_title" name="job_title" placeholder="Auto-filled from NocoDB if available">
+        <input type="text" id="job_title" name="job_title" value="{% if prefill_candidate and prefill_candidate.current_position %}{{ prefill_candidate.current_position }}{% endif %}" placeholder="Auto-filled from NocoDB if available">
         <p class="hint">Leave empty to use candidate's current position from NocoDB.</p>
 
         <label for="position">Position Applied</label>
