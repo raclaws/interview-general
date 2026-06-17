@@ -107,20 +107,9 @@
     <hr>
     <div class="summary-block">
         <h3>AI Summary</h3>
-        {% if session.aggregate_summary %}
-        <p>{{ session.aggregate_summary }}</p>
-        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
-            <form method="post" action="/session/{{ session.id }}/generate-summary">
-                <button type="submit" class="btn btn-secondary">Regenerate Summary</button>
-            </form>
-            <button type="button" class="btn btn-secondary" onclick="copyAsMarkdown()">Copy as Markdown</button>
+        <div id="summary-container">
+        {% include "partials/summary_block.html" %}
         </div>
-        {% else %}
-        <p class="no-summary">No summary generated yet.</p>
-        <form method="post" action="/session/{{ session.id }}/generate-summary">
-            <button type="submit" class="btn">Generate Summary</button>
-        </form>
-        {% endif %}
     </div>
 </div>
 

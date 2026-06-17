@@ -251,6 +251,11 @@ async def generate_session_summary(
     session.aggregate_summary = summary
     db.add(session)
     db.commit()
+
+    # If HTMX request, return just the partial
+    if request.headers.get("HX-Request"):
+        return _render(request, "partials/summary_block.html", {"session": session})
+
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
