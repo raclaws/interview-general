@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Interview Form{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-brand">Interview<br>Summarizer</div>
+            <nav class="sidebar-nav">
+                <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
+                <a href="/templates" class="{% if '/templates' in request.url.path %}active{% endif %}">Templates</a>
+                <a href="/settings" class="{% if '/settings' in request.url.path %}active{% endif %}">Settings</a>
+            </nav>
+            <div class="sidebar-footer">
+                <form method="post" action="/logout">
+                    <button type="submit" class="sidebar-logout">Logout</button>
+                </form>
+            </div>
+        </aside>
+        <div class="main-content">
+            <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')">☰</button>
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

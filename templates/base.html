@@ -8,16 +8,6 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
 </head>
 <body>
-    {% if admin is defined and admin %}
-    <nav>
-        <a href="/">Dashboard</a>
-        <a href="/templates">Templates</a>
-        <a href="/settings">Settings</a>
-        <form method="post" action="/logout" style="display:inline">
-            <button type="submit" class="link-btn">Logout</button>
-        </form>
-    </nav>
-    {% endif %}
     <main>
         {% block content %}{% endblock %}
     </main>
