@@ -6,23 +6,43 @@
     <a href="/session/new" class="btn">New Session</a>
 </div>
 
-<table>
+<div class="table-controls">
+    <input type="text" id="search-input" placeholder="Search candidate or job title..." class="table-search">
+    <select id="filter-status" class="table-filter">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+    </select>
+    <select id="filter-template" class="table-filter">
+        <option value="">All Templates</option>
+        {% set template_names = [] %}
+        {% for item in session_data %}
+        {% if item.template and item.template.name not in template_names %}
+        {% if template_names.append(item.template.name) %}{% endif %}
+        <option value="{{ item.template.name }}">{{ item.template.name }}</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+
+<table id="sessions-table">
     <thead>
         <tr>
-            <th>ID</th>
-            <th>Candidate</th>
-            <th>Job Title</th>
-            <th>Template</th>
-            <th>Round</th>
+            <th class="sortable" data-col="0">ID</th>
+            <th class="sortable" data-col="1">Candidate</th>
+            <th class="sortable" data-col="2">Job Title</th>
+            <th class="sortable" data-col="3">Template</th>
+            <th class="sortable" data-col="4">Round</th>
             <th>Progress</th>
-            <th>Status</th>
-            <th>Created</th>
+            <th class="sortable" data-col="6">Status</th>
+            <th class="sortable" data-col="7">Created</th>
             <th></th>
         </tr>
     </thead>
-    <tbody>
+    <tbody id="sessions-tbody">
         {% for item in session_data %}
-        <tr>
+        <tr data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" data-job="{{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}">
             <td>{{ item.session.id }}</td>
             <td>{{ item.session.snapshot.get("name", "—") }}</td>
             <td>{{ item.session.job_title }}</td>
@@ -37,8 +57,66 @@
         </tr>
         {% endfor %}
         {% if not session_data %}
-        <tr><td colspan="9">No sessions yet.</td></tr>
+        <tr class="empty-row"><td colspan="9">No sessions yet.</td></tr>
         {% endif %}
     </tbody>
 </table>
+
+<script>
+(function() {
+    var searchInput = document.getElementById('search-input');
+    var filterStatus = document.getElementById('filter-status');
+    var filterTemplate = document.getElementById('filter-template');
+    var tbody = document.getElementById('sessions-tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+
+    function applyFilters() {
+        var query = searchInput.value.toLowerCase();
+        var status = filterStatus.value;
+        var template = filterTemplate.value;
+
+        rows.forEach(function(row) {
+            var candidate = row.dataset.candidate || '';
+            var job = row.dataset.job || '';
+            var rowStatus = row.dataset.status || '';
+            var rowTemplate = row.dataset.template || '';
+
+            var matchSearch = !query || candidate.indexOf(query) !== -1 || job.indexOf(query) !== -1;
+            var matchStatus = !status || rowStatus === status;
+            var matchTemplate = !template || rowTemplate === template;
+
+            row.style.display = (matchSearch && matchStatus && matchTemplate) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    filterStatus.addEventListener('change', applyFilters);
+    filterTemplate.addEventListener('change', applyFilters);
+
+    // Sort
+    var headers = document.querySelectorAll('.sortable');
+    var sortDir = {};
+    headers.forEach(function(th) {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', function() {
+            var col = parseInt(th.dataset.col);
+            var dir = sortDir[col] === 'asc' ? 'desc' : 'asc';
+            sortDir[col] = dir;
+
+            rows.sort(function(a, b) {
+                var aVal = a.children[col].textContent.trim().toLowerCase();
+                var bVal = b.children[col].textContent.trim().toLowerCase();
+                if (aVal < bVal) return dir === 'asc' ? -1 : 1;
+                if (aVal > bVal) return dir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            rows.forEach(function(row) { tbody.appendChild(row); });
+
+            headers.forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
+            th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
+        });
+    });
+})();
+</script>
 {% endblock %}
