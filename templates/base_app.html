@@ -12,13 +12,19 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-brand">Interview<br>Summarizer</div>
             <nav class="sidebar-nav">
-                <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">Dashboard</a>
-                <a href="/templates" class="{% if '/templates' in request.url.path %}active{% endif %}">Templates</a>
-                <a href="/settings" class="{% if '/settings' in request.url.path %}active{% endif %}">Settings</a>
+                <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
+                    <span class="sidebar-icon">◻</span> Dashboard
+                </a>
+                <a href="/templates" class="{% if '/templates' in request.url.path %}active{% endif %}">
+                    <span class="sidebar-icon">☰</span> Templates
+                </a>
+                <a href="/settings" class="{% if '/settings' in request.url.path %}active{% endif %}">
+                    <span class="sidebar-icon">⚙</span> Settings
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <form method="post" action="/logout">
-                    <button type="submit" class="sidebar-logout">Logout</button>
+                    <button type="submit" class="sidebar-logout">↩ Logout</button>
                 </form>
             </div>
         </aside>
