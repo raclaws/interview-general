@@ -1,5 +1,10 @@
 {% extends "base_app.html" %}
 {% block title %}New Session{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/">Dashboard</a> / <span>New Session</span>
+</nav>
+{% endblock %}
 {% block content %}
 <h1>Create Interview Session</h1>
 <div class="form-container" style="max-width: 600px;">

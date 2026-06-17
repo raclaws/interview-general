@@ -1,5 +1,10 @@
 {% extends "base_app.html" %}
 {% block title %}Template: {{ template.name }}{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/">Dashboard</a> / <a href="/templates">Templates</a> / <span>{{ template.name }}</span>
+</nav>
+{% endblock %}
 {% block content %}
 <h1>{{ template.name }}</h1>
 <p>{% if template.is_default %}<span class="badge badge-completed">Default</span>{% endif %}</p>

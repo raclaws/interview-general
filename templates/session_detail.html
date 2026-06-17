@@ -1,5 +1,10 @@
 {% extends "base_app.html" %}
 {% block title %}Session Detail{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/">Dashboard</a> / <span>Session #{{ session.id }}</span>
+</nav>
+{% endblock %}
 {% block content %}
 <h1>Session #{{ session.id }}</h1>
 

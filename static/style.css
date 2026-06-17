@@ -360,6 +360,23 @@ tr:hover td { background: #f9fafb; }
     background: #f3f4f6;
 }
 
+.breadcrumb {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+}
+.breadcrumb a {
+    color: #6b7280;
+    text-decoration: none;
+}
+.breadcrumb a:hover {
+    color: #111827;
+    text-decoration: underline;
+}
+.breadcrumb span {
+    color: #111827;
+}
+
 /* Actions row */
 .actions { margin-bottom: 1.25rem; }
 

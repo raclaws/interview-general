@@ -33,6 +33,7 @@
         </aside>
         <div class="main-content">
             <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')">☰</button>
+            {% block breadcrumb %}{% endblock %}
             {% block content %}{% endblock %}
         </div>
     </div>
