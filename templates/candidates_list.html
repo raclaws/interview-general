@@ -39,7 +39,7 @@
                 {% if not item.pipelines %}—{% endif %}
             </td>
             <td>{{ item.candidate.updated_at.strftime("%Y-%m-%d") }}</td>
-            <td><a href="/candidate/{{ item.candidate.id }}" class="btn-ghost">View</a></td>
+            <td><a href="/candidate/{{ item.candidate.id }}" class="icon-btn" title="View candidate">↗</a></td>
         </tr>
         {% endfor %}
         {% if not candidate_data %}
