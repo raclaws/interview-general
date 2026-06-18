@@ -167,7 +167,9 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 .form-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
 .form-actions .btn { width: auto; padding: 0.65rem 1.5rem; }
 
-button[type="submit"], .submit-btn {
+.form-container button[type="submit"],
+.add-pipeline-form button[type="submit"],
+.submit-btn {
     margin-top: 1.5rem;
     width: 100%;
     padding: 0.5rem;
@@ -180,53 +182,9 @@ button[type="submit"], .submit-btn {
     font-weight: 600;
     transition: background 0.15s, transform 0.1s;
 }
-button[type="submit"]:hover, .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
-button.icon-btn[type="submit"] {
-    width: auto;
-    margin-top: 0;
-    padding: 0;
-    background: none;
-    color: var(--text-muted);
-    font-weight: 400;
-    font-size: 0.9rem;
-}
-button.icon-btn[type="submit"]:hover {
-    transform: none;
-}
-button.btn-danger-sm[type="submit"] {
-    width: auto;
-    margin-top: 0;
-    padding: 0.1rem 0.3rem;
-    background: none;
-    color: var(--text-muted);
-    font-weight: 400;
-    font-size: 0.7rem;
-}
-button.btn-danger-sm[type="submit"]:hover {
-    background: var(--danger-bg);
-    color: var(--danger);
-    transform: none;
-}
-button.ctx-item[type="submit"] {
-    width: 100%;
-    margin-top: 0;
-    padding: 0.45rem 0.85rem;
-    background: none;
-    border: none;
-    font-weight: 400;
-    font-size: 0.8rem;
-    border-radius: 0;
-}
-button.ctx-item[type="submit"]:hover {
-    transform: none;
-}
-button.ctx-danger[type="submit"] {
-    color: var(--danger);
-}
-button.ctx-danger[type="submit"]:hover {
-    background: var(--danger-bg);
-    color: var(--danger);
-}
+.form-container button[type="submit"]:hover,
+.add-pipeline-form button[type="submit"]:hover,
+.submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
 /* Override for buttons inside action groups — never full-width */
 .action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
     width: auto;
