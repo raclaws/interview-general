@@ -31,6 +31,16 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
         .order_by(CandidatePipeline.updated_at.desc())
     ).all()
 
+    # Cache template sections to avoid re-querying per interviewer
+    _template_sections_cache = {}
+
+    def get_template_sections(template_id):
+        if template_id not in _template_sections_cache:
+            _template_sections_cache[template_id] = db.exec(
+                select(TemplateSection).where(TemplateSection.template_id == template_id)
+            ).all()
+        return _template_sections_cache[template_id]
+
     pipeline_scores = {}
     for p in pipelines:
         p_sessions = db.exec(
@@ -62,7 +72,7 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
                 if not resp:
                     continue
                 scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
-                sections = db.exec(select(TemplateSection).where(TemplateSection.template_id == template.id)).all()
+                sections = get_template_sections(template.id)
                 section_map = {sec.id: sec for sec in sections}
                 iv_total = 0
                 for sr in scores:

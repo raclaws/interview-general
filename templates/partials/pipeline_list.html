@@ -9,6 +9,7 @@
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
+                  hx-on::before-request="this.style.opacity='0.5'"
                   style="display: inline-flex; align-items: center; gap: 0.25rem;">
                 <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
                     {% for s in stages %}
@@ -22,6 +23,7 @@
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
                   hx-confirm="Remove this pipeline entry?"
+                  hx-on::before-request="this.closest('.pipeline-entry').style.opacity='0.3'"
                   style="display: inline;">
                 <button type="submit" class="btn-danger-sm" title="Remove pipeline entry">✕</button>
             </form>

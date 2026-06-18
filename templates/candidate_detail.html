@@ -91,4 +91,14 @@
     </form>
 </details>
 
+<script>
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+        if (!menu.parentElement.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
+});
+</script>
+
 {% endblock %}
