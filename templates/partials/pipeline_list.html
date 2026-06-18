@@ -17,7 +17,7 @@
                     {% endfor %}
                 </select>
             </form>
-            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-ghost" style="font-size: 0.75rem;">Score</a>
+            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-subtle" title="View scorecard">◈</a>
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-target="#pipeline-section"
@@ -60,7 +60,7 @@
                     <td>{{ item.completed }}/{{ item.total }}</td>
                     <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
                     <td>{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
-                    <td><a href="/session/{{ item.session.id }}" class="btn-ghost" style="font-size: 0.75rem;">View</a></td>
+                    <td><a href="/session/{{ item.session.id }}" class="link-subtle">View</a></td>
                 </tr>
                 {% endfor %}
             </tbody>

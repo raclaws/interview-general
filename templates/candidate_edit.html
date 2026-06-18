@@ -2,7 +2,7 @@
 {% block title %}Edit {{ candidate.name }}{% endblock %}
 {% block breadcrumb %}
 <nav class="breadcrumb">
-    <a href="/">Dashboard</a> / <a href="/candidates">Candidates</a> / <a href="/candidate/{{ candidate.id }}">{{ candidate.name }}</a> / <span>Edit</span>
+    <a href="/candidate/{{ candidate.id }}">{{ candidate.name }}</a> / <span>Edit</span>
 </nav>
 {% endblock %}
 {% block content %}
