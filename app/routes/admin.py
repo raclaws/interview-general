@@ -37,6 +37,11 @@ def _render(request: Request, name: str, context: dict = None):
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    return _render(request, "dashboard.html", {"admin": admin})
+
+
+@router.get("/sessions", response_class=HTMLResponse)
+async def sessions_list(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     sessions = db.exec(
         select(InterviewSession).order_by(InterviewSession.created_at.desc())
     ).all()
@@ -50,7 +55,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
         session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline})
-    return _render(request, "dashboard.html", {"session_data": session_data, "admin": admin})
+    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin})
 
 
 @router.get("/session/new", response_class=HTMLResponse)
@@ -262,7 +267,7 @@ async def session_new_submit(
         db.add(interviewer)
     db.commit()
 
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/sessions", status_code=303)
 
 
 @router.get("/session/{session_id}", response_class=HTMLResponse)
@@ -416,7 +421,7 @@ async def delete_session(
 
     db.delete(session)
     db.commit()
-    return RedirectResponse("/", status_code=303)
+    return RedirectResponse("/sessions", status_code=303)
 
 
 @router.get("/session/{session_id}/edit", response_class=HTMLResponse)
@@ -509,21 +514,6 @@ async def template_detail(
         select(TemplateSection).where(TemplateSection.template_id == template.id).order_by(TemplateSection.order)
     ).all()
     return _render(request, "template_detail.html", {"template": template, "sections": sections, "admin": admin})
-
-
-@router.post("/templates/{template_id}/set-default")
-async def set_default_template(
-    request: Request,
-    template_id: int,
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_session),
-):
-    all_templates = db.exec(select(Template)).all()
-    for t in all_templates:
-        t.is_default = (t.id == template_id)
-        db.add(t)
-    db.commit()
-    return RedirectResponse("/templates", status_code=303)
 
 
 @router.get("/settings", response_class=HTMLResponse)

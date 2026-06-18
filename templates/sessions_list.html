@@ -1,0 +1,83 @@
+{% extends "base_app.html" %}
+{% block title %}Interview{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Interview Sessions</h1>
+    <a href="/session/new" class="btn">+ New Session</a>
+</div>
+
+<div class="table-controls">
+    <input type="text" id="search-input" placeholder="Search candidate or job title..." class="table-search">
+    <select id="filter-status" class="table-filter">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+    </select>
+    <select id="filter-template" class="table-filter">
+        <option value="">All Templates</option>
+        {% set template_names = [] %}
+        {% for item in session_data %}
+        {% if item.template and item.template.name not in template_names %}
+        {% if template_names.append(item.template.name) %}{% endif %}
+        <option value="{{ item.template.name }}">{{ item.template.name }}</option>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+
+<table id="sessions-table" class="table-clean">
+    <tbody id="sessions-tbody">
+        {% for item in session_data %}
+        <tr data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" data-job="{{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}" class="clickable-row" data-href="/session/{{ item.session.id }}" data-ctx='[{% if item.interviewers %}{"label":"⎘ Copy link","copy":"{{ request.base_url }}i/{{ item.interviewers[0].token }}"},{% endif %}{% if item.session.candidate_id %}{"label":"↗ View candidate","href":"/candidate/{{ item.session.candidate_id }}"},{% endif %}{"label":"✎ Edit session","href":"/session/{{ item.session.id }}/edit"}{% if item.session.status == "pending" %},{"label":"⊘ Cancel","href":"/session/{{ item.session.id }}/cancel","confirm":"Cancel this session?"}{% endif %},{"label":"✕ Delete","href":"/session/{{ item.session.id }}/delete","confirm":"Delete permanently?"}]'>
+            <td>
+                <div class="col-primary">{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</div>
+                <div class="row-meta">{{ item.session.job_title }} · {{ item.session.round }} · {{ item.template.name if item.template else "—" }}</div>
+            </td>
+            <td>
+                {% if item.pipeline %}<span class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}</span>{% endif %}
+            </td>
+            <td>{{ item.completed }}/{{ item.total }}</td>
+            <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
+            <td class="row-meta">{{ item.session.created_at.strftime("%Y-%m-%d") }}</td>
+        </tr>
+        {% endfor %}
+        {% if not session_data %}
+        <tr class="empty-row"><td colspan="5">No sessions yet.</td></tr>
+        {% endif %}
+    </tbody>
+</table>
+
+<script>
+(function() {
+    var searchInput = document.getElementById('search-input');
+    var filterStatus = document.getElementById('filter-status');
+    var filterTemplate = document.getElementById('filter-template');
+    var tbody = document.getElementById('sessions-tbody');
+    var rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
+
+    function applyFilters() {
+        var query = searchInput.value.toLowerCase();
+        var status = filterStatus.value;
+        var template = filterTemplate.value;
+
+        rows.forEach(function(row) {
+            var candidate = row.dataset.candidate || '';
+            var job = row.dataset.job || '';
+            var rowStatus = row.dataset.status || '';
+            var rowTemplate = row.dataset.template || '';
+
+            var matchSearch = !query || candidate.indexOf(query) !== -1 || job.indexOf(query) !== -1;
+            var matchStatus = !status || rowStatus === status;
+            var matchTemplate = !template || rowTemplate === template;
+
+            row.style.display = (matchSearch && matchStatus && matchTemplate) ? '' : 'none';
+        });
+    }
+
+    searchInput.addEventListener('input', applyFilters);
+    filterStatus.addEventListener('change', applyFilters);
+    filterTemplate.addEventListener('change', applyFilters);
+})();
+</script>
+{% endblock %}

@@ -1,32 +1,19 @@
 {% extends "base_app.html" %}
 {% block title %}Templates{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/settings">Settings</a> / <span>Templates</span>
+</nav>
+{% endblock %}
 {% block content %}
 <h1>Interview Templates</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Sections</th>
-            <th>Default</th>
-            <th></th>
-        </tr>
-    </thead>
+<table class="table-clean">
     <tbody>
         {% for item in template_data %}
-        <tr>
-            <td>{{ item.template.name }}</td>
-            <td>{{ item.section_count }}</td>
-            <td>
-                {% if item.template.is_default %}
-                <span class="badge badge-completed">Default</span>
-                {% else %}
-                <form method="post" action="/templates/{{ item.template.id }}/set-default" style="display:inline;">
-                    <button type="submit" class="btn btn-secondary">Set as Default</button>
-                </form>
-                {% endif %}
-            </td>
-            <td><a href="/templates/{{ item.template.id }}" class="btn-ghost">View</a></td>
+        <tr class="clickable-row" data-href="/templates/{{ item.template.id }}">
+            <td class="col-primary">{{ item.template.name }}</td>
+            <td class="row-meta">{{ item.section_count }} sections</td>
         </tr>
         {% endfor %}
     </tbody>
