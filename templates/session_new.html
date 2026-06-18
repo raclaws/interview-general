@@ -84,8 +84,9 @@
 
         <label for="template_id">Interview Template</label>
         <select id="template_id" name="template_id" required>
+            <option value="" disabled selected>— Select template —</option>
             {% for t in templates %}
-            <option value="{{ t.id }}" {% if t.is_default %}selected{% endif %}>{{ t.name }}</option>
+            <option value="{{ t.id }}">{{ t.name }}</option>
             {% endfor %}
         </select>
 
