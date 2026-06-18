@@ -1,4 +1,4 @@
-# Interview Form Summarizer
+# Interview Form Summarizer (v0.1)
 
 A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
