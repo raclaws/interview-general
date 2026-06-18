@@ -23,6 +23,30 @@
     --success-bg: #e8f5e9;
 }
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        --accent: #b4befe;
+        --accent-hover: #89b4fa;
+        --accent-light: #313244;
+        --text-primary: #cdd6f4;
+        --text-secondary: #bac2de;
+        --text-muted: #6c7086;
+        --bg-page: #1e1e2e;
+        --bg-card: #181825;
+        --bg-muted: #313244;
+        --border: #45475a;
+        --border-focus: #b4befe;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.4);
+        --danger: #f38ba8;
+        --danger-bg: #45273a;
+        --warning: #fab387;
+        --warning-bg: #45352a;
+        --success: #a6e3a1;
+        --success-bg: #2a4530;
+    }
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
@@ -318,7 +342,7 @@ tr:hover td { background: #f9fafb; }
     position: absolute;
     top: 100%;
     right: 0;
-    background: var(--bg-card, #fff);
+    background: var(--bg-card);
     border: 1px solid var(--border, #e5e7eb);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
@@ -476,7 +500,7 @@ tr:hover td { background: #f9fafb; }
     text-decoration: none;
 }
 .breadcrumb a:hover {
-    color: #111827;
+    color: var(--text-primary);
     text-decoration: underline;
 }
 .breadcrumb span {
@@ -576,7 +600,7 @@ label {
     font-size: 0.85rem;
     color: var(--text-primary);
 }
-input[type="text"], input[type="password"], input[type="number"], input[type="date"], select, textarea {
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="email"], select, textarea {
     width: 100%;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border);
@@ -584,11 +608,12 @@ input[type="text"], input[type="password"], input[type="number"], input[type="da
     font-size: 0.875rem;
     transition: border-color 0.15s, box-shadow 0.15s;
     background: var(--bg-card);
+    color: var(--text-primary);
 }
 input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+    box-shadow: 0 0 0 3px rgba(114, 135, 253, 0.15);
 }
 textarea { resize: vertical; min-height: 80px; }
 
