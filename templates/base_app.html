@@ -43,7 +43,55 @@ document.addEventListener('click', function(e) {
     if (row && !e.target.closest('a, button, select, input, form')) {
         window.location.href = row.dataset.href;
     }
+    // Close any open context menu
+    var menu = document.getElementById('ctx-menu');
+    if (menu) menu.style.display = 'none';
 });
+
+// Close dropdown menus on outside click
+document.addEventListener('click', function(e) {
+    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
+        if (!menu.parentElement.contains(e.target)) {
+            menu.classList.remove('show');
+        }
+    });
+});
+
+// Context menu
+(function() {
+    var menu = document.createElement('div');
+    menu.id = 'ctx-menu';
+    menu.className = 'ctx-menu';
+    menu.style.display = 'none';
+    document.body.appendChild(menu);
+
+    document.addEventListener('contextmenu', function(e) {
+        var row = e.target.closest('.clickable-row[data-ctx]');
+        if (!row) { menu.style.display = 'none'; return; }
+        e.preventDefault();
+        var items = JSON.parse(row.dataset.ctx);
+        menu.innerHTML = items.map(function(it) {
+            if (it.confirm) {
+                return '<form method="post" action="' + it.href + '" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="ctx-item">' + it.label + '</button></form>';
+            }
+            if (it.copy) {
+                return '<div class="ctx-item" data-copy="' + it.copy + '">' + it.label + '</div>';
+            }
+            return '<a href="' + it.href + '" class="ctx-item">' + it.label + '</a>';
+        }).join('');
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        menu.style.display = 'block';
+
+        // Copy handler
+        menu.querySelectorAll('[data-copy]').forEach(function(el) {
+            el.onclick = function() {
+                navigator.clipboard.writeText(el.dataset.copy);
+                menu.style.display = 'none';
+            };
+        });
+    });
+})();
 </script>
 </body>
 </html>
