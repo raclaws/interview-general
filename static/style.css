@@ -207,6 +207,26 @@ button.btn-danger-sm[type="submit"]:hover {
     color: var(--danger);
     transform: none;
 }
+button.ctx-item[type="submit"] {
+    width: 100%;
+    margin-top: 0;
+    padding: 0.45rem 0.85rem;
+    background: none;
+    border: none;
+    font-weight: 400;
+    font-size: 0.8rem;
+    border-radius: 0;
+}
+button.ctx-item[type="submit"]:hover {
+    transform: none;
+}
+button.ctx-danger[type="submit"] {
+    color: var(--danger);
+}
+button.ctx-danger[type="submit"]:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
 /* Override for buttons inside action groups — never full-width */
 .action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
     width: auto;
