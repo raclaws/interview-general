@@ -518,9 +518,25 @@ tr:hover td { background: #f9fafb; }
 .clickable-row:hover {
     background: var(--bg-muted);
 }
-td.col-primary {
+td.col-primary, .col-primary {
     font-weight: 600;
     color: var(--text-primary);
+}
+
+.row-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.1rem;
+}
+
+.table-clean {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table-clean td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
 }
 
 /* Actions row */

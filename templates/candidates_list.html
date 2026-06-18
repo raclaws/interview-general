@@ -15,33 +15,25 @@
     </select>
 </div>
 
-<table id="candidates-table">
-    <thead>
-        <tr>
-            <th class="sortable" data-col="0">Name</th>
-            <th class="sortable" data-col="1">Email</th>
-            <th class="sortable" data-col="2">Position</th>
-            <th>Pipeline</th>
-            <th class="sortable" data-col="4">Updated</th>
-        </tr>
-    </thead>
+<table id="candidates-table" class="table-clean">
     <tbody id="candidates-tbody">
         {% for item in candidate_data %}
         <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}">
-            <td class="col-primary">{{ item.candidate.name }}</td>
-            <td>{{ item.candidate.email }}</td>
-            <td>{{ item.candidate.current_position or "—" }}</td>
+            <td>
+                <div class="col-primary">{{ item.candidate.name }}</div>
+                <div class="row-meta">{{ item.candidate.email }}</div>
+            </td>
             <td>
                 {% for p in item.pipelines %}
                 <span class="badge badge-{{ p.stage }}">{{ p.stage | replace("_", " ") | title }}{% if p.position %} — {{ p.position }}{% endif %}</span>
                 {% endfor %}
                 {% if not item.pipelines %}—{% endif %}
             </td>
-            <td>{{ item.candidate.updated_at.strftime("%Y-%m-%d") }}</td>
+            <td class="row-meta">{{ item.candidate.updated_at.strftime("%Y-%m-%d") }}</td>
         </tr>
         {% endfor %}
         {% if not candidate_data %}
-        <tr class="empty-row"><td colspan="5">No candidates yet.</td></tr>
+        <tr class="empty-row"><td colspan="3">No candidates yet.</td></tr>
         {% endif %}
     </tbody>
 </table>
@@ -71,27 +63,6 @@
 
     searchInput.addEventListener('input', applyFilters);
     filterStage.addEventListener('change', applyFilters);
-
-    var headers = document.querySelectorAll('.sortable');
-    var sortDir = {};
-    headers.forEach(function(th) {
-        th.style.cursor = 'pointer';
-        th.addEventListener('click', function() {
-            var col = parseInt(th.dataset.col);
-            var dir = sortDir[col] === 'asc' ? 'desc' : 'asc';
-            sortDir[col] = dir;
-            rows.sort(function(a, b) {
-                var aVal = a.children[col].textContent.trim().toLowerCase();
-                var bVal = b.children[col].textContent.trim().toLowerCase();
-                if (aVal < bVal) return dir === 'asc' ? -1 : 1;
-                if (aVal > bVal) return dir === 'asc' ? 1 : -1;
-                return 0;
-            });
-            rows.forEach(function(row) { tbody.appendChild(row); });
-            headers.forEach(function(h) { h.classList.remove('sort-asc', 'sort-desc'); });
-            th.classList.add(dir === 'asc' ? 'sort-asc' : 'sort-desc');
-        });
-    });
 })();
 </script>
 {% endblock %}
