@@ -18,7 +18,7 @@
 <table id="candidates-table" class="table-clean">
     <tbody id="candidates-tbody">
         {% for item in candidate_data %}
-        <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}" data-ctx='[{"label":"Copy email","copy":"{{ item.candidate.email }}"},{"label":"Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}"},{"label":"Edit candidate","href":"/candidate/{{ item.candidate.id }}/edit"}]'>
+        <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}" data-ctx='[{"label":"⎘ Copy email","copy":"{{ item.candidate.email }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}"},{"label":"✎ Edit candidate","href":"/candidate/{{ item.candidate.id }}/edit"}]'>
             <td>
                 <div class="col-primary">{{ item.candidate.name }}</div>
                 <div class="row-meta">{{ item.candidate.email }}</div>

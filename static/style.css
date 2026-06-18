@@ -527,23 +527,33 @@ tr:hover td { background: #f9fafb; }
     box-shadow: var(--shadow-md);
     min-width: 160px;
     z-index: 200;
-    padding: 0.25rem 0;
+    padding: 0.3rem 0;
+    font-size: 0.8rem;
 }
 .ctx-item {
     display: block;
     width: 100%;
-    padding: 0.4rem 0.75rem;
+    padding: 0.45rem 0.85rem;
     font-size: 0.8rem;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     text-decoration: none;
     text-align: left;
     background: none;
     border: none;
     cursor: pointer;
+    transition: all 0.1s;
 }
 .ctx-item:hover {
     background: var(--bg-muted);
+    color: var(--text-primary);
     text-decoration: none;
+}
+.ctx-danger {
+    color: var(--danger);
+}
+.ctx-danger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
 }
 td.col-primary, .col-primary {
     font-weight: 600;

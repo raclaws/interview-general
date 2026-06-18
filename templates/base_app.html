@@ -71,13 +71,14 @@ document.addEventListener('click', function(e) {
         e.preventDefault();
         var items = JSON.parse(row.dataset.ctx);
         menu.innerHTML = items.map(function(it) {
+            var cls = it.confirm ? 'ctx-item ctx-danger' : 'ctx-item';
             if (it.confirm) {
-                return '<form method="post" action="' + it.href + '" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="ctx-item">' + it.label + '</button></form>';
+                return '<form method="post" action="' + it.href + '" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
             }
             if (it.copy) {
-                return '<div class="ctx-item" data-copy="' + it.copy + '">' + it.label + '</div>';
+                return '<div class="' + cls + '" data-copy="' + it.copy + '">' + it.label + '</div>';
             }
-            return '<a href="' + it.href + '" class="ctx-item">' + it.label + '</a>';
+            return '<a href="' + it.href + '" class="' + cls + '">' + it.label + '</a>';
         }).join('');
         menu.style.left = e.pageX + 'px';
         menu.style.top = e.pageY + 'px';
