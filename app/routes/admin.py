@@ -386,6 +386,39 @@ async def cancel_session(
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
+@router.post("/session/{session_id}/delete")
+async def delete_session(
+    request: Request,
+    session_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    session = db.get(InterviewSession, session_id)
+    if not session:
+        return HTMLResponse("Not found", status_code=404)
+
+    # Delete related responses and scores
+    interviewers = db.exec(
+        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
+    ).all()
+    for iv in interviewers:
+        response = db.exec(
+            select(Response).where(Response.session_interviewer_id == iv.id)
+        ).first()
+        if response:
+            scores = db.exec(
+                select(ResponseScore).where(ResponseScore.response_id == response.id)
+            ).all()
+            for s in scores:
+                db.delete(s)
+            db.delete(response)
+        db.delete(iv)
+
+    db.delete(session)
+    db.commit()
+    return RedirectResponse("/", status_code=303)
+
+
 @router.get("/session/{session_id}/edit", response_class=HTMLResponse)
 async def session_edit_form(
     request: Request,
