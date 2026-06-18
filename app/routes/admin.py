@@ -317,11 +317,14 @@ async def session_detail(
                 scores[sr.section_id] = sr.value
         interviewer_data.append({"interviewer": iv, "response": response, "scores": scores})
 
+    pipeline = db.get(CandidatePipeline, session.pipeline_id) if session.pipeline_id else None
+
     return _render(request, "session_detail.html", {
         "session": session,
         "template": template,
         "sections": sections,
         "interviewer_data": interviewer_data,
+        "pipeline": pipeline,
         "admin": admin,
     })
 

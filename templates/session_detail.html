@@ -24,6 +24,9 @@
 <div class="detail-grid">
     <div class="detail-section">
         <h2>Session Info</h2>
+        {% if pipeline %}
+        <p><strong>Pipeline:</strong> <a href="/candidate/{{ session.candidate_id }}">{{ pipeline.display_name or (pipeline.position or "—") ~ " · " ~ (pipeline.business_unit or "—") }}</a></p>
+        {% endif %}
         <p><strong>Template:</strong> {{ template.name if template else "—" }}</p>
         <p><strong>Job Title:</strong> {{ session.job_title }}</p>
         {% if session.position %}
