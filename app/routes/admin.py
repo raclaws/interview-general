@@ -180,28 +180,37 @@ async def session_new_submit(
     elif candidate_record:
         pos = final_position or None
         bu = business_unit.strip() if business_unit.strip() else None
-        # Auto-generate display_name: Position MMYY #N — BU
-        mmyy = datetime.utcnow().strftime("%m%y")
-        existing_pipelines = db.exec(
+        # Reuse existing pipeline with same position + BU for this candidate
+        pipeline_record = db.exec(
             select(CandidatePipeline).where(
                 CandidatePipeline.candidate_id == candidate_record.id,
                 CandidatePipeline.position == pos,
                 CandidatePipeline.business_unit == bu,
             )
-        ).all()
-        same_month = [p for p in existing_pipelines if p.created_at.strftime("%m%y") == mmyy]
-        seq = len(same_month) + 1
-        display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
+        ).first()
+        if not pipeline_record:
+            mmyy = datetime.utcnow().strftime("%m%y")
+            existing_pipelines = db.exec(
+                select(CandidatePipeline).where(
+                    CandidatePipeline.candidate_id == candidate_record.id,
+                    CandidatePipeline.position == pos,
+                    CandidatePipeline.business_unit == bu,
+                )
+            ).all()
+            same_month = [p for p in existing_pipelines if p.created_at.strftime("%m%y") == mmyy]
+            seq = len(same_month) + 1
+            display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
 
-        pipeline_record = CandidatePipeline(
-            candidate_id=candidate_record.id,
-            display_name=display_name,
-            position=pos,
-            business_unit=bu,
-            stage="interview",
-        )
-        db.add(pipeline_record)
-        db.commit()
+            pipeline_record = CandidatePipeline(
+                candidate_id=candidate_record.id,
+                display_name=display_name,
+                position=pos,
+                business_unit=bu,
+                stage="interview",
+            )
+            db.add(pipeline_record)
+            db.commit()
+            db.refresh(pipeline_record)
         db.refresh(pipeline_record)
 
     # Validate session limits per pipeline
