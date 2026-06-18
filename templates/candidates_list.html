@@ -23,12 +23,11 @@
             <th class="sortable" data-col="2">Position</th>
             <th>Pipeline</th>
             <th class="sortable" data-col="4">Updated</th>
-            <th></th>
         </tr>
     </thead>
     <tbody id="candidates-tbody">
         {% for item in candidate_data %}
-        <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}">
+        <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}">
             <td>{{ item.candidate.name }}</td>
             <td>{{ item.candidate.email }}</td>
             <td>{{ item.candidate.current_position or "—" }}</td>
@@ -39,11 +38,10 @@
                 {% if not item.pipelines %}—{% endif %}
             </td>
             <td>{{ item.candidate.updated_at.strftime("%Y-%m-%d") }}</td>
-            <td><a href="/candidate/{{ item.candidate.id }}" class="icon-btn" title="View candidate">↗</a></td>
         </tr>
         {% endfor %}
         {% if not candidate_data %}
-        <tr class="empty-row"><td colspan="6">No candidates yet.</td></tr>
+        <tr class="empty-row"><td colspan="5">No candidates yet.</td></tr>
         {% endif %}
     </tbody>
 </table>

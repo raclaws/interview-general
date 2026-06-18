@@ -38,12 +38,11 @@
             <th>Progress</th>
             <th class="sortable" data-col="7">Status</th>
             <th class="sortable" data-col="8">Created</th>
-            <th></th>
         </tr>
     </thead>
     <tbody id="sessions-tbody">
         {% for item in session_data %}
-        <tr data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" data-job="{{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}">
+        <tr data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" data-job="{{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}" class="clickable-row" data-href="/session/{{ item.session.id }}">
             <td>{{ item.session.id }}</td>
             <td>{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</td>
             <td>{{ item.session.job_title }}</td>
@@ -53,13 +52,10 @@
             <td>{{ item.completed }}/{{ item.total }} submitted</td>
             <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
             <td>{{ item.session.created_at.strftime("%Y-%m-%d %H:%M") }}</td>
-            <td>
-                <a href="/session/{{ item.session.id }}" class="icon-btn" title="View session">↗</a>
-            </td>
         </tr>
         {% endfor %}
         {% if not session_data %}
-        <tr class="empty-row"><td colspan="10">No sessions yet.</td></tr>
+        <tr class="empty-row"><td colspan="9">No sessions yet.</td></tr>
         {% endif %}
     </tbody>
 </table>

@@ -37,5 +37,13 @@
             {% block content %}{% endblock %}
         </div>
     </div>
+<script>
+document.addEventListener('click', function(e) {
+    var row = e.target.closest('.clickable-row');
+    if (row && !e.target.closest('a, button, select, input, form')) {
+        window.location.href = row.dataset.href;
+    }
+});
+</script>
 </body>
 </html>
