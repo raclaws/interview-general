@@ -55,15 +55,6 @@
             <td><strong>{{ ns.total }}</strong></td>
         </tr>
         {% endfor %}
-        <tr class="avg-row">
-            <td><strong>Average</strong></td>
-            {% set ns = namespace(total=0) %}
-            {% for dim in hr_dimensions %}
-            <td><strong>{{ hr_avg.get(dim.key, 0) }}</strong></td>
-            {% set ns.total = ns.total + hr_avg.get(dim.key, 0) %}
-            {% endfor %}
-            <td><strong>{{ "%.1f"|format(ns.total) }}</strong></td>
-        </tr>
     </tbody>
 </table>
 
