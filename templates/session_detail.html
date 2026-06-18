@@ -6,7 +6,20 @@
 </nav>
 {% endblock %}
 {% block content %}
-<h1>Session #{{ session.id }}</h1>
+<div class="page-header">
+    <h1>Session #{{ session.id }}</h1>
+    <div class="action-row-inline">
+        <a href="/session/{{ session.id }}/edit" class="icon-btn" title="Edit session">✎</a>
+        {% if session.status == "pending" %}
+        <form method="post" action="/session/{{ session.id }}/cancel" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this session? This cannot be undone.');">
+            <button type="submit" class="icon-btn icon-btn-warn" title="Cancel session">⊘</button>
+        </form>
+        {% endif %}
+        <form method="post" action="/session/{{ session.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this session permanently? All responses and scores will be lost.');">
+            <button type="submit" class="icon-btn icon-btn-danger" title="Delete session">✕</button>
+        </form>
+    </div>
+</div>
 
 <div class="detail-grid">
     <div class="detail-section">
@@ -35,18 +48,6 @@
         <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} / {{ session.snapshot.get("expected_salary", "—") }}</p>
         <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
     </div>
-</div>
-
-<div class="action-row">
-    <a href="/session/{{ session.id }}/edit" class="icon-btn" title="Edit session">✎</a>
-    {% if session.status == "pending" %}
-    <form method="post" action="/session/{{ session.id }}/cancel" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this session? This cannot be undone.');">
-        <button type="submit" class="icon-btn icon-btn-warn" title="Cancel session">⊘</button>
-    </form>
-    {% endif %}
-    <form method="post" action="/session/{{ session.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this session permanently? All responses and scores will be lost.');">
-        <button type="submit" class="icon-btn icon-btn-danger" title="Delete session">✕</button>
-    </form>
 </div>
 
 <div class="detail-section">

@@ -181,6 +181,18 @@ button[type="submit"], .submit-btn {
     transition: background 0.15s, transform 0.1s;
 }
 button[type="submit"]:hover, .submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+button.icon-btn[type="submit"] {
+    width: auto;
+    margin-top: 0;
+    padding: 0;
+    background: none;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.9rem;
+}
+button.icon-btn[type="submit"]:hover {
+    transform: none;
+}
 /* Override for buttons inside action groups — never full-width */
 .action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
     width: auto;
@@ -476,7 +488,13 @@ tr:hover td { background: #f9fafb; }
     text-decoration: underline;
 }
 .breadcrumb span {
-    color: #111827;
+    color: var(--text-primary);
+}
+
+.action-row-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 /* Actions row */
