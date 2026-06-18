@@ -4,20 +4,20 @@
         <div>
             <strong>{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</strong>
         </div>
-        <div style="display: inline-flex; align-items: center; gap: 0.5rem;">
+        <div style="display: inline-flex; align-items: center; gap: 1rem;">
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
                   hx-on::before-request="this.style.opacity='0.5'"
-                  style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                  style="display: inline-flex; align-items: center;">
                 <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
                     {% for s in stages %}
                     <option value="{{ s }}" {% if p.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
                     {% endfor %}
                 </select>
             </form>
-            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-subtle" title="View scorecard">◈</a>
+            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-score" title="View scorecard">◈ Score</a>
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-target="#pipeline-section"
