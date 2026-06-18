@@ -404,7 +404,7 @@ tr:hover td { background: #f9fafb; }
     text-decoration: none;
     transform: none;
 }
-.icon-btn-warn:hover {
+.icon-btn.icon-btn-warn:hover {
     color: var(--warning);
     background: var(--warning-bg);
     border-color: var(--warning-bg);
@@ -412,7 +412,7 @@ tr:hover td { background: #f9fafb; }
 .icon-btn-danger {
     opacity: 0.5;
 }
-.icon-btn-danger:hover {
+.icon-btn.icon-btn-danger:hover {
     opacity: 1;
     color: var(--danger);
     background: var(--danger-bg);
