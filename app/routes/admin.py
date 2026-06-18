@@ -232,9 +232,15 @@ async def session_new_submit(
             return RedirectResponse("/session/new?error=max_sessions_reached", status_code=303)
         hr_template = db.exec(select(Template).where(Template.name == "HR Interview")).first()
         if hr_template and template_id == hr_template.id:
-            hr_count = len([s for s in existing_sessions if s.template_id == hr_template.id])
-            if hr_count >= 1:
-                return RedirectResponse("/session/new?error=hr_limit_reached", status_code=303)
+            hr_existing = [s for s in existing_sessions if s.template_id == hr_template.id]
+            if hr_existing:
+                s = hr_existing[0]
+                return _render(request, "session_hr_conflict.html", {
+                    "admin": admin,
+                    "existing_session": s,
+                    "pipeline": pipeline_record,
+                    "candidate_name": snapshot.get("name", "Unknown"),
+                })
 
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:

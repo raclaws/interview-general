@@ -1,0 +1,25 @@
+{% extends "base_app.html" %}
+{% block title %}HR Interview Exists{% endblock %}
+{% block content %}
+<div style="max-width: 500px; margin: 2rem auto; text-align: center;">
+    <h1 style="font-size: 1.15rem; margin-bottom: 1rem;">HR Interview Already Exists</h1>
+
+    <div style="border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem; text-align: left;">
+        <p class="col-primary">{{ candidate_name }}</p>
+        <p class="row-meta" style="margin-top: 0.25rem;">{{ pipeline.display_name or pipeline.position or "—" }}</p>
+        <hr style="margin: 0.75rem 0;">
+        <p><strong>HR Interview #{{ existing_session.id }}</strong></p>
+        <p class="row-meta">Date: {{ existing_session.interview_date or existing_session.created_at.strftime("%Y-%m-%d") }}</p>
+        <p class="row-meta">Status: <span class="badge badge-{{ existing_session.status }}">{{ existing_session.status }}</span></p>
+    </div>
+
+    <p class="row-meta" style="margin-bottom: 1.5rem;">Only 1 HR interview is allowed per pipeline. You can delete the existing one to create a new one.</p>
+
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="/sessions" class="btn-score">← Back</a>
+        <form method="post" action="/session/{{ existing_session.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete the existing HR session? All responses will be lost.');">
+            <button type="submit" class="btn" style="background: var(--danger);">Delete & Retry</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
