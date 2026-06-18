@@ -109,7 +109,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .sidebar-footer form { margin: 0; }
 .sidebar-footer button[type="submit"] {
     all: unset;
-    color: #9ca3af;
+    color: var(--text-muted);
     font-size: 0.8rem;
     cursor: pointer;
     transition: color 0.15s;
@@ -158,7 +158,7 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 .btn:hover { background: var(--accent); color: #fff; text-decoration: none; transform: translateY(-1px); }
 .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); padding: 0.35rem 0.75rem; }
 .btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
-.btn-danger { background: #dc2626; padding: 0.35rem 0.75rem; }
+.btn-danger { background: var(--danger); padding: 0.35rem 0.75rem; }
 .btn-danger:hover { background: var(--danger); opacity: 0.85; }
 .btn-ghost { background: none; border: none; color: var(--accent); padding: 0; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
 .btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
@@ -231,7 +231,7 @@ button.btn-secondary {
 button.btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
 nav button[type="submit"] {
     all: unset;
-    color: #9ca3af;
+    color: var(--text-muted);
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 500;
@@ -294,7 +294,7 @@ tr:hover td { background: var(--bg-muted); }
     letter-spacing: 0.02em;
     text-transform: capitalize;
 }
-.badge-pending { background: var(--warning-bg); color: #e64553; }
+.badge-pending { background: var(--warning-bg); color: var(--warning); }
 .badge-completed { background: var(--success-bg); color: var(--success); }
 .badge-cancelled { background: var(--danger-bg); color: var(--danger); }
 .badge-screening { background: var(--bg-muted); color: var(--text-secondary); }
@@ -311,7 +311,8 @@ tr:hover td { background: var(--bg-muted); }
     font-size: 0.8rem;
     border-radius: 4px;
     border: 1px solid var(--border);
-    background: var(--bg);
+    background: var(--bg-card);
+    color: var(--text-primary);
 }
 
 .btn-danger-sm {
@@ -343,7 +344,7 @@ tr:hover td { background: var(--bg-muted); }
     top: 100%;
     right: 0;
     background: var(--bg-card);
-    border: 1px solid var(--border, #e5e7eb);
+    border: 1px solid var(--border);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
     min-width: 200px;
@@ -457,8 +458,8 @@ tr:hover td { background: var(--bg-muted); }
 }
 
 .score-summary-card {
-    background: #f9fafb;
-    border: 1px solid var(--border, #e5e7eb);
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.75rem 1.25rem;
     text-align: center;
@@ -469,7 +470,7 @@ tr:hover td { background: var(--bg-muted); }
 }
 .score-label {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-left: 0.25rem;
 }
 
@@ -492,11 +493,11 @@ tr:hover td { background: var(--bg-muted); }
 
 .breadcrumb {
     font-size: 0.8rem;
-    color: #6b7280;
+    color: var(--text-muted);
     margin-bottom: 1rem;
 }
 .breadcrumb a {
-    color: #6b7280;
+    color: var(--text-muted);
     text-decoration: none;
 }
 .breadcrumb a:hover {
