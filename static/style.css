@@ -193,6 +193,20 @@ button.icon-btn[type="submit"] {
 button.icon-btn[type="submit"]:hover {
     transform: none;
 }
+button.btn-danger-sm[type="submit"] {
+    width: auto;
+    margin-top: 0;
+    padding: 0.1rem 0.3rem;
+    background: none;
+    color: var(--text-muted);
+    font-weight: 400;
+    font-size: 0.7rem;
+}
+button.btn-danger-sm[type="submit"]:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+    transform: none;
+}
 /* Override for buttons inside action groups — never full-width */
 .action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
     width: auto;
