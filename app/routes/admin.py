@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
@@ -180,12 +180,13 @@ async def session_new_submit(
     elif candidate_record:
         pos = final_position or None
         bu = business_unit.strip() if business_unit.strip() else None
-        # Reuse existing pipeline with same position + BU for this candidate
+        # Reuse existing active pipeline with same position + BU for this candidate
         pipeline_record = db.exec(
             select(CandidatePipeline).where(
                 CandidatePipeline.candidate_id == candidate_record.id,
                 CandidatePipeline.position == pos,
                 CandidatePipeline.business_unit == bu,
+                CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
             )
         ).first()
         if not pipeline_record:

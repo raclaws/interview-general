@@ -14,7 +14,9 @@
             <button class="btn" onclick="this.nextElementSibling.classList.toggle('show')">+ Add Interview ▾</button>
             <div class="dropdown-menu">
                 {% for p in pipelines %}
+                {% if p.stage not in ["hired", "rejected", "withdrawn"] %}
                 <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ p.id }}">{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</a>
+                {% endif %}
                 {% endfor %}
             </div>
         </div>

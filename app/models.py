@@ -60,6 +60,8 @@ PIPELINE_STAGES = [
     "on_hold",
 ]
 
+PIPELINE_ENDED_STAGES = ["hired", "rejected", "withdrawn"]
+
 
 class CandidatePipeline(SQLModel, table=True):
     __tablename__ = "candidate_pipelines"
