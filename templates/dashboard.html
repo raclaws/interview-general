@@ -44,7 +44,7 @@
         {% for item in session_data %}
         <tr data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" data-job="{{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}" class="clickable-row" data-href="/session/{{ item.session.id }}">
             <td>{{ item.session.id }}</td>
-            <td>{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</td>
+            <td class="col-primary">{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</td>
             <td>{{ item.session.job_title }}</td>
             <td>{% if item.pipeline %}{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% else %}—{% endif %}</td>
             <td>{{ item.template.name if item.template else "—" }}</td>

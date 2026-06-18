@@ -518,6 +518,10 @@ tr:hover td { background: #f9fafb; }
 .clickable-row:hover {
     background: var(--bg-muted);
 }
+td.col-primary {
+    font-weight: 600;
+    color: var(--text-primary);
+}
 
 /* Actions row */
 .actions { margin-bottom: 1.25rem; }

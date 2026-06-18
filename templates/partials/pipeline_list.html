@@ -54,7 +54,7 @@
             <tbody>
                 {% for item in pipeline_sessions[p.id] %}
                 <tr class="clickable-row" data-href="/session/{{ item.session.id }}">
-                    <td>{{ item.session.round }}</td>
+                    <td class="col-primary">{{ item.session.round }}</td>
                     <td>{{ item.session.job_title }}</td>
                     <td>{{ item.completed }}/{{ item.total }}</td>
                     <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>

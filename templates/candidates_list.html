@@ -28,7 +28,7 @@
     <tbody id="candidates-tbody">
         {% for item in candidate_data %}
         <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}">
-            <td>{{ item.candidate.name }}</td>
+            <td class="col-primary">{{ item.candidate.name }}</td>
             <td>{{ item.candidate.email }}</td>
             <td>{{ item.candidate.current_position or "—" }}</td>
             <td>
