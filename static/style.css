@@ -159,7 +159,7 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 .btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); padding: 0.35rem 0.75rem; }
 .btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
 .btn-danger { background: #dc2626; padding: 0.35rem 0.75rem; }
-.btn-danger:hover { background: #b91c1c; }
+.btn-danger:hover { background: var(--danger); opacity: 0.85; }
 .btn-ghost { background: none; border: none; color: var(--accent); padding: 0; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
 .btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
 .btn-copy {
@@ -282,7 +282,7 @@ table { width: 100%; border-collapse: collapse; background: var(--bg-card); bord
 th, td { padding: 0.65rem 0.85rem; text-align: left; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
 th { background: var(--bg-muted); font-weight: 600; color: var(--text-primary); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
 tr:last-child td { border-bottom: none; }
-tr:hover td { background: #f9fafb; }
+tr:hover td { background: var(--bg-muted); }
 
 /* Badges */
 .badge {
