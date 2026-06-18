@@ -239,6 +239,7 @@ async def session_new_submit(
                     "admin": admin,
                     "existing_session": s,
                     "pipeline": pipeline_record,
+                    "candidate_id": candidate_record.id if candidate_record else None,
                     "candidate_name": snapshot.get("name", "Unknown"),
                 })
 
@@ -405,6 +406,7 @@ async def cancel_session(
 async def delete_session(
     request: Request,
     session_id: int,
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -431,7 +433,7 @@ async def delete_session(
 
     db.delete(session)
     db.commit()
-    return RedirectResponse("/sessions", status_code=303)
+    return RedirectResponse(next or "/sessions", status_code=303)
 
 
 @router.get("/session/{session_id}/edit", response_class=HTMLResponse)
