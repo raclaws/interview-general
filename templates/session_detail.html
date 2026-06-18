@@ -39,8 +39,8 @@
     </div>
 
     <div class="detail-section">
-        <h2>Candidate Snapshot</h2>
-        <p><strong>Name:</strong> {{ session.snapshot.get("name", "—") }}</p>
+        <h2>Candidate Details</h2>
+        <p><strong>Name:</strong> {% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">{{ session.snapshot.get("name", "—") }}</a>{% else %}{{ session.snapshot.get("name", "—") }}{% endif %}</p>
         <p><strong>Position:</strong> {{ session.snapshot.get("current_position", "—") }}</p>
         <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
         <p><strong>Tech Stack:</strong> {{ session.snapshot.get("languages", "—") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</p>
