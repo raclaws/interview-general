@@ -18,6 +18,9 @@
                 <a href="/sessions" class="{% if '/session' in request.url.path %}active{% endif %}">
                     <span class="sidebar-icon">▤</span> Interview
                 </a>
+                <a href="/pipelines" class="{% if '/pipeline' in request.url.path and '/candidate' not in request.url.path %}active{% endif %}">
+                    <span class="sidebar-icon">⊟</span> Pipelines
+                </a>
                 <a href="/candidates" class="{% if '/candidate' in request.url.path %}active{% endif %}">
                     <span class="sidebar-icon">👤</span> Candidates
                 </a>

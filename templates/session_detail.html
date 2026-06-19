@@ -35,7 +35,6 @@
         {% if session.business_unit %}
         <p><strong>Business Unit:</strong> {{ session.business_unit }}</p>
         {% endif %}
-        <p><strong>Round:</strong> {{ session.round }}</p>
         <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
         <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
         <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>

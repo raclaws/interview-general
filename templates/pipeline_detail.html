@@ -1,0 +1,124 @@
+{% extends "base_app.html" %}
+{% block title %}{{ pipeline.display_name or "Pipeline" }}{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/candidates">Candidates</a> / <a href="/candidate/{{ candidate.id }}">{{ candidate.name }}</a> / <span>{{ pipeline.display_name or "Pipeline" }}</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ pipeline.display_name or (pipeline.position or "—") ~ " · " ~ (pipeline.business_unit or "—") }}</h1>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" class="btn">+ Add Interview</a>
+        <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score" class="btn-ghost">◈ Scorecard</a>
+        <form method="post" action="/pipeline/{{ pipeline.id }}/delete"
+              hx-post="/pipeline/{{ pipeline.id }}/delete"
+              hx-confirm="Delete this pipeline entry? Sessions will be unlinked."
+              hx-on::before-request="this.style.opacity='0.3'"
+              style="display: inline;">
+            <button type="submit" class="btn-danger-sm" title="Delete pipeline">✕</button>
+        </form>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+    <div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Candidate</div>
+        <a href="/candidate/{{ candidate.id }}" style="font-weight: 600;">{{ candidate.name }}</a>
+        <div class="row-meta">{{ candidate.email }}</div>
+    </div>
+    <div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Position · BU</div>
+        <div>{{ pipeline.position or "—" }} · {{ pipeline.business_unit or "—" }}</div>
+    </div>
+    <div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Stage</div>
+        <form method="post" action="/pipeline/{{ pipeline.id }}/stage"
+              style="display: inline-flex; align-items: center;">
+            <select name="stage" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
+                {% for s in stages %}
+                <option value="{{ s }}" {% if pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+    <div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Updated</div>
+        <div>{{ pipeline.updated_at.strftime("%Y-%m-%d %H:%M") }}</div>
+    </div>
+</div>
+
+<details style="margin-bottom: 1.5rem;">
+    <summary class="row-meta" style="cursor: pointer;">Notes{% if pipeline.notes %} — {{ pipeline.notes[:60] }}{% if pipeline.notes|length > 60 %}…{% endif %}{% endif %}</summary>
+    <form method="post" action="/pipeline/{{ pipeline.id }}/notes"
+          onsubmit="this.style.opacity='0.5'"
+          style="margin-top: 0.5rem;">
+        <textarea name="notes" rows="3" style="width: 100%;">{{ pipeline.notes or "" }}</textarea>
+        <button type="submit" class="btn-ghost" style="margin-top: 0.25rem;">Save</button>
+    </form>
+</details>
+
+{% if session_data %}
+<h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Sessions</h2>
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for item in session_data %}
+        <tr class="clickable-row" data-href="/session/{{ item.session.id }}">
+            <td>
+                <div class="col-primary">{% if item.template %}{{ item.template.name }}{% else %}—{% endif %}</div>
+                <div class="row-meta">{{ item.interviewers | join(", ") }}</div>
+            </td>
+            <td>{{ item.completed }}/{{ item.total }}</td>
+            <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
+            <td class="row-meta">{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="hint" style="margin-bottom: 1.5rem;">No sessions linked to this pipeline.</p>
+{% endif %}
+
+{% if hr_data or culture_data %}
+<h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Scorecard Summary</h2>
+<div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+    <div>
+        <span style="font-weight: 600;">HR: {{ hr_total }}/12</span>
+    </div>
+    <div>
+        <span style="font-weight: 600;">Culture: {{ culture_total }}/16</span>
+    </div>
+    <div>
+        <span class="row-meta">Total: {{ "%.1f"|format(hr_total + culture_total) }}/28</span>
+    </div>
+</div>
+
+{% if hr_data %}
+<div style="margin-bottom: 1rem;">
+    <div class="row-meta" style="margin-bottom: 0.25rem;">HR (per interviewer)</div>
+    {% for entry in hr_data %}
+    <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
+        <span style="min-width: 120px;">{{ entry.name }}</span>
+        {% for dim in hr_dimensions %}
+        <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if culture_data %}
+<div style="margin-bottom: 1rem;">
+    <div class="row-meta" style="margin-bottom: 0.25rem;">Culture (per interviewer)</div>
+    {% for entry in culture_data %}
+    <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
+        <span style="min-width: 120px;">{{ entry.name }}</span>
+        {% for dim in culture_dimensions %}
+        <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

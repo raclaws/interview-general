@@ -19,7 +19,7 @@ def _get_db():
 
 
 @mcp.tool()
-async def create_session(candidate_id: int, job_title: str, round: str, interviewer_names: list[str]) -> dict:
+async def create_session(candidate_id: int, job_title: str, interviewer_names: list[str]) -> dict:
     """Create a new interview session with multiple interviewers and return shareable URLs."""
     snapshot = await fetch_candidate(candidate_id)
     if not snapshot:
@@ -30,7 +30,6 @@ async def create_session(candidate_id: int, job_title: str, round: str, intervie
             candidate_id=candidate_id,
             candidate_snapshot=json.dumps(snapshot),
             job_title=job_title,
-            round=round,
             status="pending",
             created_at=datetime.utcnow(),
         )
@@ -74,7 +73,6 @@ async def get_session(session_id: int) -> dict:
             "id": session.id,
             "candidate": session.snapshot,
             "job_title": session.job_title,
-            "round": session.round,
             "status": session.status,
             "aggregate_summary": session.aggregate_summary,
             "created_at": session.created_at.isoformat(),
@@ -124,7 +122,6 @@ async def list_sessions(candidate_id: int | None = None) -> list[dict]:
                 "id": s.id,
                 "candidate_name": s.snapshot.get("name", ""),
                 "job_title": s.job_title,
-                "round": s.round,
                 "status": s.status,
                 "progress": f"{completed}/{total}",
                 "created_at": s.created_at.isoformat(),

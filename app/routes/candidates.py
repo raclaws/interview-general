@@ -3,7 +3,8 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, col
+from sqlalchemy import func, case
 
 from app.database import get_session
 from app.auth import get_current_admin
@@ -224,7 +225,14 @@ async def candidate_detail(
         ).all()
         total = len(ivs)
         completed = len([i for i in ivs if i.status == "completed"])
-        entry = {"session": s, "total": total, "completed": completed}
+        template = db.get(Template, s.template_id) if s.template_id else None
+        entry = {
+            "session": s,
+            "total": total,
+            "completed": completed,
+            "template": template,
+            "interviewers": [iv.interviewer_name for iv in ivs],
+        }
         pid = s.pipeline_id or 0
         pipeline_sessions.setdefault(pid, []).append(entry)
 
@@ -553,3 +561,259 @@ async def pipeline_score_view(
         "culture_total": culture_total,
         "admin": admin,
     })
+
+
+# --- CLA-19: Pipeline List Page ---
+
+@router.get("/pipelines", response_class=HTMLResponse)
+async def pipelines_list(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    # Batch query 1: all pipelines joined with candidate
+    results = db.exec(
+        select(CandidatePipeline, Candidate)
+        .join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
+        .order_by(CandidatePipeline.updated_at.desc())
+    ).all()
+
+    # Batch query 2: session counts grouped by pipeline_id
+    session_counts_rows = db.exec(
+        select(
+            InterviewSession.pipeline_id,
+            func.count(SessionInterviewer.id).label("total"),
+            func.sum(case((SessionInterviewer.status == "completed", 1), else_=0)).label("completed"),
+        )
+        .join(SessionInterviewer, SessionInterviewer.session_id == InterviewSession.id)
+        .where(InterviewSession.pipeline_id != None)
+        .group_by(InterviewSession.pipeline_id)
+    ).all()
+    session_counts = {row[0]: {"total": row[1], "completed": int(row[2] or 0)} for row in session_counts_rows}
+
+    # Batch query 3: scores from PipelineScore table
+    all_scores = db.exec(select(PipelineScore)).all()
+    scores_map = {s.pipeline_id: s for s in all_scores}
+
+    pipeline_data = []
+    bus_set = set()
+    for pipeline, candidate in results:
+        sc = scores_map.get(pipeline.id)
+        hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
+        culture_avg = round(sc.culture_total / 4, 1) if sc and sc.culture_total else 0
+        counts = session_counts.get(pipeline.id, {"total": 0, "completed": 0})
+        if pipeline.business_unit:
+            bus_set.add(pipeline.business_unit)
+        pipeline_data.append({
+            "pipeline": pipeline,
+            "candidate": candidate,
+            "session_count": counts,
+            "scores": {"hr_avg": hr_avg, "culture_avg": culture_avg},
+        })
+
+    return _render(request, "pipelines_list.html", {
+        "pipeline_data": pipeline_data,
+        "admin": admin,
+        "stages": PIPELINE_STAGES,
+        "business_units": sorted(bus_set),
+    })
+
+
+# --- CLA-20: Pipeline Detail Page ---
+
+def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate: Candidate):
+    """Build context for pipeline detail page."""
+    sessions = db.exec(
+        select(InterviewSession)
+        .where(InterviewSession.pipeline_id == pipeline.id)
+        .order_by(InterviewSession.created_at.desc())
+    ).all()
+
+    session_data = []
+    for s in sessions:
+        ivs = db.exec(
+            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
+        ).all()
+        total = len(ivs)
+        completed = len([i for i in ivs if i.status == "completed"])
+        template = db.get(Template, s.template_id) if s.template_id else None
+        session_data.append({"session": s, "total": total, "completed": completed, "template": template, "interviewers": [iv.interviewer_name for iv in ivs]})
+
+    # Scores: per-interviewer breakdown
+    hr_data = []
+    culture_data = []
+    completed_sessions = [s for s in sessions if s.status == "completed"]
+
+    HR_TITLE_MAP = {
+        "Ownership with Accountability": "ownership_accountability",
+        "Maturity & Growth Mindset": "maturity_growth",
+        "Supportive & Collaborative": "supportive_collaborative",
+    }
+    CULTURE_TITLE_MAP = {
+        "Execution Excellence": "execution_excellence",
+        "Learn Fast, Adapt Faster": "learn_adapt",
+        "Impact Over Activity": "impact_over_activity",
+        "Clarity & Structured Thinking": "clarity_structured",
+    }
+
+    for session in completed_sessions:
+        template = db.get(Template, session.template_id) if session.template_id else None
+        if not template:
+            continue
+        is_hr = template.name == "HR Interview"
+        is_culture = template.name == "Culture Alignment"
+        if not is_hr and not is_culture:
+            continue
+
+        sections = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == template.id)
+        ).all()
+        section_map = {sec.id: sec for sec in sections}
+
+        interviewers = db.exec(
+            select(SessionInterviewer).where(
+                SessionInterviewer.session_id == session.id,
+                SessionInterviewer.status == "completed",
+            )
+        ).all()
+
+        for iv in interviewers:
+            response = db.exec(
+                select(Response).where(Response.session_interviewer_id == iv.id)
+            ).first()
+            if not response:
+                continue
+            score_rows = db.exec(
+                select(ResponseScore).where(ResponseScore.response_id == response.id)
+            ).all()
+
+            scores = {}
+            drive_dream = []
+            title_map = HR_TITLE_MAP if is_hr else CULTURE_TITLE_MAP
+            for sr in score_rows:
+                section = section_map.get(sr.section_id)
+                if not section:
+                    continue
+                dim_key = title_map.get(section.title)
+                if dim_key and sr.value:
+                    try:
+                        scores[dim_key] = int(sr.value)
+                    except ValueError:
+                        pass
+                if section.title == "Drive & Dream" and sr.value:
+                    drive_dream = [v.strip() for v in sr.value.split(",") if v.strip()]
+
+            entry = {"name": iv.interviewer_name, "scores": scores, "drive_dream": drive_dream}
+            if is_hr:
+                hr_data.append(entry)
+            elif is_culture:
+                culture_data.append(entry)
+
+    def compute_avg(data_list, dimensions):
+        avg = {}
+        for dim in dimensions:
+            values = [d["scores"].get(dim["key"], 0) for d in data_list if d["scores"].get(dim["key"])]
+            avg[dim["key"]] = round(sum(values) / len(values), 1) if values else 0
+        return avg
+
+    hr_avg = compute_avg(hr_data, HR_DIMENSIONS)
+    culture_avg = compute_avg(culture_data, CULTURE_DIMENSIONS)
+
+    return {
+        "pipeline": pipeline,
+        "candidate": candidate,
+        "session_data": session_data,
+        "hr_data": hr_data,
+        "culture_data": culture_data,
+        "hr_avg": hr_avg,
+        "culture_avg": culture_avg,
+        "hr_total": sum(hr_avg.values()),
+        "culture_total": sum(culture_avg.values()),
+        "hr_dimensions": HR_DIMENSIONS,
+        "culture_dimensions": CULTURE_DIMENSIONS,
+        "stages": PIPELINE_STAGES,
+    }
+
+
+@router.get("/pipeline/{pipeline_id}", response_class=HTMLResponse)
+async def pipeline_detail(
+    request: Request,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    ctx = _pipeline_detail_context(db, pipeline, candidate)
+    ctx["admin"] = admin
+    return _render(request, "pipeline_detail.html", ctx)
+
+
+@router.post("/pipeline/{pipeline_id}/stage")
+async def pipeline_detail_update_stage(
+    request: Request,
+    pipeline_id: int,
+    stage: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+
+    if stage in PIPELINE_STAGES:
+        pipeline.stage = stage
+        pipeline.updated_at = datetime.utcnow()
+        db.add(pipeline)
+        db.commit()
+
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+@router.post("/pipeline/{pipeline_id}/notes")
+async def pipeline_detail_update_notes(
+    request: Request,
+    pipeline_id: int,
+    notes: str = Form(""),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+
+    pipeline.notes = notes.strip() or None
+    pipeline.updated_at = datetime.utcnow()
+    db.add(pipeline)
+    db.commit()
+
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+@router.post("/pipeline/{pipeline_id}/delete")
+async def pipeline_detail_delete(
+    request: Request,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+
+    linked_sessions = db.exec(
+        select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_id)
+    ).all()
+    for s in linked_sessions:
+        s.pipeline_id = None
+        db.add(s)
+
+    db.delete(pipeline)
+    db.commit()
+
+    return RedirectResponse("/pipelines", status_code=303)

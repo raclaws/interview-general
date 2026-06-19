@@ -14,14 +14,6 @@
         <label for="job_title">Job Title</label>
         <input type="text" id="job_title" name="job_title" value="{{ session.job_title }}" required>
 
-        <label for="round">Interview Round</label>
-        <select id="round" name="round" required>
-            <option value="1st" {{ "selected" if session.round == "1st" }}>1st</option>
-            <option value="2nd" {{ "selected" if session.round == "2nd" }}>2nd</option>
-            <option value="3rd" {{ "selected" if session.round == "3rd" }}>3rd</option>
-            <option value="Final" {{ "selected" if session.round == "Final" }}>Final</option>
-        </select>
-
         <label for="interview_date">Interview Date</label>
         <input type="date" id="interview_date" name="interview_date" value="{{ session.interview_date or '' }}">
 

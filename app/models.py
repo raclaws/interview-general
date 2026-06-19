@@ -119,7 +119,6 @@ class InterviewSession(SQLModel, table=True):
     pipeline_id: Optional[int] = Field(default=None, foreign_key="candidate_pipelines.id")
     candidate_snapshot: str  # JSON string — frozen at creation time
     job_title: str
-    round: str
     interview_date: Optional[str] = Field(default=None)
     show_salary: bool = Field(default=False)
     status: str = Field(default="pending")

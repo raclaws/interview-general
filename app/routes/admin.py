@@ -84,7 +84,6 @@ async def session_new_submit(
     candidate_id: int = Form(None),
     pipeline_id: int = Form(None),
     job_title: str = Form(""),
-    round: str = Form(...),
     interviewer_names: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
@@ -256,7 +255,6 @@ async def session_new_submit(
         pipeline_id=pipeline_record.id if pipeline_record else None,
         candidate_snapshot=json.dumps(snapshot),
         job_title=auto_title,
-        round=round,
         position=final_position if final_position else None,
         business_unit=business_unit.strip() if business_unit.strip() else None,
         interview_date=interview_date if interview_date.strip() else None,
@@ -466,7 +464,6 @@ async def session_edit_submit(
     request: Request,
     session_id: int,
     job_title: str = Form(...),
-    round: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
     position: str = Form(""),
@@ -480,7 +477,6 @@ async def session_edit_submit(
         return HTMLResponse("Not found", status_code=404)
 
     session.job_title = job_title
-    session.round = round
     session.interview_date = interview_date if interview_date.strip() else None
     session.show_salary = show_salary.lower() in ("on", "true", "1", "yes")
     session.position = position.strip() if position.strip() else None
