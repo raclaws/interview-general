@@ -101,7 +101,11 @@
                 var row = visible[ctx.focusIndex];
                 if (row && row.dataset.href) window.location.href = row.dataset.href;
             } else if (e.key === 'Escape') {
-                setFocus(-1);
+                if (ctx.focusIndex >= 0) {
+                    setFocus(-1);
+                } else {
+                    history.back();
+                }
             } else if (e.key === 'Home') {
                 e.preventDefault();
                 setFocus(0);
