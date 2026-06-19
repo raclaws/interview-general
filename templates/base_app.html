@@ -67,6 +67,19 @@
     document.body.addEventListener('toast', function(e) {
         toast(e.detail.value || e.detail);
     });
+
+    // CLA-43: Update row data-stage after inline select swap, re-run table grouping
+    document.body.addEventListener('htmx:afterSettle', function(e) {
+        var sel = e.detail.elt;
+        if (sel.tagName === 'SELECT' && sel.name === 'stage') {
+            var row = sel.closest('tr');
+            if (row) {
+                row.dataset.stage = sel.value;
+                var table = row.closest('[data-table]');
+                if (table) table.dispatchEvent(new Event('table:refresh'));
+            }
+        }
+    });
 })();
 
 document.addEventListener('click', function(e) {
@@ -95,16 +108,18 @@ document.addEventListener('click', function(e) {
     menu.className = 'ctx-menu';
     menu.style.display = 'none';
     document.body.appendChild(menu);
+    var ctxRow = null;
 
     document.addEventListener('contextmenu', function(e) {
         var row = e.target.closest('.clickable-row[data-ctx]');
         if (!row) { menu.style.display = 'none'; return; }
         e.preventDefault();
+        ctxRow = row;
         var items = JSON.parse(row.dataset.ctx);
         menu.innerHTML = items.map(function(it) {
             var cls = it.confirm ? 'ctx-item ctx-danger' : 'ctx-item';
             if (it.confirm) {
-                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
+                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" data-ctx-delete onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
             }
             if (it.copy) {
                 return '<div class="' + cls + '" data-copy="' + it.copy + '">' + it.label + '</div>';
@@ -124,6 +139,15 @@ document.addEventListener('click', function(e) {
                 toast('Copied to clipboard');
             };
         });
+    });
+
+    // Remove row on successful delete from context menu
+    document.body.addEventListener('htmx:afterOnLoad', function(e) {
+        if (e.detail.elt.closest('[data-ctx-delete]') && ctxRow) {
+            ctxRow.style.transition = 'opacity 0.2s';
+            ctxRow.style.opacity = '0';
+            setTimeout(function() { ctxRow.remove(); ctxRow = null; }, 200);
+        }
     });
 })();
 </script>

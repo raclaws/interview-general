@@ -158,6 +158,9 @@
 
         // Initial count
         updateCount();
+
+        // Allow external refresh via custom event
+        container.addEventListener('table:refresh', applyAll);
     }
 
     function filterRows(ctx, searchInput, filters) {

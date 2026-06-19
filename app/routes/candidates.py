@@ -889,4 +889,7 @@ async def pipeline_detail_delete(
     db.delete(pipeline)
     db.commit()
 
+    if request.headers.get("HX-Request"):
+        return HTMLResponse("", headers={"HX-Trigger": "toast:Pipeline deleted"})
+
     return RedirectResponse("/pipelines", status_code=303)
