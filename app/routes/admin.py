@@ -417,7 +417,7 @@ async def cancel_session(
     if request.headers.get("HX-Request") == "true":
         return HTMLResponse(
             f'<span class="badge badge-cancelled">cancelled</span>',
-            headers={"HX-Reswap": "innerHTML", "HX-Retarget": f"#status-{session_id}"},
+            headers={"HX-Reswap": "innerHTML", "HX-Retarget": f"#status-{session_id}", "HX-Trigger": "toast:Session cancelled"},
         )
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 

@@ -33,6 +33,22 @@
         var sortSelect = container.querySelector('[data-table-sort]');
         var groupSelect = container.querySelector('[data-table-groupby]');
 
+        // Row count indicator
+        var countEl = document.createElement('span');
+        countEl.className = 'table-count';
+        var controls = container.querySelector('.table-controls');
+        if (controls) controls.appendChild(countEl);
+
+        function updateCount() {
+            var visible = getVisibleRows();
+            var total = ctx.rows.length;
+            if (visible.length === total) {
+                countEl.textContent = total + ' item' + (total !== 1 ? 's' : '');
+            } else {
+                countEl.textContent = visible.length + ' of ' + total;
+            }
+        }
+
         function getVisibleRows() {
             return ctx.rows.filter(function(r) { return r.style.display !== 'none'; });
         }
@@ -50,6 +66,7 @@
             filterRows(ctx, searchInput, filters);
             sortRows(ctx);
             groupRows(ctx);
+            updateCount();
             var visible = getVisibleRows();
             if (ctx.focusIndex >= visible.length) setFocus(visible.length - 1);
             else if (ctx.focusIndex >= 0 && !visible[ctx.focusIndex]) setFocus(0);
@@ -69,10 +86,12 @@
                 if (!val) {
                     ctx.sortField = null;
                     ctx.sortDir = null;
+                    sortSelect.classList.remove('sort-active');
                 } else {
                     var parts = val.split(':');
                     ctx.sortField = parts[0];
                     ctx.sortDir = parts[1] || 'asc';
+                    sortSelect.classList.add('sort-active');
                 }
                 applyAll();
             });
@@ -86,7 +105,29 @@
         }
 
         document.addEventListener('keydown', function(e) {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') {
+                if (e.key === 'Escape') {
+                    e.target.blur();
+                    e.preventDefault();
+                }
+                return;
+            }
+
+            // Escape closes context menu first
+            var ctxMenu = document.getElementById('ctx-menu');
+            if (e.key === 'Escape' && ctxMenu && ctxMenu.style.display === 'block') {
+                ctxMenu.style.display = 'none';
+                e.preventDefault();
+                return;
+            }
+
+            // / to focus search
+            if (e.key === '/' && searchInput) {
+                e.preventDefault();
+                searchInput.focus();
+                return;
+            }
+
             var visible = getVisibleRows();
             if (!visible.length) return;
 
@@ -114,6 +155,9 @@
                 setFocus(visible.length - 1);
             }
         });
+
+        // Initial count
+        updateCount();
     }
 
     function filterRows(ctx, searchInput, filters) {
@@ -134,6 +178,48 @@
             });
 
             row.style.display = (matchSearch && matchFilters) ? '' : 'none';
+        });
+
+        // Search highlight
+        highlightSearch(ctx, query);
+    }
+
+    function highlightSearch(ctx, query) {
+        ctx.rows.forEach(function(row) {
+            var cells = row.querySelectorAll('td');
+            cells.forEach(function(cell) {
+                // Remove existing marks
+                cell.querySelectorAll('mark.search-hl').forEach(function(m) {
+                    m.replaceWith(m.textContent);
+                });
+            });
+            if (!query || row.style.display === 'none') return;
+            cells.forEach(function(cell) {
+                highlightText(cell, query);
+            });
+        });
+    }
+
+    function highlightText(el, query) {
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        var nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(function(node) {
+            var text = node.textContent;
+            var lower = text.toLowerCase();
+            var idx = lower.indexOf(query);
+            if (idx === -1) return;
+            var before = text.slice(0, idx);
+            var match = text.slice(idx, idx + query.length);
+            var after = text.slice(idx + query.length);
+            var frag = document.createDocumentFragment();
+            if (before) frag.appendChild(document.createTextNode(before));
+            var mark = document.createElement('mark');
+            mark.className = 'search-hl';
+            mark.textContent = match;
+            frag.appendChild(mark);
+            if (after) frag.appendChild(document.createTextNode(after));
+            node.parentNode.replaceChild(frag, node);
         });
     }
 

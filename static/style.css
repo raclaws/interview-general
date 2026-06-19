@@ -889,3 +889,25 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     transform: translateY(-4px);
     transition: opacity 0.25s ease, transform 0.25s ease;
 }
+
+/* Search highlight */
+mark.search-hl {
+    background: none;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+/* Table count */
+.table-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    align-self: center;
+}
+
+/* Active sort indicator */
+.table-filter.sort-active {
+    color: var(--accent);
+    border-color: var(--accent);
+    font-weight: 600;
+}
