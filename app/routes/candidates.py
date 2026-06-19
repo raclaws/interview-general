@@ -841,7 +841,7 @@ async def pipeline_detail_update_stage(
             for s in PIPELINE_STAGES
         )
         return HTMLResponse(
-            f'<select name="stage" onchange="this.form.requestSubmit()" class="inline-select">{options}</select>',
+            f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" hx-target="this" hx-swap="outerHTML" hx-trigger="change" class="inline-select">{options}</select>',
             headers={"HX-Trigger": "toast:Stage updated"},
         )
 

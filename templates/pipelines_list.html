@@ -44,11 +44,13 @@
                 </td>
                 <td>
                     <form method="post" action="/pipeline/{{ item.pipeline.id }}/stage"
-                          hx-post="/pipeline/{{ item.pipeline.id }}/stage"
-                          hx-target="find select"
-                          hx-swap="outerHTML"
                           style="margin:0; display:inline;">
-                        <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
+                        <select name="stage"
+                                hx-post="/pipeline/{{ item.pipeline.id }}/stage"
+                                hx-target="this"
+                                hx-swap="outerHTML"
+                                hx-trigger="change"
+                                class="inline-select">
                             {% for s in stages %}
                             <option value="{{ s }}" {% if item.pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
                             {% endfor %}
