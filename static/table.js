@@ -155,8 +155,10 @@
                 ' <span class="group-count">(' + groups[label].length + ')</span>';
             headerRow.appendChild(td);
 
-            var firstRow = groups[label][0];
-            ctx.tbody.insertBefore(headerRow, firstRow);
+            ctx.tbody.appendChild(headerRow);
+            groups[label].forEach(function(row) {
+                ctx.tbody.appendChild(row);
+            });
         });
 
         requestAnimationFrame(function() {
