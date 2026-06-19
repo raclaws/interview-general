@@ -1,17 +1,42 @@
 # Interview Form Summarizer
 
-A lightweight self-hosted webapp for generating on-demand interview assessment sessions. Admin creates a session with candidate context, shares token links with interviewers, and AI summarizes the submissions.
+A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
+
+**Current version: v0.2**
 
 ## Features
 
+### Core
+- **Candidate management** — profiles with position, YoE, salary, skills, languages
+- **Pipeline tracking** — per-candidate pipelines with configurable stages (screening → hired/rejected)
+- **Scorecard** — auto-aggregated from completed sessions, per-interviewer + average scores
 - **Configurable templates** — 3 seeded (Default, Culture Alignment, HR Interview) with custom sections, conditional logic
 - **Multiple interviewers** — N interviewers per session, each with unique token link
 - **Dynamic measurement types** — rating 1-4, single/multi select, short/long text
+
+### AI
 - **Lazy LLM summaries** — generated on admin demand, not on submission (saves tokens)
 - **Cross-evaluator analysis** — auto-switches to multi-evaluator prompt for 2+ interviewers
-- **NocoDB integration** — candidate search (optional, manual entry supported)
-- **Admin controls** — editable sessions, cancel, settings page, salary visibility toggle
+- **Provider-agnostic** — any OpenAI-compatible endpoint (base URL + key + model)
+- **Dashboard-editable** — LLM settings configurable from `/settings` without restart
+
+### UI
+- **Dark mode** — Catppuccin Mocha palette throughout
+- **Sidebar navigation** — Dashboard, Interview, Pipelines, Candidates, Settings
+- **Table module** — client-side search, filter, sort, group-by on all list pages
+- **Context menus** — right-click actions on table rows
+- **Clickable rows** — navigate to detail by clicking anywhere
+
+### Admin
+- **Editable sessions** — modify details + results after creation
+- **Cancel/expire sessions** — admin can invalidate pending sessions
+- **Copy token link** — one-click copy interview URL from dashboard
+- **Copy as Markdown** — export results as formatted markdown
+- **Salary toggle** — hidden by default, admin toggles per session
 - **Consent prompt** — data + AI disclosure required before submission
+
+### Integrations
+- **NocoDB** — candidate search/import (optional, manual entry supported)
 - **MCP server** — agent access for session management
 
 ## Quick Start
@@ -168,39 +193,23 @@ sudo systemctl restart interview-general
 
 ## Deploy with Docker
 
-### Dockerfile
-
-```dockerfile
-FROM python:3.12-slim
-
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
-EXPOSE 8000
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-```
-
-### Build and run
+### Production
 
 ```bash
-docker build -t interview-general .
-docker run -d \
-  --name interview-general \
-  -p 8000:8000 \
-  --env-file .env \
-  -v $(pwd)/interview.db:/app/interview.db \
-  --restart unless-stopped \
-  interview-general
-```
-
-### Create admin user in container
-
-```bash
+docker compose up -d --build
 docker exec -it interview-general python -m app.cli create-admin admin <your-password>
 ```
+
+Production runs on port 8000 with `docker-compose.yml`.
+
+### Staging
+
+```bash
+docker compose -f docker-compose.staging.yml up -d --build
+docker exec -it interview-staging python -m app.cli create-admin admin <your-password>
+```
+
+Staging runs on port 8001 with a separate database (`interview_staging.db`). Configure `.env.staging` for staging-specific values.
 
 ## Deploy with Cloudflare Tunnel (free)
 
@@ -238,9 +247,30 @@ LLM settings (base URL, API key, model, system prompt) can be changed from `/set
 ## Notes
 
 - **DB auto-created** on first run (SQLite). Templates seeded automatically.
+- **Auto-migration** — new columns added to existing tables on startup without data loss.
 - **Tokens are single-use** — consumed on submission per interviewer.
 - **NocoDB is optional** — manual candidate entry always available.
 - **Job title auto-fills** from NocoDB candidate's current position.
 - **Salary hidden by default** — admin toggles per session.
+- **Session limits** — max 4 sessions per pipeline, max 1 HR Interview template per pipeline.
 - **Session cancellation** is irreversible (hard cancel).
 - **Python ≥3.12** required. FastAPI ≥0.115, SQLModel 0.0.22.
+
+## Changelog
+
+### v0.2 (2026-06-18)
+- Dark mode (Catppuccin Mocha) with full hardcoded color removal
+- Sidebar navigation with collapsible mobile hamburger
+- `table.js` module: search, filter, sort, group-by on all list pages
+- Context menus and clickable rows (Linear-style)
+- Pipeline list and detail pages
+- Candidate history with inline stage/notes editing
+- Scorecard auto-populate from completed sessions
+- Staging environment (`docker-compose.staging.yml`, port 8001)
+- Group-by DOM reordering fix
+
+### v0.1 (2026-06-17)
+- Initial release: sessions, templates, multi-interviewer, LLM summaries
+- Candidate + Pipeline models, NocoDB integration
+- Admin auth, settings page, consent prompt
+- Docker + systemd + Cloudflare Tunnel deployment
