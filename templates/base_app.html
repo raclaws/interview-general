@@ -42,6 +42,33 @@
         </div>
     </div>
 <script>
+// Toast notification system
+(function() {
+    var container = document.createElement('div');
+    container.className = 'toast-container';
+    document.body.appendChild(container);
+
+    window.toast = function(message) {
+        var el = document.createElement('div');
+        el.className = 'toast';
+        el.textContent = message;
+        container.appendChild(el);
+        requestAnimationFrame(function() { el.classList.add('show'); });
+        setTimeout(function() {
+            el.classList.remove('show');
+            el.classList.add('hide');
+            setTimeout(function() { el.remove(); }, 250);
+        }, 2500);
+        // Max 3 visible
+        var toasts = container.querySelectorAll('.toast');
+        if (toasts.length > 3) toasts[0].remove();
+    };
+
+    document.body.addEventListener('toast', function(e) {
+        toast(e.detail.value || e.detail);
+    });
+})();
+
 document.addEventListener('click', function(e) {
     var row = e.target.closest('.clickable-row');
     if (row && !e.target.closest('a, button, select, input, form')) {
@@ -94,6 +121,7 @@ document.addEventListener('click', function(e) {
             el.onclick = function() {
                 navigator.clipboard.writeText(el.dataset.copy);
                 menu.style.display = 'none';
+                toast('Copied to clipboard');
             };
         });
     });

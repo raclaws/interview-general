@@ -177,10 +177,7 @@ function copyAsMarkdown() {
     md += `\n${summary}\n`;
 
     navigator.clipboard.writeText(md).then(() => {
-        const btn = event.target;
-        const orig = btn.textContent;
-        btn.textContent = "Copied!";
-        setTimeout(() => btn.textContent = orig, 1500);
+        toast('Copied as Markdown');
     });
 }
 </script>
@@ -200,17 +197,13 @@ function fallbackCopy(text, btn) {
     textarea.select();
     document.execCommand('copy');
     document.body.removeChild(textarea);
-    var orig = btn.textContent;
-    btn.textContent = "Copied!";
-    setTimeout(function() { btn.textContent = orig; }, 1500);
+    toast('Copied to clipboard');
 }
 function copyLink(token, btn) {
     var url = window.location.origin + '/i/' + token;
     if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(url).then(function() {
-            var orig = btn.textContent;
-            btn.textContent = "Copied!";
-            setTimeout(function() { btn.textContent = orig; }, 1500);
+            toast('Link copied');
         }).catch(function() { fallbackCopy(url, btn); });
     } else {
         fallbackCopy(url, btn);

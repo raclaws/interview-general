@@ -835,6 +835,16 @@ async def pipeline_detail_update_stage(
         db.add(pipeline)
         db.commit()
 
+    if request.headers.get("HX-Request"):
+        options = "".join(
+            f'<option value="{s}" {"selected" if s == pipeline.stage else ""}>{s.replace("_", " ").title()}</option>'
+            for s in PIPELINE_STAGES
+        )
+        return HTMLResponse(
+            f'<select name="stage" onchange="this.form.requestSubmit()" class="inline-select">{options}</select>',
+            headers={"HX-Trigger": "toast:Stage updated"},
+        )
+
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
 
 

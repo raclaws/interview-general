@@ -522,6 +522,10 @@ tr:hover td { background: var(--bg-muted); }
 .clickable-row:hover {
     background: var(--bg-muted);
 }
+.clickable-row.row-focused {
+    background: var(--bg-muted);
+    box-shadow: inset 3px 0 0 var(--accent);
+}
 
 .ctx-menu {
     position: absolute;
@@ -849,4 +853,39 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     .form-actions { justify-content: stretch; }
     .form-actions button[type="submit"] { width: 100%; }
+}
+
+/* Toast notifications */
+.toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    pointer-events: none;
+}
+.toast {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.85rem;
+    font-size: 0.8rem;
+    max-width: 280px;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    pointer-events: auto;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+.toast.hide {
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
 }

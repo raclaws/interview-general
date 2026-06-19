@@ -19,7 +19,8 @@
             rows: [],
             sortField: null,
             sortDir: null,
-            groupField: null
+            groupField: null,
+            focusIndex: -1
         };
 
         function refreshRows() {
@@ -32,10 +33,26 @@
         var sortSelect = container.querySelector('[data-table-sort]');
         var groupSelect = container.querySelector('[data-table-groupby]');
 
+        function getVisibleRows() {
+            return ctx.rows.filter(function(r) { return r.style.display !== 'none'; });
+        }
+
+        function setFocus(index) {
+            var visible = getVisibleRows();
+            ctx.rows.forEach(function(r) { r.classList.remove('row-focused'); });
+            if (index < 0 || index >= visible.length) { ctx.focusIndex = -1; return; }
+            ctx.focusIndex = index;
+            visible[index].classList.add('row-focused');
+            visible[index].scrollIntoView({ block: 'nearest' });
+        }
+
         function applyAll() {
             filterRows(ctx, searchInput, filters);
             sortRows(ctx);
             groupRows(ctx);
+            var visible = getVisibleRows();
+            if (ctx.focusIndex >= visible.length) setFocus(visible.length - 1);
+            else if (ctx.focusIndex >= 0 && !visible[ctx.focusIndex]) setFocus(0);
         }
 
         if (searchInput) {
@@ -67,6 +84,32 @@
                 applyAll();
             });
         }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+            var visible = getVisibleRows();
+            if (!visible.length) return;
+
+            if (e.key === 'ArrowDown' || e.key === 'j') {
+                e.preventDefault();
+                setFocus(ctx.focusIndex < visible.length - 1 ? ctx.focusIndex + 1 : 0);
+            } else if (e.key === 'ArrowUp' || e.key === 'k') {
+                e.preventDefault();
+                setFocus(ctx.focusIndex > 0 ? ctx.focusIndex - 1 : visible.length - 1);
+            } else if (e.key === 'Enter' && ctx.focusIndex >= 0) {
+                e.preventDefault();
+                var row = visible[ctx.focusIndex];
+                if (row && row.dataset.href) window.location.href = row.dataset.href;
+            } else if (e.key === 'Escape') {
+                setFocus(-1);
+            } else if (e.key === 'Home') {
+                e.preventDefault();
+                setFocus(0);
+            } else if (e.key === 'End') {
+                e.preventDefault();
+                setFocus(visible.length - 1);
+            }
+        });
     }
 
     function filterRows(ctx, searchInput, filters) {

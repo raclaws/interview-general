@@ -56,7 +56,7 @@
             </tr>
             {% endfor %}
             {% if not session_data %}
-            <tr class="empty-row"><td colspan="5">No sessions yet.</td></tr>
+            <tr class="empty-row"><td colspan="5" style="text-align:center; padding:2rem;">No sessions yet. <a href="/session/new" class="btn-ghost">Create your first session</a></td></tr>
             {% endif %}
         </tbody>
     </table>

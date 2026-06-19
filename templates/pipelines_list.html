@@ -42,7 +42,19 @@
                     <div class="col-primary">{{ item.candidate.name }}</div>
                     <div class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% if item.pipeline.display_name %} · {{ item.pipeline.display_name }}{% endif %}</div>
                 </td>
-                <td><span class="badge badge-{{ item.pipeline.stage }}">{{ item.pipeline.stage | replace("_", " ") | title }}</span></td>
+                <td>
+                    <form method="post" action="/pipeline/{{ item.pipeline.id }}/stage"
+                          hx-post="/pipeline/{{ item.pipeline.id }}/stage"
+                          hx-target="find select"
+                          hx-swap="outerHTML"
+                          style="margin:0; display:inline;">
+                        <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
+                            {% for s in stages %}
+                            <option value="{{ s }}" {% if item.pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </td>
                 <td>{{ item.session_count.completed }}/{{ item.session_count.total }}</td>
                 <td>
                     {% if item.scores.hr_avg or item.scores.culture_avg %}
@@ -55,7 +67,7 @@
             </tr>
             {% endfor %}
             {% if not pipeline_data %}
-            <tr class="empty-row"><td colspan="5">No pipelines yet.</td></tr>
+            <tr class="empty-row"><td colspan="5" style="text-align:center; padding:2rem;">No pipelines yet. <a href="/candidates" class="btn-ghost">Start by adding a candidate</a></td></tr>
             {% endif %}
         </tbody>
     </table>
