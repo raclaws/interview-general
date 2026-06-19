@@ -2,7 +2,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.exceptions import HTTPException
 from dotenv import load_dotenv
 
@@ -19,6 +19,8 @@ app = FastAPI(title="Interview Form Summarizer")
 @app.exception_handler(HTTPException)
 async def auth_exception_handler(request: Request, exc: HTTPException):
     if exc.status_code == 401:
+        if request.headers.get("HX-Request") == "true":
+            return HTMLResponse("", status_code=200, headers={"HX-Redirect": "/login"})
         return RedirectResponse("/login", status_code=303)
     if exc.status_code == 404:
         return templates.TemplateResponse(request, "404.html", status_code=404)

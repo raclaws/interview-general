@@ -5,64 +5,49 @@
     <h1>Candidates</h1>
 </div>
 
-<div class="table-controls">
-    <input type="text" id="search-input" placeholder="Search by name or email..." class="table-search">
-    <select id="filter-stage" class="table-filter">
-        <option value="">All Stages</option>
-        {% for s in stages %}
-        <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
-        {% endfor %}
-    </select>
+<div data-table>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search by name or email..." class="table-search">
+        <select data-table-filter="stages" data-filter-mode="contains" class="table-filter">
+            <option value="">All Stages</option>
+            {% for s in stages %}
+            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+            {% endfor %}
+        </select>
+        <select data-table-sort class="table-filter">
+            <option value="">Sort</option>
+            <option value="date:desc" data-sort-type="date">Newest first</option>
+            <option value="date:asc" data-sort-type="date">Oldest first</option>
+            <option value="name:asc" data-sort-type="string">Name A-Z</option>
+            <option value="name:desc" data-sort-type="string">Name Z-A</option>
+        </select>
+    </div>
+
+    <table class="table-clean">
+        <tbody>
+            {% for item in candidate_data %}
+            <tr data-search="{{ item.candidate.name | lower }} {{ item.candidate.email | lower }}" data-stages="{{ item.stages | join(',') }}" data-name="{{ item.candidate.name | lower }}" data-date="{{ item.latest_activity.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}" data-ctx='[{"label":"⎘ Copy email","copy":"{{ item.candidate.email }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}"},{"label":"✎ Edit candidate","href":"/candidate/{{ item.candidate.id }}/edit"}]'>
+                <td>
+                    <div class="col-primary">{{ item.candidate.name }}</div>
+                    <div class="row-meta">{{ item.candidate.email }}</div>
+                </td>
+                <td>
+                    <div class="col-primary">{{ item.candidate.current_position or "—" }}</div>
+                    <div class="row-meta">
+                        {% for s in item.stages %}
+                        <span class="badge badge-{{ s }}">{{ s | replace("_", " ") | title }}</span>
+                        {% endfor %}
+                        {% if not item.stages %}—{% endif %}
+                    </div>
+                </td>
+                <td class="row-meta">{{ item.pipeline_count }} pipeline{{ "s" if item.pipeline_count != 1 else "" }} · {{ item.session_count }} session{{ "s" if item.session_count != 1 else "" }}</td>
+                <td class="row-meta">{{ item.latest_activity.strftime("%Y-%m-%d") }}</td>
+            </tr>
+            {% endfor %}
+            {% if not candidate_data %}
+            <tr class="empty-row"><td colspan="4">No candidates yet.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
 </div>
-
-<table id="candidates-table" class="table-clean">
-    <tbody id="candidates-tbody">
-        {% for item in candidate_data %}
-        <tr data-name="{{ item.candidate.name | lower }}" data-email="{{ item.candidate.email | lower }}" data-stages="{{ item.pipelines | map(attribute='stage') | join(',') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}" data-ctx='[{"label":"⎘ Copy email","copy":"{{ item.candidate.email }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}"},{"label":"✎ Edit candidate","href":"/candidate/{{ item.candidate.id }}/edit"}]'>
-            <td>
-                <div class="col-primary">{{ item.candidate.name }}</div>
-                <div class="row-meta">{{ item.candidate.email }}</div>
-            </td>
-            <td>
-                {% for p in item.pipelines %}
-                <span class="badge badge-{{ p.stage }}">{{ p.stage | replace("_", " ") | title }}{% if p.position %} — {{ p.position }}{% endif %}</span>
-                {% endfor %}
-                {% if not item.pipelines %}—{% endif %}
-            </td>
-            <td class="row-meta">{{ item.candidate.updated_at.strftime("%Y-%m-%d") }}</td>
-        </tr>
-        {% endfor %}
-        {% if not candidate_data %}
-        <tr class="empty-row"><td colspan="3">No candidates yet.</td></tr>
-        {% endif %}
-    </tbody>
-</table>
-
-<script>
-(function() {
-    var searchInput = document.getElementById('search-input');
-    var filterStage = document.getElementById('filter-stage');
-    var tbody = document.getElementById('candidates-tbody');
-    var rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
-
-    function applyFilters() {
-        var query = searchInput.value.toLowerCase();
-        var stage = filterStage.value;
-
-        rows.forEach(function(row) {
-            var name = row.dataset.name || '';
-            var email = row.dataset.email || '';
-            var stages = row.dataset.stages || '';
-
-            var matchSearch = !query || name.indexOf(query) !== -1 || email.indexOf(query) !== -1;
-            var matchStage = !stage || stages.indexOf(stage) !== -1;
-
-            row.style.display = (matchSearch && matchStage) ? '' : 'none';
-        });
-    }
-
-    searchInput.addEventListener('input', applyFilters);
-    filterStage.addEventListener('change', applyFilters);
-})();
-</script>
 {% endblock %}

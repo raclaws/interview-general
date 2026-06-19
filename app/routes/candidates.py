@@ -125,15 +125,78 @@ async def candidates_list(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
+    from sqlalchemy import literal_column
+    from sqlalchemy.orm import aliased
+
     candidates = db.exec(
         select(Candidate).order_by(Candidate.updated_at.desc())
     ).all()
+    candidate_ids = [c.id for c in candidates]
+
+    # Pipeline counts + stages in one query
+    pipeline_rows = db.exec(
+        select(
+            CandidatePipeline.candidate_id,
+            func.count(CandidatePipeline.id).label("pipeline_count"),
+            func.group_concat(CandidatePipeline.stage).label("stages_csv"),
+        )
+        .where(CandidatePipeline.candidate_id.in_(candidate_ids))
+        .group_by(CandidatePipeline.candidate_id)
+    ).all() if candidate_ids else []
+    pipeline_map = {r[0]: {"count": r[1], "stages_csv": r[2] or ""} for r in pipeline_rows}
+
+    # Session counts per candidate
+    session_rows = db.exec(
+        select(
+            InterviewSession.candidate_id,
+            func.count(InterviewSession.id).label("session_count"),
+        )
+        .where(InterviewSession.candidate_id.in_(candidate_ids))
+        .group_by(InterviewSession.candidate_id)
+    ).all() if candidate_ids else []
+    session_map = {r[0]: r[1] for r in session_rows}
+
+    # Latest activity: max of candidate.updated_at, pipeline.updated_at, session.created_at
+    pipeline_latest = db.exec(
+        select(
+            CandidatePipeline.candidate_id,
+            func.max(CandidatePipeline.updated_at).label("latest"),
+        )
+        .where(CandidatePipeline.candidate_id.in_(candidate_ids))
+        .group_by(CandidatePipeline.candidate_id)
+    ).all() if candidate_ids else []
+    pipeline_latest_map = {r[0]: r[1] for r in pipeline_latest}
+
+    session_latest = db.exec(
+        select(
+            InterviewSession.candidate_id,
+            func.max(InterviewSession.created_at).label("latest"),
+        )
+        .where(InterviewSession.candidate_id.in_(candidate_ids))
+        .group_by(InterviewSession.candidate_id)
+    ).all() if candidate_ids else []
+    session_latest_map = {r[0]: r[1] for r in session_latest}
+
     candidate_data = []
     for c in candidates:
-        pipelines = db.exec(
-            select(CandidatePipeline).where(CandidatePipeline.candidate_id == c.id)
-        ).all()
-        candidate_data.append({"candidate": c, "pipelines": pipelines})
+        p_info = pipeline_map.get(c.id, {"count": 0, "stages_csv": ""})
+        s_count = session_map.get(c.id, 0)
+        stages = [s for s in p_info["stages_csv"].split(",") if s] if p_info["stages_csv"] else []
+
+        dates = [c.updated_at]
+        if c.id in pipeline_latest_map and pipeline_latest_map[c.id]:
+            dates.append(pipeline_latest_map[c.id])
+        if c.id in session_latest_map and session_latest_map[c.id]:
+            dates.append(session_latest_map[c.id])
+        latest_activity = max(dates)
+
+        candidate_data.append({
+            "candidate": c,
+            "pipeline_count": p_info["count"],
+            "session_count": s_count,
+            "stages": stages,
+            "latest_activity": latest_activity,
+        })
     return _render(request, "candidates_list.html", {
         "candidate_data": candidate_data,
         "admin": admin,

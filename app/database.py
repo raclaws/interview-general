@@ -25,6 +25,18 @@ def _migrate():
                 existing = [c["name"] for c in inspector.get_columns(table)]
                 if column not in existing:
                     conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
+        # Handle legacy 'round' column: make it nullable so model without round can INSERT
+        if "sessions" in inspector.get_table_names():
+            cols = {c["name"]: c for c in inspector.get_columns("sessions")}
+            if "round" in cols:
+                try:
+                    conn.execute(text('ALTER TABLE sessions DROP COLUMN "round"'))
+                except Exception:
+                    # SQLite <3.35 can't DROP COLUMN; set a default instead
+                    try:
+                        conn.execute(text('UPDATE sessions SET "round" = 1 WHERE "round" IS NULL'))
+                    except Exception:
+                        pass
         conn.commit()
 
 

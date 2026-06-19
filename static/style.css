@@ -190,6 +190,7 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 /* Form actions */
 .form-actions { display: flex; justify-content: flex-end; margin-top: 1.5rem; }
 .form-actions .btn { width: auto; padding: 0.65rem 1.5rem; }
+.form-error { background: var(--danger-bg); border: 1px solid var(--danger); color: var(--danger); padding: 0.6rem 0.9rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.85rem; }
 
 .form-container button[type="submit"],
 .add-pipeline-form button[type="submit"],
@@ -577,6 +578,19 @@ td.col-primary, .col-primary {
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
+}
+.group-header td {
+    background: var(--bg-muted);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+.group-count {
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 0.5rem;
 }
 
 /* Actions row */

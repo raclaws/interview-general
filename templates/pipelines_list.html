@@ -5,77 +5,59 @@
     <h1>Pipelines</h1>
 </div>
 
-<div class="table-controls">
-    <input type="text" id="search-input" placeholder="Search candidate name..." class="table-search">
-    <select id="filter-stage" class="table-filter">
-        <option value="">All Stages</option>
-        {% for s in stages %}
-        <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
-        {% endfor %}
-    </select>
-    <select id="filter-bu" class="table-filter">
-        <option value="">All BU</option>
-        {% for bu in business_units %}
-        <option value="{{ bu }}">{{ bu }}</option>
-        {% endfor %}
-    </select>
+<div data-table>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search candidate name..." class="table-search">
+        <select data-table-filter="stage" class="table-filter">
+            <option value="">All Stages</option>
+            {% for s in stages %}
+            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+            {% endfor %}
+        </select>
+        <select data-table-filter="bu" class="table-filter">
+            <option value="">All BU</option>
+            {% for bu in business_units %}
+            <option value="{{ bu }}">{{ bu }}</option>
+            {% endfor %}
+        </select>
+        <select data-table-sort class="table-filter">
+            <option value="">Sort</option>
+            <option value="date:desc" data-sort-type="date">Newest first</option>
+            <option value="date:asc" data-sort-type="date">Oldest first</option>
+            <option value="name:asc" data-sort-type="string">Name A-Z</option>
+            <option value="name:desc" data-sort-type="string">Name Z-A</option>
+        </select>
+        <select data-table-groupby class="table-filter">
+            <option value="">Group by</option>
+            <option value="stage">Stage</option>
+            <option value="bu">Business Unit</option>
+        </select>
+    </div>
+
+    <table class="table-clean">
+        <tbody>
+            {% for item in pipeline_data %}
+            <tr data-search="{{ item.candidate.name | lower }}" data-stage="{{ item.pipeline.stage }}" data-bu="{{ item.pipeline.business_unit or '' }}" data-name="{{ item.candidate.name | lower }}" data-date="{{ item.pipeline.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"↗ View candidate","href":"/candidate/{{ item.candidate.id }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}&pipeline_id={{ item.pipeline.id }}"},{"label":"✕ Delete","href":"/pipeline/{{ item.pipeline.id }}/delete","confirm":"Delete this pipeline entry?"}]'>
+                <td>
+                    <div class="col-primary">{{ item.candidate.name }}</div>
+                    <div class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% if item.pipeline.display_name %} · {{ item.pipeline.display_name }}{% endif %}</div>
+                </td>
+                <td><span class="badge badge-{{ item.pipeline.stage }}">{{ item.pipeline.stage | replace("_", " ") | title }}</span></td>
+                <td>{{ item.session_count.completed }}/{{ item.session_count.total }}</td>
+                <td>
+                    {% if item.scores.hr_avg or item.scores.culture_avg %}
+                    <span class="row-meta">HR {{ item.scores.hr_avg }} · C {{ item.scores.culture_avg }}</span>
+                    {% else %}
+                    <span class="row-meta">—</span>
+                    {% endif %}
+                </td>
+                <td class="row-meta">{{ item.pipeline.updated_at.strftime("%Y-%m-%d") }}</td>
+            </tr>
+            {% endfor %}
+            {% if not pipeline_data %}
+            <tr class="empty-row"><td colspan="5">No pipelines yet.</td></tr>
+            {% endif %}
+        </tbody>
+    </table>
 </div>
-
-<table id="pipelines-table" class="table-clean">
-    <tbody id="pipelines-tbody">
-        {% for item in pipeline_data %}
-        <tr data-name="{{ item.candidate.name | lower }}" data-stage="{{ item.pipeline.stage }}" data-bu="{{ item.pipeline.business_unit or '' }}" class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"↗ View candidate","href":"/candidate/{{ item.candidate.id }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}&pipeline_id={{ item.pipeline.id }}"},{"label":"✕ Delete","href":"/pipeline/{{ item.pipeline.id }}/delete","confirm":"Delete this pipeline entry?"}]'>
-            <td>
-                <div class="col-primary">{{ item.candidate.name }}</div>
-                <div class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% if item.pipeline.display_name %} · {{ item.pipeline.display_name }}{% endif %}</div>
-            </td>
-            <td><span class="badge badge-{{ item.pipeline.stage }}">{{ item.pipeline.stage | replace("_", " ") | title }}</span></td>
-            <td>{{ item.session_count.completed }}/{{ item.session_count.total }}</td>
-            <td>
-                {% if item.scores.hr_avg or item.scores.culture_avg %}
-                <span class="row-meta">HR {{ item.scores.hr_avg }} · C {{ item.scores.culture_avg }}</span>
-                {% else %}
-                <span class="row-meta">—</span>
-                {% endif %}
-            </td>
-            <td class="row-meta">{{ item.pipeline.updated_at.strftime("%Y-%m-%d") }}</td>
-        </tr>
-        {% endfor %}
-        {% if not pipeline_data %}
-        <tr class="empty-row"><td colspan="5">No pipelines yet.</td></tr>
-        {% endif %}
-    </tbody>
-</table>
-
-<script>
-(function() {
-    var searchInput = document.getElementById('search-input');
-    var filterStage = document.getElementById('filter-stage');
-    var filterBu = document.getElementById('filter-bu');
-    var tbody = document.getElementById('pipelines-tbody');
-    var rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row)'));
-
-    function applyFilters() {
-        var query = searchInput.value.toLowerCase();
-        var stage = filterStage.value;
-        var bu = filterBu.value;
-
-        rows.forEach(function(row) {
-            var name = row.dataset.name || '';
-            var rowStage = row.dataset.stage || '';
-            var rowBu = row.dataset.bu || '';
-
-            var matchSearch = !query || name.indexOf(query) !== -1;
-            var matchStage = !stage || rowStage === stage;
-            var matchBu = !bu || rowBu === bu;
-
-            row.style.display = (matchSearch && matchStage && matchBu) ? '' : 'none';
-        });
-    }
-
-    searchInput.addEventListener('input', applyFilters);
-    filterStage.addEventListener('change', applyFilters);
-    filterBu.addEventListener('change', applyFilters);
-})();
-</script>
 {% endblock %}

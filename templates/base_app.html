@@ -6,6 +6,7 @@
     <title>{% block title %}Interview Form{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="/static/table.js"></script>
 </head>
 <body>
     <div class="app-shell">
@@ -76,7 +77,7 @@ document.addEventListener('click', function(e) {
         menu.innerHTML = items.map(function(it) {
             var cls = it.confirm ? 'ctx-item ctx-danger' : 'ctx-item';
             if (it.confirm) {
-                return '<form method="post" action="' + it.href + '" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
+                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
             }
             if (it.copy) {
                 return '<div class="' + cls + '" data-copy="' + it.copy + '">' + it.label + '</div>';
@@ -86,6 +87,7 @@ document.addEventListener('click', function(e) {
         menu.style.left = e.pageX + 'px';
         menu.style.top = e.pageY + 'px';
         menu.style.display = 'block';
+        htmx.process(menu);
 
         // Copy handler
         menu.querySelectorAll('[data-copy]').forEach(function(el) {

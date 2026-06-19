@@ -106,17 +106,25 @@ async def session_new_submit(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
+    is_htmx = request.headers.get("HX-Request") == "true"
+
     if entry_mode == "nocodb":
         if not candidate_id:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Please select a candidate.</div>')
             return RedirectResponse("/session/new?error=no_candidate_selected", status_code=303)
         snapshot = await fetch_candidate(candidate_id)
         if not snapshot:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Candidate not found in NocoDB.</div>')
             return RedirectResponse("/session/new?error=candidate_not_found", status_code=303)
         # Pull job_title from snapshot if not provided
         if not job_title.strip():
             job_title = snapshot.get("current_position", "")
     else:
         if not manual_name.strip():
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Candidate name is required.</div>')
             return RedirectResponse("/session/new?error=name_required", status_code=303)
         snapshot = {
             "name": manual_name.strip(),
@@ -228,6 +236,8 @@ async def session_new_submit(
             select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_record.id)
         ).all()
         if len(existing_sessions) >= 4:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Maximum 4 sessions per pipeline reached.</div>')
             return RedirectResponse("/session/new?error=max_sessions_reached", status_code=303)
         hr_template = db.exec(select(Template).where(Template.name == "HR Interview")).first()
         if hr_template and template_id == hr_template.id:
@@ -244,6 +254,8 @@ async def session_new_submit(
 
     names = [n.strip() for n in interviewer_names.split(",") if n.strip()]
     if not names:
+        if is_htmx:
+            return HTMLResponse('<div class="form-error">At least one interviewer name is required.</div>')
         return RedirectResponse("/session/new?error=no_interviewers", status_code=303)
 
     # Job title is plain — no auto-differentiation (pipeline name handles that)
@@ -276,6 +288,8 @@ async def session_new_submit(
         db.add(interviewer)
     db.commit()
 
+    if is_htmx:
+        return HTMLResponse("", headers={"HX-Redirect": f"/session/{session.id}"})
     return RedirectResponse("/sessions", status_code=303)
 
 
@@ -400,6 +414,11 @@ async def cancel_session(
         session.status = "cancelled"
         db.add(session)
         db.commit()
+    if request.headers.get("HX-Request") == "true":
+        return HTMLResponse(
+            f'<span class="badge badge-cancelled">cancelled</span>',
+            headers={"HX-Reswap": "innerHTML", "HX-Retarget": f"#status-{session_id}"},
+        )
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
@@ -434,6 +453,8 @@ async def delete_session(
 
     db.delete(session)
     db.commit()
+    if request.headers.get("HX-Request") == "true":
+        return HTMLResponse("", headers={"HX-Reswap": "delete", "HX-Retarget": f"closest tr"})
     return RedirectResponse(next or "/sessions", status_code=303)
 
 
