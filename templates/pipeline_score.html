@@ -16,14 +16,17 @@
     <div class="score-summary-card">
         <span class="score-big">{{ "%.1f"|format(hr_total) }}</span>
         <span class="score-label">/ 12 HR</span>
+        {% if hr_partial %}<span class="badge badge-pending">{{ hr_completion }} submitted</span>{% endif %}
     </div>
     <div class="score-summary-card">
         <span class="score-big">{{ "%.1f"|format(culture_total) }}</span>
         <span class="score-label">/ 16 Culture</span>
+        {% if culture_partial %}<span class="badge badge-pending">{{ culture_completion }} submitted</span>{% endif %}
     </div>
     <div class="score-summary-card">
         <span class="score-big">{{ "%.1f"|format(hr_total + culture_total) }}</span>
         <span class="score-label">/ 28 Total</span>
+        {% if hr_partial or culture_partial %}<span class="badge badge-pending">Partial</span>{% endif %}
     </div>
 </div>
 

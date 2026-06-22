@@ -55,6 +55,12 @@ def get_llm_config() -> tuple[str, str, str, str]:
     return base_url, api_key, model, system_prompt
 
 
+def get_llm_params() -> tuple[float, int]:
+    temperature = float(get_setting("llm_temperature", "0.3"))
+    max_tokens = int(get_setting("llm_max_tokens", "700"))
+    return temperature, max_tokens
+
+
 def _build_dimensions_context(sections: list) -> str:
     lines = []
     for s in sections:
@@ -90,6 +96,7 @@ async def generate_summary_dynamic(
     responses_data: list[dict],
 ) -> str:
     base_url, api_key, model, system_prompt = get_llm_config()
+    temperature, max_tokens = get_llm_params()
     client = AsyncOpenAI(base_url=base_url, api_key=api_key)
 
     dimensions_context = _build_dimensions_context(sections)
@@ -115,7 +122,7 @@ Dimensions assessed:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_msg},
         ],
-        temperature=0.3,
-        max_tokens=700,
+        temperature=temperature,
+        max_tokens=max_tokens,
     )
     return response.choices[0].message.content or ""

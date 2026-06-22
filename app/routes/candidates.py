@@ -704,10 +704,10 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         template = db.get(Template, s.template_id) if s.template_id else None
         session_data.append({"session": s, "total": total, "completed": completed, "template": template, "interviewers": [iv.interviewer_name for iv in ivs]})
 
-    # Scores: per-interviewer breakdown
+    # Scores: per-interviewer breakdown (include partial — any session with at least one submitted response)
     hr_data = []
     culture_data = []
-    completed_sessions = [s for s in sessions if s.status == "completed"]
+    scored_sessions = [s for s in sessions if s.status in ("completed", "pending")]
 
     HR_TITLE_MAP = {
         "Ownership with Accountability": "ownership_accountability",
@@ -721,7 +721,7 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         "Clarity & Structured Thinking": "clarity_structured",
     }
 
-    for session in completed_sessions:
+    for session in scored_sessions:
         template = db.get(Template, session.template_id) if session.template_id else None
         if not template:
             continue
@@ -784,6 +784,22 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
     hr_avg = compute_avg(hr_data, HR_DIMENSIONS)
     culture_avg = compute_avg(culture_data, CULTURE_DIMENSIONS)
 
+    # Scorecard completion status
+    hr_sessions = [s for s in scored_sessions if db.get(Template, s.template_id) and db.get(Template, s.template_id).name == "HR Interview"]
+    culture_sessions = [s for s in scored_sessions if db.get(Template, s.template_id) and db.get(Template, s.template_id).name == "Culture Alignment"]
+
+    def session_completion(session_list):
+        total_ivs = 0
+        completed_ivs = 0
+        for s in session_list:
+            ivs = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)).all()
+            total_ivs += len(ivs)
+            completed_ivs += len([i for i in ivs if i.status == "completed"])
+        return completed_ivs, total_ivs
+
+    hr_completed_ivs, hr_total_ivs = session_completion(hr_sessions)
+    culture_completed_ivs, culture_total_ivs = session_completion(culture_sessions)
+
     return {
         "pipeline": pipeline,
         "candidate": candidate,
@@ -796,6 +812,10 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         "culture_total": sum(culture_avg.values()),
         "hr_dimensions": HR_DIMENSIONS,
         "culture_dimensions": CULTURE_DIMENSIONS,
+        "hr_completion": f"{hr_completed_ivs}/{hr_total_ivs}",
+        "hr_partial": hr_total_ivs > 0 and hr_completed_ivs < hr_total_ivs,
+        "culture_completion": f"{culture_completed_ivs}/{culture_total_ivs}",
+        "culture_partial": culture_total_ivs > 0 and culture_completed_ivs < culture_total_ivs,
         "stages": PIPELINE_STAGES,
     }
 
