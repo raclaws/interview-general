@@ -17,6 +17,7 @@ def _migrate():
         ("sessions", "position", "TEXT"),
         ("sessions", "business_unit", "TEXT"),
         ("candidate_pipelines", "display_name", "TEXT"),
+        ("candidates", "cv_link", "TEXT"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)

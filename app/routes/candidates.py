@@ -343,6 +343,7 @@ async def candidate_edit_submit(
     current_salary: str = Form(""),
     expected_salary: str = Form(""),
     notice_period: str = Form(""),
+    cv_link: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -362,6 +363,7 @@ async def candidate_edit_submit(
     candidate.current_salary = current_salary.strip() or None
     candidate.expected_salary = expected_salary.strip() or None
     candidate.notice_period = notice_period.strip() or None
+    candidate.cv_link = cv_link.strip() or None
     candidate.updated_at = datetime.utcnow()
     db.add(candidate)
     db.commit()

@@ -45,6 +45,9 @@
         <label for="notice_period">Notice Period</label>
         <input type="text" id="notice_period" name="notice_period" value="{{ candidate.notice_period or '' }}">
 
+        <label for="cv_link">CV / Resume Link</label>
+        <input type="url" id="cv_link" name="cv_link" value="{{ candidate.cv_link or '' }}" placeholder="https://...">
+
         <div class="form-actions">
             <button type="submit" class="btn">Save Changes</button>
             <a href="/candidate/{{ candidate.id }}" class="btn-ghost">Cancel</a>
