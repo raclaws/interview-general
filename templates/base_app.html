@@ -142,8 +142,9 @@ document.addEventListener('click', function(e) {
     });
 
     // Remove row on successful delete from context menu
-    document.body.addEventListener('htmx:afterOnLoad', function(e) {
-        if (e.detail.elt.closest('[data-ctx-delete]') && ctxRow) {
+    document.body.addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.elt.closest('[data-ctx-delete]') && ctxRow && e.detail.successful) {
+            menu.style.display = 'none';
             ctxRow.style.transition = 'opacity 0.2s';
             ctxRow.style.opacity = '0';
             setTimeout(function() { ctxRow.remove(); ctxRow = null; }, 200);

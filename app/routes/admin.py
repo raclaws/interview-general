@@ -458,7 +458,7 @@ async def delete_session(
     db.delete(session)
     db.commit()
     if request.headers.get("HX-Request") == "true":
-        return HTMLResponse("", headers={"HX-Reswap": "delete", "HX-Retarget": f"closest tr"})
+        return HTMLResponse("")
     return RedirectResponse(next or "/sessions", status_code=303)
 
 
