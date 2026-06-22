@@ -27,6 +27,9 @@
         {% if session.snapshot.get("notice_period") %}
         <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period") }}</p>
         {% endif %}
+        {% if session.snapshot.get("cv_link") %}
+        <p><strong>CV / Resume:</strong> <a href="{{ session.snapshot.get('cv_link') }}" target="_blank" rel="noopener">View CV</a></p>
+        {% endif %}
         {% if session.position %}
         <p><strong>Position Applied:</strong> {{ session.position }}</p>
         {% endif %}

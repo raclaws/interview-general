@@ -18,6 +18,7 @@
         <input type="hidden" name="manual_current_salary" value="{{ prefill_candidate.current_salary or '' }}">
         <input type="hidden" name="manual_expected_salary" value="{{ prefill_candidate.expected_salary or '' }}">
         <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
+        <input type="hidden" name="manual_cv_link" value="{{ prefill_candidate.cv_link or '' }}">
         {% if prefill_pipeline_id %}
         <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
         {% endif %}
@@ -78,6 +79,9 @@
 
             <label for="manual_notice_period">Notice Period</label>
             <input type="text" id="manual_notice_period" name="manual_notice_period">
+
+            <label for="manual_cv_link">CV / Resume Link</label>
+            <input type="url" id="manual_cv_link" name="manual_cv_link" placeholder="https://...">
         </div>
         {% endif %}
 

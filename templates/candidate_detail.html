@@ -39,6 +39,7 @@
     {% if candidate.current_salary %}<p><strong>Current Salary:</strong> {{ candidate.current_salary }}</p>{% endif %}
     {% if candidate.expected_salary %}<p><strong>Expected Salary:</strong> {{ candidate.expected_salary }}</p>{% endif %}
     {% if candidate.notice_period %}<p><strong>Notice Period:</strong> {{ candidate.notice_period }}</p>{% endif %}
+    {% if candidate.cv_link %}<p><strong>CV / Resume:</strong> <a href="{{ candidate.cv_link }}" target="_blank" rel="noopener">View CV</a></p>{% endif %}
 </div>
 
 <hr>

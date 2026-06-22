@@ -27,6 +27,7 @@ FIELD_MAPPING = {
     "(Full-time) Current Salary (Nett in IDR)": "current_salary",
     "(Full-time) Expected Salary (Nett in IDR)": "expected_salary",
     "(Full-time) Notice Period": "notice_period",
+    "CV": "cv_link",
 }
 
 
@@ -108,6 +109,7 @@ def upsert_candidate_from_nocodb(snapshot: dict, nocodb_id: int) -> Candidate:
             candidate.current_salary = snapshot.get("current_salary") or candidate.current_salary
             candidate.expected_salary = snapshot.get("expected_salary") or candidate.expected_salary
             candidate.notice_period = snapshot.get("notice_period") or candidate.notice_period
+            candidate.cv_link = snapshot.get("cv_link") or candidate.cv_link
             candidate.updated_at = datetime.utcnow()
         else:
             candidate = Candidate(
@@ -124,6 +126,7 @@ def upsert_candidate_from_nocodb(snapshot: dict, nocodb_id: int) -> Candidate:
                 current_salary=snapshot.get("current_salary", ""),
                 expected_salary=snapshot.get("expected_salary", ""),
                 notice_period=snapshot.get("notice_period", ""),
+                cv_link=snapshot.get("cv_link", ""),
             )
             db.add(candidate)
         db.commit()

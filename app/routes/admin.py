@@ -103,6 +103,7 @@ async def session_new_submit(
     manual_current_salary: str = Form(""),
     manual_expected_salary: str = Form(""),
     manual_notice_period: str = Form(""),
+    manual_cv_link: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -139,6 +140,7 @@ async def session_new_submit(
             "current_salary": manual_current_salary.strip(),
             "expected_salary": manual_expected_salary.strip(),
             "notice_period": manual_notice_period.strip(),
+            "cv_link": manual_cv_link.strip(),
         }
         candidate_id = None
 
@@ -164,6 +166,7 @@ async def session_new_submit(
         candidate_record.current_salary = snapshot.get("current_salary") or candidate_record.current_salary
         candidate_record.expected_salary = snapshot.get("expected_salary") or candidate_record.expected_salary
         candidate_record.notice_period = snapshot.get("notice_period") or candidate_record.notice_period
+        candidate_record.cv_link = snapshot.get("cv_link") or candidate_record.cv_link
         candidate_record.updated_at = datetime.utcnow()
         db.add(candidate_record)
         db.commit()
@@ -183,6 +186,7 @@ async def session_new_submit(
             current_salary=snapshot.get("current_salary") or None,
             expected_salary=snapshot.get("expected_salary") or None,
             notice_period=snapshot.get("notice_period") or None,
+            cv_link=snapshot.get("cv_link") or None,
         )
         db.add(candidate_record)
         db.commit()

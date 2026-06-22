@@ -29,6 +29,7 @@ class Candidate(SQLModel, table=True):
     current_salary: Optional[str] = None
     expected_salary: Optional[str] = None
     notice_period: Optional[str] = None
+    cv_link: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -46,6 +47,7 @@ class Candidate(SQLModel, table=True):
             "current_salary": self.current_salary or "",
             "expected_salary": self.expected_salary or "",
             "notice_period": self.notice_period or "",
+            "cv_link": self.cv_link or "",
         }
 
 
