@@ -27,7 +27,7 @@ FIELD_MAPPING = {
     "(Full-time) Current Salary (Nett in IDR)": "current_salary",
     "(Full-time) Expected Salary (Nett in IDR)": "expected_salary",
     "(Full-time) Notice Period": "notice_period",
-    "CV": "cv_link",
+    "upload CV": "cv_link",
 }
 
 
@@ -83,7 +83,10 @@ async def fetch_candidate(row_id: int) -> dict | None:
         record = resp.json()
         snapshot = {}
         for noco_field, key in FIELD_MAPPING.items():
-            snapshot[key] = record.get(noco_field, "")
+            val = record.get(noco_field, "")
+            if key == "cv_link" and isinstance(val, list) and val:
+                val = val[0].get("signedUrl") or val[0].get("url") or val[0].get("path") or ""
+            snapshot[key] = val
         snapshot["id"] = record.get("Id")
         return snapshot
 
