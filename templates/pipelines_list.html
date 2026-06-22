@@ -37,7 +37,7 @@
     <table class="table-clean">
         <tbody>
             {% for item in pipeline_data %}
-            <tr data-search="{{ item.candidate.name | lower }}" data-stage="{{ item.pipeline.stage }}" data-bu="{{ item.pipeline.business_unit or '' }}" data-name="{{ item.candidate.name | lower }}" data-date="{{ item.pipeline.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"↗ View candidate","href":"/candidate/{{ item.candidate.id }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}&pipeline_id={{ item.pipeline.id }}"},{"label":"✕ Delete","href":"/pipeline/{{ item.pipeline.id }}/delete","confirm":"Delete this pipeline entry?"}]'>
+            <tr data-search="{{ item.candidate.name | lower }}" data-stage="{{ item.pipeline.stage }}" data-bu="{{ item.pipeline.business_unit or '' }}" data-name="{{ item.candidate.name | lower }}" data-date="{{ item.pipeline.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"↗ View candidate","href":"/candidate/{{ item.candidate.id }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}&pipeline_id={{ item.pipeline.id }}"},{"label":"✕ Delete","href":"/pipeline/{{ item.pipeline.id }}/delete","confirm":"Delete this pipeline entry?","delete":true}]'>
                 <td>
                     <div class="col-primary">{{ item.candidate.name }}</div>
                     <div class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% if item.pipeline.display_name %} · {{ item.pipeline.display_name }}{% endif %}</div>

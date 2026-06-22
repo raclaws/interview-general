@@ -144,6 +144,16 @@ async def session_new_submit(
         }
         candidate_id = None
 
+    if not snapshot or not snapshot.get("name", "").strip():
+        if is_htmx:
+            return HTMLResponse('<div class="form-error">Candidate information is required.</div>')
+        return RedirectResponse("/session/new?error=no_candidate", status_code=303)
+
+    if not interview_date.strip():
+        if is_htmx:
+            return HTMLResponse('<div class="form-error">Interview date is required.</div>')
+        return RedirectResponse("/session/new?error=date_required", status_code=303)
+
     # Handle "Other" position
     final_position = position_other.strip() if position == "Other" and position_other.strip() else position.strip()
 
@@ -555,6 +565,8 @@ async def template_detail(
 @router.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request, admin: AdminUser = Depends(get_current_admin)):
     base_url, api_key, model, system_prompt = get_llm_config()
+    from app.llm import get_llm_params
+    temperature, max_tokens = get_llm_params()
     masked_key = ("*" * (len(api_key) - 4) + api_key[-4:]) if len(api_key) > 4 else "*" * len(api_key)
     return _render(request, "settings.html", {
         "admin": admin,
@@ -562,6 +574,8 @@ async def settings_page(request: Request, admin: AdminUser = Depends(get_current
         "api_key_masked": masked_key,
         "model": model,
         "system_prompt": system_prompt,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
     })
 
 
@@ -572,6 +586,8 @@ async def settings_save(
     llm_api_key: str = Form(""),
     llm_model: str = Form(...),
     llm_system_prompt: str = Form(...),
+    llm_temperature: str = Form("0.3"),
+    llm_max_tokens: str = Form("700"),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -580,6 +596,8 @@ async def settings_save(
         set_setting("llm_api_key", llm_api_key)
     set_setting("llm_model", llm_model)
     set_setting("llm_system_prompt", llm_system_prompt)
+    set_setting("llm_temperature", llm_temperature)
+    set_setting("llm_max_tokens", llm_max_tokens)
     return RedirectResponse("/settings", status_code=303)
 
 

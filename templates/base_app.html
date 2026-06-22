@@ -118,8 +118,11 @@ document.addEventListener('click', function(e) {
         var items = JSON.parse(row.dataset.ctx);
         menu.innerHTML = items.map(function(it) {
             var cls = it.confirm ? 'ctx-item ctx-danger' : 'ctx-item';
-            if (it.confirm) {
+            if (it.confirm && it.delete) {
                 return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" data-ctx-delete onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
+            }
+            if (it.confirm) {
+                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-target="this" hx-swap="outerHTML" onsubmit="return confirm(\'' + it.confirm + '\')" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
             }
             if (it.copy) {
                 return '<div class="' + cls + '" data-copy="' + it.copy + '">' + it.label + '</div>';
@@ -143,11 +146,14 @@ document.addEventListener('click', function(e) {
 
     // Remove row on successful delete from context menu
     document.body.addEventListener('htmx:afterRequest', function(e) {
-        if (e.detail.elt.closest('[data-ctx-delete]') && ctxRow && e.detail.successful) {
+        if (!e.detail.successful) return;
+        if (e.detail.elt.closest('[data-ctx-delete]') && ctxRow) {
             menu.style.display = 'none';
             ctxRow.style.transition = 'opacity 0.2s';
             ctxRow.style.opacity = '0';
             setTimeout(function() { ctxRow.remove(); ctxRow = null; }, 200);
+        } else if (e.detail.elt.closest('.ctx-menu')) {
+            menu.style.display = 'none';
         }
     });
 })();
