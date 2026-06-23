@@ -6,7 +6,7 @@
 
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
         {% if assignment.time_limit %}
-        <div class="row-meta"><strong>Time limit:</strong> {{ assignment.time_limit }} minutes</div>
+        <div class="row-meta"><strong>Time limit:</strong> {{ assignment.time_limit }} day{{ "s" if assignment.time_limit != 1 else "" }}</div>
         {% endif %}
         {% if assignment.deadline %}
         <div class="row-meta"><strong>Deadline:</strong> {{ assignment.deadline.strftime("%Y-%m-%d %H:%M") }} UTC</div>
