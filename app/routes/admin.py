@@ -8,7 +8,7 @@ from sqlmodel import Session, select, func, col
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
@@ -93,7 +93,27 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
         session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline})
-    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin})
+    views = db.exec(select(TableView).where(TableView.page == "/sessions")).all()
+    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
+    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin, "views": views_data})
+
+
+@router.post("/views")
+async def create_view(request: Request, page: str = Form(...), name: str = Form(...), config: str = Form(""), admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    view = TableView(page=page, name=name, config=config)
+    db.add(view)
+    db.commit()
+    db.refresh(view)
+    return HTMLResponse(f'<span class="view-pill" data-view-id="{view.id}" data-view-config=\'{view.config}\'>{view.name} <button type="button" class="view-del">×</button></span>')
+
+
+@router.delete("/views/{view_id}")
+async def delete_view(view_id: int, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    view = db.get(TableView, view_id)
+    if view:
+        db.delete(view)
+        db.commit()
+    return HTMLResponse("")
 
 
 @router.get("/session/new", response_class=HTMLResponse)

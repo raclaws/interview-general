@@ -46,6 +46,124 @@
         pillsRow.className = 'filter-pills';
         if (controls) controls.parentNode.insertBefore(pillsRow, controls.nextSibling);
 
+        // Custom views
+        var viewsData = [];
+        if (container.dataset.tableViews) {
+            try { viewsData = JSON.parse(container.dataset.tableViews); } catch(e) {}
+        }
+        var tablePage = container.dataset.tablePage || window.location.pathname;
+        var viewPillsRow = null;
+        var activeViewId = null;
+
+        if (controls) {
+            viewPillsRow = document.createElement('div');
+            viewPillsRow.className = 'view-pills';
+            controls.parentNode.insertBefore(viewPillsRow, controls.nextSibling);
+            // Move filter pills after view pills
+            viewPillsRow.parentNode.insertBefore(pillsRow, viewPillsRow.nextSibling);
+        }
+
+        function getCurrentState() {
+            var state = {};
+            if (ctx.advancedRules.length) state.rules = ctx.advancedRules;
+            if (sortSelect && sortSelect.value) state.sort = sortSelect.value;
+            if (groupSelect && groupSelect.value) state.group = groupSelect.value;
+            if (searchInput && searchInput.value) state.search = searchInput.value;
+            return JSON.stringify(state);
+        }
+
+        function applyViewConfig(configStr) {
+            var config = {};
+            try { config = JSON.parse(configStr); } catch(e) { return; }
+            ctx.advancedRules = config.rules || [];
+            syncDropdownFromRules();
+            renderPills();
+            if (searchInput) searchInput.value = config.search || '';
+            if (sortSelect) {
+                sortSelect.value = config.sort || '';
+                if (config.sort) {
+                    var parts = config.sort.split(':');
+                    ctx.sortField = parts[0];
+                    ctx.sortDir = parts[1] || 'asc';
+                    sortSelect.classList.add('sort-active');
+                } else {
+                    ctx.sortField = null;
+                    ctx.sortDir = null;
+                    sortSelect.classList.remove('sort-active');
+                }
+            }
+            if (groupSelect) {
+                groupSelect.value = config.group || '';
+                ctx.groupField = config.group || null;
+            }
+            applyAll();
+        }
+
+        function renderViewPills() {
+            if (!viewPillsRow) return;
+            viewPillsRow.innerHTML = '';
+
+            var allPill = document.createElement('span');
+            allPill.className = 'view-pill' + (activeViewId === null ? ' view-pill--active' : '');
+            allPill.textContent = 'All';
+            allPill.addEventListener('click', function() {
+                activeViewId = null;
+                ctx.advancedRules = [];
+                syncDropdownFromRules();
+                renderPills();
+                if (searchInput) searchInput.value = '';
+                if (sortSelect) { sortSelect.value = ''; ctx.sortField = null; ctx.sortDir = null; sortSelect.classList.remove('sort-active'); }
+                if (groupSelect) { groupSelect.value = ''; ctx.groupField = null; }
+                applyAll();
+                renderViewPills();
+            });
+            viewPillsRow.appendChild(allPill);
+
+            viewsData.forEach(function(v) {
+                var pill = document.createElement('span');
+                pill.className = 'view-pill' + (activeViewId === v.id ? ' view-pill--active' : '');
+                pill.dataset.viewId = v.id;
+                pill.dataset.viewConfig = v.config;
+                pill.innerHTML = v.name + ' <button type="button" class="view-del">×</button>';
+                pill.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('view-del')) return;
+                    activeViewId = v.id;
+                    applyViewConfig(v.config);
+                    renderViewPills();
+                });
+                pill.querySelector('.view-del').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    fetch('/views/' + v.id, {method: 'DELETE'});
+                    viewsData = viewsData.filter(function(x) { return x.id !== v.id; });
+                    if (activeViewId === v.id) activeViewId = null;
+                    renderViewPills();
+                });
+                viewPillsRow.appendChild(pill);
+            });
+
+            var saveLink = document.createElement('button');
+            saveLink.type = 'button';
+            saveLink.className = 'view-save-link';
+            saveLink.textContent = '+ Save view';
+            saveLink.addEventListener('click', function() {
+                var name = prompt('View name:');
+                if (!name || !name.trim()) return;
+                var config = getCurrentState();
+                var form = new FormData();
+                form.append('page', tablePage);
+                form.append('name', name.trim());
+                form.append('config', config);
+                fetch('/views', {method: 'POST', body: form}).then(function(r) { return r.text(); }).then(function() {
+                    viewsData.push({id: Date.now(), name: name.trim(), config: config});
+                    activeViewId = viewsData[viewsData.length - 1].id;
+                    renderViewPills();
+                });
+            });
+            viewPillsRow.appendChild(saveLink);
+        }
+
+        renderViewPills();
+
         // "+ Filter" button and popover
         var filterWrap = null;
         if (fieldsConfig && controls) {
@@ -199,6 +317,7 @@
         // URL param sync
         function syncToURL() {
             var params = new URLSearchParams();
+            if (activeViewId) params.set('view', activeViewId);
             if (searchInput && searchInput.value) params.set('search', searchInput.value);
             ctx.advancedRules.forEach(function(rule) {
                 params.append('af', rule.field + ':' + rule.op + ':' + rule.value);
@@ -212,6 +331,17 @@
 
         function restoreFromURL() {
             var params = new URLSearchParams(window.location.search);
+            // Restore view if specified
+            if (params.has('view')) {
+                var vid = parseInt(params.get('view'));
+                var matchedView = viewsData.find(function(v) { return v.id === vid; });
+                if (matchedView) {
+                    activeViewId = vid;
+                    applyViewConfig(matchedView.config);
+                    renderViewPills();
+                    return;
+                }
+            }
             if (searchInput && params.has('search')) {
                 searchInput.value = params.get('search');
             }

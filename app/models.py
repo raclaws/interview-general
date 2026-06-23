@@ -221,3 +221,13 @@ class PipelineScore(SQLModel, table=True):
     @property
     def culture_total(self) -> int:
         return sum(int(v) for v in self.culture_scores_dict.values() if v)
+
+
+class TableView(SQLModel, table=True):
+    __tablename__ = "table_views"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    page: str
+    name: str
+    config: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)
