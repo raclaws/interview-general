@@ -502,7 +502,9 @@
                 var row = visible[ctx.focusIndex];
                 if (row && row.dataset.href) window.location.href = row.dataset.href;
             } else if (e.key === 'Escape') {
-                if (ctx.focusIndex >= 0) {
+                if (selected.size > 0) {
+                    deselectAll();
+                } else if (ctx.focusIndex >= 0) {
                     setFocus(-1);
                 } else {
                     history.back();
@@ -521,6 +523,7 @@
         var lastCheckedIndex = -1;
         var table = container.querySelector('table.table-clean');
         var thead = table ? table.querySelector('thead') : null;
+        var selectAllCb = null;
         var bulkBar = document.createElement('div');
         bulkBar.className = 'bulk-bar';
         bulkBar.style.display = 'none';
@@ -531,7 +534,7 @@
             if (headerRow) {
                 var selectAllTh = document.createElement('th');
                 selectAllTh.className = 'col-select';
-                var selectAllCb = document.createElement('input');
+                selectAllCb = document.createElement('input');
                 selectAllCb.type = 'checkbox';
                 selectAllTh.appendChild(selectAllCb);
                 headerRow.insertBefore(selectAllTh, headerRow.firstChild);
@@ -563,9 +566,23 @@
             td.appendChild(cb);
             row.insertBefore(td, row.firstChild);
 
+            cb.addEventListener('change', function(e) {
+                e.stopPropagation();
+                if (cb.checked) {
+                    selected.add(row);
+                    row.classList.add('row-selected');
+                } else {
+                    selected.delete(row);
+                    row.classList.remove('row-selected');
+                }
+                lastCheckedIndex = idx;
+                updateBulkBar();
+            });
+
             cb.addEventListener('click', function(e) {
                 e.stopPropagation();
-                if ((e.shiftKey || (e.ctrlKey && e.shiftKey)) && lastCheckedIndex >= 0) {
+                if (e.shiftKey && lastCheckedIndex >= 0) {
+                    e.preventDefault();
                     var start = Math.min(lastCheckedIndex, idx);
                     var end = Math.max(lastCheckedIndex, idx);
                     for (var i = start; i <= end; i++) {
@@ -574,27 +591,9 @@
                         var rcb = ctx.rows[i].querySelector('.col-select input');
                         if (rcb) rcb.checked = true;
                     }
-                } else if (e.ctrlKey) {
-                    if (selected.has(row)) {
-                        selected.delete(row);
-                        row.classList.remove('row-selected');
-                        cb.checked = false;
-                    } else {
-                        selected.add(row);
-                        row.classList.add('row-selected');
-                        cb.checked = true;
-                    }
-                } else {
-                    if (cb.checked) {
-                        selected.add(row);
-                        row.classList.add('row-selected');
-                    } else {
-                        selected.delete(row);
-                        row.classList.remove('row-selected');
-                    }
+                    lastCheckedIndex = idx;
+                    updateBulkBar();
                 }
-                lastCheckedIndex = idx;
-                updateBulkBar();
             });
 
             row.addEventListener('click', function(e) {
@@ -673,6 +672,44 @@
                 updateCount();
             });
         }
+
+        function selectAll() {
+            var visible = getVisibleRows();
+            visible.forEach(function(row) {
+                selected.add(row);
+                row.classList.add('row-selected');
+                var cb = row.querySelector('.col-select input');
+                if (cb) cb.checked = true;
+            });
+            if (selectAllCb) selectAllCb.checked = true;
+            updateBulkBar();
+        }
+
+        function deselectAll() {
+            selected.forEach(function(row) {
+                row.classList.remove('row-selected');
+                var cb = row.querySelector('.col-select input');
+                if (cb) cb.checked = false;
+            });
+            selected.clear();
+            if (selectAllCb) selectAllCb.checked = false;
+            updateBulkBar();
+        }
+
+        container.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                selectAll();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.target.closest('input, textarea, select')) return;
+            if (e.ctrlKey && e.key === 'a') {
+                e.preventDefault();
+                selectAll();
+            }
+        });
 
         // Expose toggle for shortcuts.js (x key)
         container._toggleRowSelection = toggleRowSelection;
