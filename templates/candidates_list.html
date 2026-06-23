@@ -5,7 +5,7 @@
     <h1>Candidates</h1>
 </div>
 
-<div data-table>
+<div data-table data-table-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"date","label":"Date","type":"date"}]' data-table-views='{{ views | tojson }}' data-table-page="/candidates">
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search by name or email..." class="table-search">
         <select data-table-filter="stages" data-filter-mode="contains" class="table-filter">

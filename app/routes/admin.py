@@ -1,14 +1,14 @@
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func, col
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 
@@ -37,7 +37,45 @@ def _render(request: Request, name: str, context: dict = None):
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
-    return _render(request, "dashboard.html", {"admin": admin})
+    total_sessions = db.exec(select(func.count(InterviewSession.id))).one()
+    pending_sessions = db.exec(
+        select(func.count(InterviewSession.id)).where(InterviewSession.status == "pending")
+    ).one()
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    completed_this_week = db.exec(
+        select(func.count(InterviewSession.id)).where(
+            InterviewSession.status == "completed",
+            col(InterviewSession.created_at) >= week_ago,
+        )
+    ).one()
+    active_candidates = db.exec(
+        select(func.count(func.distinct(CandidatePipeline.candidate_id))).where(
+            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES)
+        )
+    ).one()
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    upcoming_sessions = db.exec(
+        select(InterviewSession).where(
+            InterviewSession.status == "pending",
+            col(InterviewSession.interview_date) >= today_str,
+        ).order_by(InterviewSession.interview_date).limit(10)
+    ).all()
+    upcoming = []
+    for s in upcoming_sessions:
+        interviewers = db.exec(
+            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
+        ).all()
+        upcoming.append({"session": s, "interviewers": interviewers})
+
+    return _render(request, "dashboard.html", {
+        "admin": admin,
+        "total_sessions": total_sessions,
+        "pending_sessions": pending_sessions,
+        "completed_this_week": completed_this_week,
+        "active_candidates": active_candidates,
+        "upcoming": upcoming,
+    })
 
 
 @router.get("/sessions", response_class=HTMLResponse)
@@ -55,7 +93,27 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
         session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline})
-    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin})
+    views = db.exec(select(TableView).where(TableView.page == "/sessions")).all()
+    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
+    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin, "views": views_data})
+
+
+@router.post("/views")
+async def create_view(request: Request, page: str = Form(...), name: str = Form(...), config: str = Form(""), admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    view = TableView(page=page, name=name, config=config)
+    db.add(view)
+    db.commit()
+    db.refresh(view)
+    return HTMLResponse(f'<span class="view-pill" data-view-id="{view.id}" data-view-config=\'{view.config}\'>{view.name} <button type="button" class="view-del">×</button></span>')
+
+
+@router.delete("/views/{view_id}")
+async def delete_view(view_id: int, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    view = db.get(TableView, view_id)
+    if view:
+        db.delete(view)
+        db.commit()
+    return HTMLResponse("")
 
 
 @router.get("/session/new", response_class=HTMLResponse)

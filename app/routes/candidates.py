@@ -11,7 +11,7 @@ from app.auth import get_current_admin
 from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
-    PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS,
+    PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
 )
 from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
@@ -197,10 +197,13 @@ async def candidates_list(
             "stages": stages,
             "latest_activity": latest_activity,
         })
+    views = db.exec(select(TableView).where(TableView.page == "/candidates")).all()
+    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
     return _render(request, "candidates_list.html", {
         "candidate_data": candidate_data,
         "admin": admin,
         "stages": PIPELINE_STAGES,
+        "views": views_data,
     })
 
 
@@ -676,11 +679,14 @@ async def pipelines_list(
             "scores": {"hr_avg": hr_avg, "culture_avg": culture_avg},
         })
 
+    views = db.exec(select(TableView).where(TableView.page == "/pipelines")).all()
+    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
     return _render(request, "pipelines_list.html", {
         "pipeline_data": pipeline_data,
         "admin": admin,
         "stages": PIPELINE_STAGES,
         "business_units": sorted(bus_set),
+        "views": views_data,
     })
 
 

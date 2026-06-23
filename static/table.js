@@ -20,7 +20,8 @@
             sortField: null,
             sortDir: null,
             groupField: null,
-            focusIndex: -1
+            focusIndex: -1,
+            advancedRules: []
         };
 
         function refreshRows() {
@@ -32,11 +33,368 @@
         var filters = Array.from(container.querySelectorAll('[data-table-filter]'));
         var sortSelect = container.querySelector('[data-table-sort]');
         var groupSelect = container.querySelector('[data-table-groupby]');
+        var controls = container.querySelector('.table-controls');
+
+        // Advanced filter field config
+        var fieldsConfig = null;
+        if (container.dataset.tableFields) {
+            try { fieldsConfig = JSON.parse(container.dataset.tableFields); } catch(e) {}
+        }
+
+        // Filter pills container
+        var pillsRow = document.createElement('div');
+        pillsRow.className = 'filter-pills';
+        if (controls) controls.parentNode.insertBefore(pillsRow, controls.nextSibling);
+
+        // Custom views
+        var viewsData = [];
+        if (container.dataset.tableViews) {
+            try { viewsData = JSON.parse(container.dataset.tableViews); } catch(e) {}
+        }
+        var tablePage = container.dataset.tablePage || window.location.pathname;
+        var viewPillsRow = null;
+        var activeViewId = null;
+
+        if (controls) {
+            viewPillsRow = document.createElement('div');
+            viewPillsRow.className = 'view-pills';
+            controls.parentNode.insertBefore(viewPillsRow, controls.nextSibling);
+            // Move filter pills after view pills
+            viewPillsRow.parentNode.insertBefore(pillsRow, viewPillsRow.nextSibling);
+        }
+
+        function getCurrentState() {
+            var state = {};
+            if (ctx.advancedRules.length) state.rules = ctx.advancedRules;
+            if (sortSelect && sortSelect.value) state.sort = sortSelect.value;
+            if (groupSelect && groupSelect.value) state.group = groupSelect.value;
+            if (searchInput && searchInput.value) state.search = searchInput.value;
+            return JSON.stringify(state);
+        }
+
+        function applyViewConfig(configStr) {
+            var config = {};
+            try { config = JSON.parse(configStr); } catch(e) { return; }
+            ctx.advancedRules = config.rules || [];
+            syncDropdownFromRules();
+            renderPills();
+            if (searchInput) searchInput.value = config.search || '';
+            if (sortSelect) {
+                sortSelect.value = config.sort || '';
+                if (config.sort) {
+                    var parts = config.sort.split(':');
+                    ctx.sortField = parts[0];
+                    ctx.sortDir = parts[1] || 'asc';
+                    sortSelect.classList.add('sort-active');
+                } else {
+                    ctx.sortField = null;
+                    ctx.sortDir = null;
+                    sortSelect.classList.remove('sort-active');
+                }
+            }
+            if (groupSelect) {
+                groupSelect.value = config.group || '';
+                ctx.groupField = config.group || null;
+            }
+            applyAll();
+        }
+
+        function renderViewPills() {
+            if (!viewPillsRow) return;
+            viewPillsRow.innerHTML = '';
+
+            var allPill = document.createElement('span');
+            allPill.className = 'view-pill' + (activeViewId === null ? ' view-pill--active' : '');
+            allPill.textContent = 'All';
+            allPill.addEventListener('click', function() {
+                activeViewId = null;
+                ctx.advancedRules = [];
+                syncDropdownFromRules();
+                renderPills();
+                if (searchInput) searchInput.value = '';
+                if (sortSelect) { sortSelect.value = ''; ctx.sortField = null; ctx.sortDir = null; sortSelect.classList.remove('sort-active'); }
+                if (groupSelect) { groupSelect.value = ''; ctx.groupField = null; }
+                applyAll();
+                renderViewPills();
+            });
+            viewPillsRow.appendChild(allPill);
+
+            viewsData.forEach(function(v) {
+                var pill = document.createElement('span');
+                pill.className = 'view-pill' + (activeViewId === v.id ? ' view-pill--active' : '');
+                pill.dataset.viewId = v.id;
+                pill.dataset.viewConfig = v.config;
+                pill.innerHTML = v.name + ' <button type="button" class="view-del">×</button>';
+                pill.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('view-del')) return;
+                    activeViewId = v.id;
+                    applyViewConfig(v.config);
+                    renderViewPills();
+                });
+                pill.querySelector('.view-del').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    fetch('/views/' + v.id, {method: 'DELETE'});
+                    viewsData = viewsData.filter(function(x) { return x.id !== v.id; });
+                    if (activeViewId === v.id) activeViewId = null;
+                    renderViewPills();
+                });
+                viewPillsRow.appendChild(pill);
+            });
+
+            var saveLink = document.createElement('button');
+            saveLink.type = 'button';
+            saveLink.className = 'view-save-link';
+            saveLink.textContent = '+ Save view';
+            saveLink.addEventListener('click', function() {
+                var name = prompt('View name:');
+                if (!name || !name.trim()) return;
+                var config = getCurrentState();
+                var form = new FormData();
+                form.append('page', tablePage);
+                form.append('name', name.trim());
+                form.append('config', config);
+                fetch('/views', {method: 'POST', body: form}).then(function(r) { return r.text(); }).then(function() {
+                    viewsData.push({id: Date.now(), name: name.trim(), config: config});
+                    activeViewId = viewsData[viewsData.length - 1].id;
+                    renderViewPills();
+                });
+            });
+            viewPillsRow.appendChild(saveLink);
+        }
+
+        renderViewPills();
+
+        // "+ Filter" button and popover
+        var filterWrap = null;
+        if (fieldsConfig && controls) {
+            filterWrap = document.createElement('span');
+            filterWrap.style.position = 'relative';
+            filterWrap.style.display = 'inline-block';
+
+            var addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'filter-add-btn';
+            addBtn.textContent = '+ Filter';
+            filterWrap.appendChild(addBtn);
+
+            var popover = document.createElement('div');
+            popover.className = 'filter-popover';
+            popover.style.display = 'none';
+
+            var fieldSel = document.createElement('select');
+            fieldSel.innerHTML = '<option value="">Field</option>' +
+                fieldsConfig.map(function(f) { return '<option value="' + f.key + '">' + f.label + '</option>'; }).join('');
+            popover.appendChild(fieldSel);
+
+            var opSel = document.createElement('select');
+            opSel.innerHTML = '<option value="">Op</option>';
+            popover.appendChild(opSel);
+
+            var valInput = document.createElement('input');
+            valInput.type = 'text';
+            valInput.placeholder = 'Value';
+            valInput.style.width = '100px';
+            popover.appendChild(valInput);
+
+            var valSel = document.createElement('select');
+            valSel.style.display = 'none';
+            popover.appendChild(valSel);
+
+            var addRuleBtn = document.createElement('button');
+            addRuleBtn.type = 'button';
+            addRuleBtn.textContent = 'Add';
+            popover.appendChild(addRuleBtn);
+
+            filterWrap.appendChild(popover);
+            controls.appendChild(filterWrap);
+
+            var opsForType = {
+                'select': [
+                    {value: 'is', label: 'is'},
+                    {value: 'is_not', label: 'is not'},
+                    {value: 'in', label: 'in'}
+                ],
+                'date': [
+                    {value: 'is', label: 'is'},
+                    {value: 'gte', label: 'on or after'},
+                    {value: 'lte', label: 'on or before'}
+                ],
+                'text': [
+                    {value: 'contains', label: 'contains'},
+                    {value: 'not_contains', label: 'does not contain'}
+                ]
+            };
+
+            fieldSel.addEventListener('change', function() {
+                var cfg = fieldsConfig.find(function(f) { return f.key === fieldSel.value; });
+                if (!cfg) { opSel.innerHTML = '<option value="">Op</option>'; return; }
+                var ops = opsForType[cfg.type] || opsForType['text'];
+                opSel.innerHTML = ops.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
+                if (cfg.type === 'select' && cfg.options) {
+                    valSel.innerHTML = cfg.options.map(function(o) { return '<option value="' + o + '">' + o.replace(/_/g, ' ') + '</option>'; }).join('');
+                    valSel.style.display = '';
+                    valInput.style.display = 'none';
+                } else {
+                    valSel.style.display = 'none';
+                    valInput.style.display = '';
+                    valInput.type = cfg.type === 'date' ? 'date' : 'text';
+                }
+            });
+
+            addBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                popover.style.display = popover.style.display === 'none' ? 'flex' : 'none';
+            });
+
+            addRuleBtn.addEventListener('click', function() {
+                var field = fieldSel.value;
+                var op = opSel.value;
+                var cfg = fieldsConfig.find(function(f) { return f.key === field; });
+                if (!field || !op) return;
+                var value = (cfg && cfg.type === 'select' && cfg.options) ? valSel.value : valInput.value;
+                if (!value) return;
+                ctx.advancedRules.push({field: field, op: op, value: value});
+                renderPills();
+                syncDropdownFromRules();
+                applyAll();
+                popover.style.display = 'none';
+                fieldSel.value = '';
+                opSel.innerHTML = '<option value="">Op</option>';
+                valInput.value = '';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!filterWrap.contains(e.target)) popover.style.display = 'none';
+            });
+        }
+
+        function renderPills() {
+            pillsRow.innerHTML = '';
+            ctx.advancedRules.forEach(function(rule, i) {
+                var cfg = fieldsConfig ? fieldsConfig.find(function(f) { return f.key === rule.field; }) : null;
+                var label = cfg ? cfg.label : rule.field;
+                var opLabel = rule.op.replace(/_/g, ' ');
+                var pill = document.createElement('span');
+                pill.className = 'filter-pill';
+                pill.innerHTML = '<span>' + label + ' ' + opLabel + ' ' + rule.value.replace(/_/g, ' ') + '</span>';
+                var closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.textContent = '×';
+                closeBtn.addEventListener('click', function() {
+                    ctx.advancedRules.splice(i, 1);
+                    renderPills();
+                    syncDropdownFromRules();
+                    applyAll();
+                });
+                pill.appendChild(closeBtn);
+                pillsRow.appendChild(pill);
+            });
+        }
+
+        function syncDropdownFromRules() {
+            filters.forEach(function(sel) {
+                var field = sel.dataset.tableFilter;
+                var rule = ctx.advancedRules.find(function(r) { return r.field === field && r.op === 'is'; });
+                sel.value = rule ? rule.value : '';
+            });
+        }
+
+        function syncRulesFromDropdown(sel) {
+            var field = sel.dataset.tableFilter;
+            var value = sel.value;
+            var idx = -1;
+            ctx.advancedRules.forEach(function(r, i) { if (r.field === field) idx = i; });
+            if (value) {
+                var rule = {field: field, op: 'is', value: value};
+                if (idx >= 0) ctx.advancedRules[idx] = rule;
+                else ctx.advancedRules.push(rule);
+            } else {
+                if (idx >= 0) ctx.advancedRules.splice(idx, 1);
+            }
+            renderPills();
+        }
+
+        // URL param sync
+        function syncToURL() {
+            var params = new URLSearchParams();
+            if (activeViewId) params.set('view', activeViewId);
+            if (searchInput && searchInput.value) params.set('search', searchInput.value);
+            ctx.advancedRules.forEach(function(rule) {
+                params.append('af', rule.field + ':' + rule.op + ':' + rule.value);
+            });
+            if (sortSelect && sortSelect.value) params.set('sort', sortSelect.value);
+            if (groupSelect && groupSelect.value) params.set('group', groupSelect.value);
+            var qs = params.toString();
+            var url = window.location.pathname + (qs ? '?' + qs : '');
+            history.replaceState(null, '', url);
+        }
+
+        function restoreFromURL() {
+            var params = new URLSearchParams(window.location.search);
+            // Restore view if specified
+            if (params.has('view')) {
+                var vid = parseInt(params.get('view'));
+                var matchedView = viewsData.find(function(v) { return v.id === vid; });
+                if (matchedView) {
+                    activeViewId = vid;
+                    applyViewConfig(matchedView.config);
+                    renderViewPills();
+                    return;
+                }
+            }
+            if (searchInput && params.has('search')) {
+                searchInput.value = params.get('search');
+            }
+            // Restore advanced rules
+            ctx.advancedRules = [];
+            params.getAll('af').forEach(function(raw) {
+                var parts = raw.split(':');
+                if (parts.length >= 3) {
+                    ctx.advancedRules.push({field: parts[0], op: parts[1], value: parts.slice(2).join(':')});
+                }
+            });
+            // Legacy f_ params (from CLA-66) — convert to rules
+            filters.forEach(function(sel) {
+                var key = 'f_' + sel.dataset.tableFilter;
+                if (params.has(key) && !ctx.advancedRules.some(function(r) { return r.field === sel.dataset.tableFilter; })) {
+                    var val = params.get(key);
+                    var opt = sel.querySelector('option[value="' + CSS.escape(val) + '"]');
+                    if (opt) {
+                        ctx.advancedRules.push({field: sel.dataset.tableFilter, op: 'is', value: val});
+                    }
+                }
+            });
+            syncDropdownFromRules();
+            renderPills();
+            if (sortSelect && params.has('sort')) {
+                var sortVal = params.get('sort');
+                var opt = sortSelect.querySelector('option[value="' + CSS.escape(sortVal) + '"]');
+                if (opt) {
+                    sortSelect.value = sortVal;
+                    var parts = sortVal.split(':');
+                    ctx.sortField = parts[0];
+                    ctx.sortDir = parts[1] || 'asc';
+                    sortSelect.classList.add('sort-active');
+                }
+            }
+            if (groupSelect && params.has('group')) {
+                var groupVal = params.get('group');
+                var opt = groupSelect.querySelector('option[value="' + CSS.escape(groupVal) + '"]');
+                if (opt) {
+                    groupSelect.value = groupVal;
+                    ctx.groupField = groupVal;
+                }
+            }
+        }
+
+        window.addEventListener('popstate', function() {
+            restoreFromURL();
+            applyAll();
+        });
 
         // Row count indicator
         var countEl = document.createElement('span');
         countEl.className = 'table-count';
-        var controls = container.querySelector('.table-controls');
         if (controls) controls.appendChild(countEl);
 
         function updateCount() {
@@ -63,13 +421,14 @@
         }
 
         function applyAll() {
-            filterRows(ctx, searchInput, filters);
+            filterRows(ctx, searchInput);
             sortRows(ctx);
             groupRows(ctx);
             updateCount();
             var visible = getVisibleRows();
             if (ctx.focusIndex >= visible.length) setFocus(visible.length - 1);
             else if (ctx.focusIndex >= 0 && !visible[ctx.focusIndex]) setFocus(0);
+            syncToURL();
         }
 
         if (searchInput) {
@@ -77,7 +436,10 @@
         }
 
         filters.forEach(function(sel) {
-            sel.addEventListener('change', applyAll);
+            sel.addEventListener('change', function() {
+                syncRulesFromDropdown(sel);
+                applyAll();
+            });
         });
 
         if (sortSelect) {
@@ -113,7 +475,6 @@
                 return;
             }
 
-            // Escape closes context menu first
             var ctxMenu = document.getElementById('ctx-menu');
             if (e.key === 'Escape' && ctxMenu && ctxMenu.style.display === 'block') {
                 ctxMenu.style.display = 'none';
@@ -121,7 +482,6 @@
                 return;
             }
 
-            // / to focus search
             if (e.key === '/' && searchInput) {
                 e.preventDefault();
                 searchInput.focus();
@@ -156,34 +516,175 @@
             }
         });
 
-        // Initial count
-        updateCount();
+        // Bulk selection system
+        var selected = new Set();
+        var lastCheckedIndex = -1;
+        var table = container.querySelector('table.table-clean');
+        var thead = table ? table.querySelector('thead') : null;
+        var bulkBar = document.createElement('div');
+        bulkBar.className = 'bulk-bar';
+        bulkBar.style.display = 'none';
+        if (table) table.parentNode.insertBefore(bulkBar, table);
 
-        // Allow external refresh via custom event
+        if (thead) {
+            var headerRow = thead.querySelector('tr');
+            if (headerRow) {
+                var selectAllTh = document.createElement('th');
+                selectAllTh.className = 'col-select';
+                var selectAllCb = document.createElement('input');
+                selectAllCb.type = 'checkbox';
+                selectAllTh.appendChild(selectAllCb);
+                headerRow.insertBefore(selectAllTh, headerRow.firstChild);
+
+                selectAllCb.addEventListener('change', function() {
+                    var visible = getVisibleRows();
+                    visible.forEach(function(row) {
+                        var cb = row.querySelector('.col-select input');
+                        if (selectAllCb.checked) {
+                            selected.add(row);
+                            row.classList.add('row-selected');
+                            if (cb) cb.checked = true;
+                        } else {
+                            selected.delete(row);
+                            row.classList.remove('row-selected');
+                            if (cb) cb.checked = false;
+                        }
+                    });
+                    updateBulkBar();
+                });
+            }
+        }
+
+        ctx.rows.forEach(function(row, idx) {
+            var td = document.createElement('td');
+            td.className = 'col-select';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            td.appendChild(cb);
+            row.insertBefore(td, row.firstChild);
+
+            cb.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (e.shiftKey && lastCheckedIndex >= 0) {
+                    var start = Math.min(lastCheckedIndex, idx);
+                    var end = Math.max(lastCheckedIndex, idx);
+                    for (var i = start; i <= end; i++) {
+                        selected.add(ctx.rows[i]);
+                        ctx.rows[i].classList.add('row-selected');
+                        var rcb = ctx.rows[i].querySelector('.col-select input');
+                        if (rcb) rcb.checked = true;
+                    }
+                } else {
+                    if (cb.checked) {
+                        selected.add(row);
+                        row.classList.add('row-selected');
+                    } else {
+                        selected.delete(row);
+                        row.classList.remove('row-selected');
+                    }
+                }
+                lastCheckedIndex = idx;
+                updateBulkBar();
+            });
+        });
+
+        function toggleRowSelection(row) {
+            var cb = row.querySelector('.col-select input');
+            if (selected.has(row)) {
+                selected.delete(row);
+                row.classList.remove('row-selected');
+                if (cb) cb.checked = false;
+            } else {
+                selected.add(row);
+                row.classList.add('row-selected');
+                if (cb) cb.checked = true;
+            }
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            if (selected.size > 0) {
+                bulkBar.style.display = 'flex';
+                bulkBar.innerHTML = '<span>' + selected.size + ' selected</span>';
+                var delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'bulk-delete-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.addEventListener('click', bulkDelete);
+                bulkBar.appendChild(delBtn);
+            } else {
+                bulkBar.style.display = 'none';
+            }
+        }
+
+        function bulkDelete() {
+            if (!confirm('Delete ' + selected.size + ' item(s)?')) return;
+            var promises = [];
+            selected.forEach(function(row) {
+                var ctx = row.dataset.ctx;
+                if (!ctx) return;
+                try {
+                    var items = JSON.parse(ctx);
+                    var deleteItem = items.find(function(it) { return it.delete; });
+                    if (deleteItem) {
+                        promises.push(
+                            fetch(deleteItem.href, {method: 'POST'}).then(function() {
+                                row.remove();
+                            })
+                        );
+                    }
+                } catch(err) {}
+            });
+            Promise.all(promises).then(function() {
+                selected.clear();
+                updateBulkBar();
+                refreshRows();
+                updateCount();
+            });
+        }
+
+        // Expose toggle for shortcuts.js (x key)
+        container._toggleRowSelection = toggleRowSelection;
+
+        // Restore state from URL params and apply
+        restoreFromURL();
+        updateCount();
+        applyAll();
+
         container.addEventListener('table:refresh', applyAll);
     }
 
-    function filterRows(ctx, searchInput, filters) {
+    function matchRule(rule, rowVal) {
+        var rv = (rowVal || '').toLowerCase();
+        var v = rule.value.toLowerCase();
+        switch (rule.op) {
+            case 'is': return rv === v;
+            case 'is_not': return rv !== v;
+            case 'in':
+                var vals = rule.value.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                return vals.indexOf(rv) !== -1;
+            case 'contains': return rv.indexOf(v) !== -1;
+            case 'not_contains': return rv.indexOf(v) === -1;
+            case 'gte': return rv >= v;
+            case 'lte': return rv <= v;
+            default: return true;
+        }
+    }
+
+    function filterRows(ctx, searchInput) {
         var query = searchInput ? searchInput.value.toLowerCase() : '';
 
         ctx.rows.forEach(function(row) {
             var matchSearch = !query || (row.dataset.search || '').indexOf(query) !== -1;
 
-            var matchFilters = filters.every(function(sel) {
-                var field = sel.dataset.tableFilter;
-                var value = sel.value;
-                if (!value) return true;
-                var rowVal = row.dataset[field] || '';
-                if (sel.dataset.filterMode === 'contains') {
-                    return rowVal.indexOf(value) !== -1;
-                }
-                return rowVal === value;
+            var matchAdvanced = ctx.advancedRules.every(function(rule) {
+                var rowVal = row.dataset[rule.field] || '';
+                return matchRule(rule, rowVal);
             });
 
-            row.style.display = (matchSearch && matchFilters) ? '' : 'none';
+            row.style.display = (matchSearch && matchAdvanced) ? '' : 'none';
         });
 
-        // Search highlight
         highlightSearch(ctx, query);
     }
 
@@ -191,7 +692,6 @@
         ctx.rows.forEach(function(row) {
             var cells = row.querySelectorAll('td');
             cells.forEach(function(cell) {
-                // Remove existing marks
                 cell.querySelectorAll('mark.search-hl').forEach(function(m) {
                     m.replaceWith(m.textContent);
                 });

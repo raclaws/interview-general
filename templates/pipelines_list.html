@@ -5,7 +5,7 @@
     <h1>Pipelines</h1>
 </div>
 
-<div data-table>
+<div data-table data-table-fields='[{"key":"stage","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"bu","label":"Business Unit","type":"select","options":["Markethac","APEX","EXONIA","1011","R&D","Group Support","LUPIN"]},{"key":"date","label":"Date","type":"date"}]' data-table-views='{{ views | tojson }}' data-table-page="/pipelines">
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search candidate name..." class="table-search">
         <select data-table-filter="stage" class="table-filter">
