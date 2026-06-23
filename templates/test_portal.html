@@ -18,7 +18,9 @@
     {% endif %}
 
     {% if past_deadline %}
-    <div class="alert alert-danger" style="margin-bottom: 1rem;">The deadline for this test has passed. You may still submit, but your submission will be flagged as late.</div>
+    <div style="background: var(--warning-bg); color: var(--warning); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.25rem;">⚠</span> The deadline for this test has passed. You may still submit, but your submission will be flagged as late.
+    </div>
     {% endif %}
 
     {% if error %}
