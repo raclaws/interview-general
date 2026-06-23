@@ -962,6 +962,7 @@ textarea { resize: vertical; min-height: 80px; }
 tbody .col-select input[type="checkbox"] { opacity: 0; transition: opacity 0.15s; }
 tr:hover .col-select input[type="checkbox"],
 tr.row-selected .col-select input[type="checkbox"] { opacity: 1; }
+.table-selecting { user-select: none; -webkit-user-select: none; }
 
 /* Done page */
 .done-container { text-align: center; padding: 4rem 2rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }

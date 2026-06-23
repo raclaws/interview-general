@@ -583,6 +583,8 @@
                 e.stopPropagation();
                 if (e.shiftKey && lastCheckedIndex >= 0) {
                     e.preventDefault();
+                    if (table) table.classList.add('table-selecting');
+                    window.getSelection().removeAllRanges();
                     var start = Math.min(lastCheckedIndex, idx);
                     var end = Math.max(lastCheckedIndex, idx);
                     for (var i = start; i <= end; i++) {
@@ -593,6 +595,7 @@
                     }
                     lastCheckedIndex = idx;
                     updateBulkBar();
+                    setTimeout(function() { if (table) table.classList.remove('table-selecting'); }, 0);
                 }
             });
 
@@ -600,6 +603,8 @@
                 if (e.target.closest('.col-select, a, button, select, input, form')) return;
                 if (e.shiftKey && lastCheckedIndex >= 0) {
                     e.preventDefault();
+                    if (table) table.classList.add('table-selecting');
+                    window.getSelection().removeAllRanges();
                     var start = Math.min(lastCheckedIndex, idx);
                     var end = Math.max(lastCheckedIndex, idx);
                     for (var i = start; i <= end; i++) {
@@ -610,6 +615,7 @@
                     }
                     lastCheckedIndex = idx;
                     updateBulkBar();
+                    setTimeout(function() { if (table) table.classList.remove('table-selecting'); }, 0);
                 } else if (e.ctrlKey) {
                     e.preventDefault();
                     toggleRowSelection(row);
