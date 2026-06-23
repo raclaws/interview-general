@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="form-container" style="max-width: 600px; margin: 2rem auto;">
+    <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">{{ assignment.title }}</h1>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        {% if assignment.time_limit %}
+        <div class="row-meta"><strong>Time limit:</strong> {{ assignment.time_limit }} minutes</div>
+        {% endif %}
+        {% if assignment.deadline %}
+        <div class="row-meta"><strong>Deadline:</strong> {{ assignment.deadline.strftime("%Y-%m-%d %H:%M") }} UTC</div>
+        {% endif %}
+    </div>
+
+    {% if assignment.instructions %}
+    <div style="background: var(--bg-muted); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 0.875rem;">{{ assignment.instructions }}</div>
+    {% endif %}
+
+    {% if past_deadline %}
+    <div class="alert alert-danger" style="margin-bottom: 1rem;">The deadline for this test has passed. You may still submit, but your submission will be flagged as late.</div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-danger" style="margin-bottom: 1rem;">{{ error }}</div>
+    {% endif %}
+
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ assignment.external_url }}" target="_blank" rel="noopener" class="btn" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            Open Test
+        </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
+
+    <h2 style="font-size: 1rem; margin-bottom: 0.75rem;">Submit Results</h2>
+    <p class="row-meta" style="margin-bottom: 1rem;">Upload your result file or provide a link to your submission.</p>
+
+    <form method="post" action="/t/{{ token }}/submit" enctype="multipart/form-data" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Submitting...'">
+        <input type="hidden" name="key" value="{{ key }}">
+
+        <div class="form-group">
+            <label class="form-label">Upload file{% if assignment.max_upload_size %} <span class="row-meta">(max {{ assignment.max_upload_size }} MB)</span>{% endif %}</label>
+            <input type="file" name="file" class="form-input" {% if assignment.max_upload_size %}onchange="if(this.files[0] && this.files[0].size > {{ assignment.max_upload_size * 1024 * 1024 }}) { alert('File exceeds {{ assignment.max_upload_size }} MB limit'); this.value=''; }"{% endif %}>
+        </div>
+
+        <div class="row-meta" style="text-align: center; margin: 0.75rem 0;">— or —</div>
+
+        <div class="form-group">
+            <label class="form-label">Submission link</label>
+            <input type="url" name="submission_url" class="form-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <button type="submit" class="btn" style="width: 100%; margin-top: 0.5rem;">Submit</button>
+    </form>
+
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <p class="row-meta" style="font-size: 0.8rem;">Need help? Contact us via WhatsApp hotline.</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Submitted{% endblock %}
+{% block content %}
+<div class="done-container" style="max-width: 500px; margin: 4rem auto;">
+    <div style="font-size: 2.5rem; margin-bottom: 1rem;">✓</div>
+    <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Submission Received</h1>
+    <p class="row-meta" style="margin-bottom: 1.5rem;">Your submission for <strong>{{ assignment.title }}</strong> has been recorded. You may close this page.</p>
+    {% if assignment.submitted_at %}
+    <p class="row-meta" style="font-size: 0.8rem;">Submitted at: {{ assignment.submitted_at.strftime("%Y-%m-%d %H:%M") }} UTC</p>
+    {% endif %}
+</div>
+{% endblock %}

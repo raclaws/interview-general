@@ -79,6 +79,35 @@
 <p class="hint" style="margin-bottom: 1.5rem;">No sessions linked to this pipeline.</p>
 {% endif %}
 
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+    <h2 style="font-size: 1rem; margin: 0;">Tests</h2>
+    <a href="/pipeline/{{ pipeline.id }}/assign-test" class="btn-ghost" style="font-size: 0.8rem;">+ Assign Test</a>
+</div>
+{% if test_assignments %}
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for t in test_assignments %}
+        <tr data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}t/{{ t.token }}"},{"label":"⎘ Copy password","copy":"{{ t.password }}"},{"label":"✕ Delete","href":"/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete","confirm":"Delete this test assignment?","delete":true}]'>
+            <td>
+                <div class="col-primary">{{ t.title }}</div>
+                <div class="row-meta">{{ t.external_url[:50] }}{% if t.external_url|length > 50 %}…{% endif %}</div>
+            </td>
+            <td>
+                {% if t.deadline %}<span class="row-meta">Due: {{ t.deadline.strftime("%Y-%m-%d %H:%M") }}</span>{% endif %}
+            </td>
+            <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span></td>
+            <td style="display: flex; gap: 0.25rem;">
+                <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ request.base_url }}t/{{ t.token }}'); toast('Link copied')">Link</button>
+                <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ t.password }}'); toast('Password copied')">Pass</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="hint" style="margin-bottom: 1.5rem;">No tests assigned.</p>
+{% endif %}
+
 {% if hr_data or culture_data %}
 <h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Scorecard Summary</h2>
 <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">

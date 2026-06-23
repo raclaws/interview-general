@@ -12,6 +12,7 @@ from app.database import create_tables
 from app.routes.admin import router as admin_router
 from app.routes.interview import router as interview_router
 from app.routes.candidates import router as candidates_router
+from app.routes.test_portal import router as test_portal_router
 
 app = FastAPI(title="Interview Form Summarizer")
 
@@ -35,6 +36,7 @@ app.state.templates = templates
 app.include_router(admin_router)
 app.include_router(interview_router)
 app.include_router(candidates_router)
+app.include_router(test_portal_router)
 
 
 @app.on_event("startup")
