@@ -6,7 +6,7 @@
     <a href="/session/new" class="btn">+ New Session</a>
 </div>
 
-<div data-table>
+<div data-table data-table-fields='[{"key":"status","label":"Status","type":"select","options":["pending","completed","cancelled"]},{"key":"template","label":"Template","type":"select","options":[{% set ns = namespace(items=[]) %}{% for item in session_data %}{% if item.template and item.template.name not in ns.items %}{% set ns.items = ns.items + [item.template.name] %}{% endif %}{% endfor %}{% for t in ns.items %}"{{ t }}"{% if not loop.last %},{% endif %}{% endfor %}]},{"key":"date","label":"Date","type":"date"}]'>
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search candidate or job title..." class="table-search">
         <select data-table-filter="status" class="table-filter">

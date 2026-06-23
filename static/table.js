@@ -20,7 +20,8 @@
             sortField: null,
             sortDir: null,
             groupField: null,
-            focusIndex: -1
+            focusIndex: -1,
+            advancedRules: []
         };
 
         function refreshRows() {
@@ -32,13 +33,175 @@
         var filters = Array.from(container.querySelectorAll('[data-table-filter]'));
         var sortSelect = container.querySelector('[data-table-sort]');
         var groupSelect = container.querySelector('[data-table-groupby]');
+        var controls = container.querySelector('.table-controls');
+
+        // Advanced filter field config
+        var fieldsConfig = null;
+        if (container.dataset.tableFields) {
+            try { fieldsConfig = JSON.parse(container.dataset.tableFields); } catch(e) {}
+        }
+
+        // Filter pills container
+        var pillsRow = document.createElement('div');
+        pillsRow.className = 'filter-pills';
+        if (controls) controls.parentNode.insertBefore(pillsRow, controls.nextSibling);
+
+        // "+ Filter" button and popover
+        var filterWrap = null;
+        if (fieldsConfig && controls) {
+            filterWrap = document.createElement('span');
+            filterWrap.style.position = 'relative';
+            filterWrap.style.display = 'inline-block';
+
+            var addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'filter-add-btn';
+            addBtn.textContent = '+ Filter';
+            filterWrap.appendChild(addBtn);
+
+            var popover = document.createElement('div');
+            popover.className = 'filter-popover';
+            popover.style.display = 'none';
+
+            var fieldSel = document.createElement('select');
+            fieldSel.innerHTML = '<option value="">Field</option>' +
+                fieldsConfig.map(function(f) { return '<option value="' + f.key + '">' + f.label + '</option>'; }).join('');
+            popover.appendChild(fieldSel);
+
+            var opSel = document.createElement('select');
+            opSel.innerHTML = '<option value="">Op</option>';
+            popover.appendChild(opSel);
+
+            var valInput = document.createElement('input');
+            valInput.type = 'text';
+            valInput.placeholder = 'Value';
+            valInput.style.width = '100px';
+            popover.appendChild(valInput);
+
+            var valSel = document.createElement('select');
+            valSel.style.display = 'none';
+            popover.appendChild(valSel);
+
+            var addRuleBtn = document.createElement('button');
+            addRuleBtn.type = 'button';
+            addRuleBtn.textContent = 'Add';
+            popover.appendChild(addRuleBtn);
+
+            filterWrap.appendChild(popover);
+            controls.appendChild(filterWrap);
+
+            var opsForType = {
+                'select': [
+                    {value: 'is', label: 'is'},
+                    {value: 'is_not', label: 'is not'},
+                    {value: 'in', label: 'in'}
+                ],
+                'date': [
+                    {value: 'is', label: 'is'},
+                    {value: 'gte', label: 'on or after'},
+                    {value: 'lte', label: 'on or before'}
+                ],
+                'text': [
+                    {value: 'contains', label: 'contains'},
+                    {value: 'not_contains', label: 'does not contain'}
+                ]
+            };
+
+            fieldSel.addEventListener('change', function() {
+                var cfg = fieldsConfig.find(function(f) { return f.key === fieldSel.value; });
+                if (!cfg) { opSel.innerHTML = '<option value="">Op</option>'; return; }
+                var ops = opsForType[cfg.type] || opsForType['text'];
+                opSel.innerHTML = ops.map(function(o) { return '<option value="' + o.value + '">' + o.label + '</option>'; }).join('');
+                if (cfg.type === 'select' && cfg.options) {
+                    valSel.innerHTML = cfg.options.map(function(o) { return '<option value="' + o + '">' + o.replace(/_/g, ' ') + '</option>'; }).join('');
+                    valSel.style.display = '';
+                    valInput.style.display = 'none';
+                } else {
+                    valSel.style.display = 'none';
+                    valInput.style.display = '';
+                    valInput.type = cfg.type === 'date' ? 'date' : 'text';
+                }
+            });
+
+            addBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                popover.style.display = popover.style.display === 'none' ? 'flex' : 'none';
+            });
+
+            addRuleBtn.addEventListener('click', function() {
+                var field = fieldSel.value;
+                var op = opSel.value;
+                var cfg = fieldsConfig.find(function(f) { return f.key === field; });
+                if (!field || !op) return;
+                var value = (cfg && cfg.type === 'select' && cfg.options) ? valSel.value : valInput.value;
+                if (!value) return;
+                ctx.advancedRules.push({field: field, op: op, value: value});
+                renderPills();
+                syncDropdownFromRules();
+                applyAll();
+                popover.style.display = 'none';
+                fieldSel.value = '';
+                opSel.innerHTML = '<option value="">Op</option>';
+                valInput.value = '';
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!filterWrap.contains(e.target)) popover.style.display = 'none';
+            });
+        }
+
+        function renderPills() {
+            pillsRow.innerHTML = '';
+            ctx.advancedRules.forEach(function(rule, i) {
+                var cfg = fieldsConfig ? fieldsConfig.find(function(f) { return f.key === rule.field; }) : null;
+                var label = cfg ? cfg.label : rule.field;
+                var opLabel = rule.op.replace(/_/g, ' ');
+                var pill = document.createElement('span');
+                pill.className = 'filter-pill';
+                pill.innerHTML = '<span>' + label + ' ' + opLabel + ' ' + rule.value.replace(/_/g, ' ') + '</span>';
+                var closeBtn = document.createElement('button');
+                closeBtn.type = 'button';
+                closeBtn.textContent = '×';
+                closeBtn.addEventListener('click', function() {
+                    ctx.advancedRules.splice(i, 1);
+                    renderPills();
+                    syncDropdownFromRules();
+                    applyAll();
+                });
+                pill.appendChild(closeBtn);
+                pillsRow.appendChild(pill);
+            });
+        }
+
+        function syncDropdownFromRules() {
+            filters.forEach(function(sel) {
+                var field = sel.dataset.tableFilter;
+                var rule = ctx.advancedRules.find(function(r) { return r.field === field && r.op === 'is'; });
+                sel.value = rule ? rule.value : '';
+            });
+        }
+
+        function syncRulesFromDropdown(sel) {
+            var field = sel.dataset.tableFilter;
+            var value = sel.value;
+            var idx = -1;
+            ctx.advancedRules.forEach(function(r, i) { if (r.field === field) idx = i; });
+            if (value) {
+                var rule = {field: field, op: 'is', value: value};
+                if (idx >= 0) ctx.advancedRules[idx] = rule;
+                else ctx.advancedRules.push(rule);
+            } else {
+                if (idx >= 0) ctx.advancedRules.splice(idx, 1);
+            }
+            renderPills();
+        }
 
         // URL param sync
         function syncToURL() {
             var params = new URLSearchParams();
             if (searchInput && searchInput.value) params.set('search', searchInput.value);
-            filters.forEach(function(sel) {
-                if (sel.value) params.set('f_' + sel.dataset.tableFilter, sel.value);
+            ctx.advancedRules.forEach(function(rule) {
+                params.append('af', rule.field + ':' + rule.op + ':' + rule.value);
             });
             if (sortSelect && sortSelect.value) params.set('sort', sortSelect.value);
             if (groupSelect && groupSelect.value) params.set('group', groupSelect.value);
@@ -52,14 +215,27 @@
             if (searchInput && params.has('search')) {
                 searchInput.value = params.get('search');
             }
-            filters.forEach(function(sel) {
-                var key = 'f_' + sel.dataset.tableFilter;
-                if (params.has(key)) {
-                    var val = params.get(key);
-                    var opt = sel.querySelector('option[value="' + CSS.escape(val) + '"]');
-                    if (opt) sel.value = val;
+            // Restore advanced rules
+            ctx.advancedRules = [];
+            params.getAll('af').forEach(function(raw) {
+                var parts = raw.split(':');
+                if (parts.length >= 3) {
+                    ctx.advancedRules.push({field: parts[0], op: parts[1], value: parts.slice(2).join(':')});
                 }
             });
+            // Legacy f_ params (from CLA-66) — convert to rules
+            filters.forEach(function(sel) {
+                var key = 'f_' + sel.dataset.tableFilter;
+                if (params.has(key) && !ctx.advancedRules.some(function(r) { return r.field === sel.dataset.tableFilter; })) {
+                    var val = params.get(key);
+                    var opt = sel.querySelector('option[value="' + CSS.escape(val) + '"]');
+                    if (opt) {
+                        ctx.advancedRules.push({field: sel.dataset.tableFilter, op: 'is', value: val});
+                    }
+                }
+            });
+            syncDropdownFromRules();
+            renderPills();
             if (sortSelect && params.has('sort')) {
                 var sortVal = params.get('sort');
                 var opt = sortSelect.querySelector('option[value="' + CSS.escape(sortVal) + '"]');
@@ -89,7 +265,6 @@
         // Row count indicator
         var countEl = document.createElement('span');
         countEl.className = 'table-count';
-        var controls = container.querySelector('.table-controls');
         if (controls) controls.appendChild(countEl);
 
         function updateCount() {
@@ -116,7 +291,7 @@
         }
 
         function applyAll() {
-            filterRows(ctx, searchInput, filters);
+            filterRows(ctx, searchInput);
             sortRows(ctx);
             groupRows(ctx);
             updateCount();
@@ -131,7 +306,10 @@
         }
 
         filters.forEach(function(sel) {
-            sel.addEventListener('change', applyAll);
+            sel.addEventListener('change', function() {
+                syncRulesFromDropdown(sel);
+                applyAll();
+            });
         });
 
         if (sortSelect) {
@@ -167,7 +345,6 @@
                 return;
             }
 
-            // Escape closes context menu first
             var ctxMenu = document.getElementById('ctx-menu');
             if (e.key === 'Escape' && ctxMenu && ctxMenu.style.display === 'block') {
                 ctxMenu.style.display = 'none';
@@ -175,7 +352,6 @@
                 return;
             }
 
-            // / to focus search
             if (e.key === '/' && searchInput) {
                 e.preventDefault();
                 searchInput.focus();
@@ -212,36 +388,43 @@
 
         // Restore state from URL params and apply
         restoreFromURL();
-
-        // Initial count
         updateCount();
         applyAll();
 
-        // Allow external refresh via custom event
         container.addEventListener('table:refresh', applyAll);
     }
 
-    function filterRows(ctx, searchInput, filters) {
+    function matchRule(rule, rowVal) {
+        var rv = (rowVal || '').toLowerCase();
+        var v = rule.value.toLowerCase();
+        switch (rule.op) {
+            case 'is': return rv === v;
+            case 'is_not': return rv !== v;
+            case 'in':
+                var vals = rule.value.split(',').map(function(s) { return s.trim().toLowerCase(); });
+                return vals.indexOf(rv) !== -1;
+            case 'contains': return rv.indexOf(v) !== -1;
+            case 'not_contains': return rv.indexOf(v) === -1;
+            case 'gte': return rv >= v;
+            case 'lte': return rv <= v;
+            default: return true;
+        }
+    }
+
+    function filterRows(ctx, searchInput) {
         var query = searchInput ? searchInput.value.toLowerCase() : '';
 
         ctx.rows.forEach(function(row) {
             var matchSearch = !query || (row.dataset.search || '').indexOf(query) !== -1;
 
-            var matchFilters = filters.every(function(sel) {
-                var field = sel.dataset.tableFilter;
-                var value = sel.value;
-                if (!value) return true;
-                var rowVal = row.dataset[field] || '';
-                if (sel.dataset.filterMode === 'contains') {
-                    return rowVal.indexOf(value) !== -1;
-                }
-                return rowVal === value;
+            var matchAdvanced = ctx.advancedRules.every(function(rule) {
+                var rowVal = row.dataset[rule.field] || '';
+                return matchRule(rule, rowVal);
             });
 
-            row.style.display = (matchSearch && matchFilters) ? '' : 'none';
+            row.style.display = (matchSearch && matchAdvanced) ? '' : 'none';
         });
 
-        // Search highlight
         highlightSearch(ctx, query);
     }
 
@@ -249,7 +432,6 @@
         ctx.rows.forEach(function(row) {
             var cells = row.querySelectorAll('td');
             cells.forEach(function(cell) {
-                // Remove existing marks
                 cell.querySelectorAll('mark.search-hl').forEach(function(m) {
                     m.replaceWith(m.textContent);
                 });

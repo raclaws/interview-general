@@ -800,6 +800,72 @@ textarea { resize: vertical; min-height: 80px; }
     .dash-stats { flex-direction: column; }
 }
 
+/* Advanced filter pills */
+.filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.filter-pill button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding: 0;
+    line-height: 1;
+}
+.filter-pill button:hover { color: var(--text-primary); }
+.filter-add-btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.8rem;
+    border-radius: var(--radius-sm);
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.filter-add-btn:hover { border-color: var(--border-focus); color: var(--text-primary); }
+.filter-popover {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 0.75rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    z-index: 100;
+}
+.filter-popover select, .filter-popover input {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+.filter-popover button {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+}
+
 /* Done page */
 .done-container { text-align: center; padding: 4rem 2rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
 .done-container h1 { margin-bottom: 1rem; color: var(--accent); }
