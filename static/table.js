@@ -33,6 +33,59 @@
         var sortSelect = container.querySelector('[data-table-sort]');
         var groupSelect = container.querySelector('[data-table-groupby]');
 
+        // URL param sync
+        function syncToURL() {
+            var params = new URLSearchParams();
+            if (searchInput && searchInput.value) params.set('search', searchInput.value);
+            filters.forEach(function(sel) {
+                if (sel.value) params.set('f_' + sel.dataset.tableFilter, sel.value);
+            });
+            if (sortSelect && sortSelect.value) params.set('sort', sortSelect.value);
+            if (groupSelect && groupSelect.value) params.set('group', groupSelect.value);
+            var qs = params.toString();
+            var url = window.location.pathname + (qs ? '?' + qs : '');
+            history.replaceState(null, '', url);
+        }
+
+        function restoreFromURL() {
+            var params = new URLSearchParams(window.location.search);
+            if (searchInput && params.has('search')) {
+                searchInput.value = params.get('search');
+            }
+            filters.forEach(function(sel) {
+                var key = 'f_' + sel.dataset.tableFilter;
+                if (params.has(key)) {
+                    var val = params.get(key);
+                    var opt = sel.querySelector('option[value="' + CSS.escape(val) + '"]');
+                    if (opt) sel.value = val;
+                }
+            });
+            if (sortSelect && params.has('sort')) {
+                var sortVal = params.get('sort');
+                var opt = sortSelect.querySelector('option[value="' + CSS.escape(sortVal) + '"]');
+                if (opt) {
+                    sortSelect.value = sortVal;
+                    var parts = sortVal.split(':');
+                    ctx.sortField = parts[0];
+                    ctx.sortDir = parts[1] || 'asc';
+                    sortSelect.classList.add('sort-active');
+                }
+            }
+            if (groupSelect && params.has('group')) {
+                var groupVal = params.get('group');
+                var opt = groupSelect.querySelector('option[value="' + CSS.escape(groupVal) + '"]');
+                if (opt) {
+                    groupSelect.value = groupVal;
+                    ctx.groupField = groupVal;
+                }
+            }
+        }
+
+        window.addEventListener('popstate', function() {
+            restoreFromURL();
+            applyAll();
+        });
+
         // Row count indicator
         var countEl = document.createElement('span');
         countEl.className = 'table-count';
@@ -70,6 +123,7 @@
             var visible = getVisibleRows();
             if (ctx.focusIndex >= visible.length) setFocus(visible.length - 1);
             else if (ctx.focusIndex >= 0 && !visible[ctx.focusIndex]) setFocus(0);
+            syncToURL();
         }
 
         if (searchInput) {
@@ -156,8 +210,12 @@
             }
         });
 
+        // Restore state from URL params and apply
+        restoreFromURL();
+
         // Initial count
         updateCount();
+        applyAll();
 
         // Allow external refresh via custom event
         container.addEventListener('table:refresh', applyAll);
