@@ -565,7 +565,7 @@
 
             cb.addEventListener('click', function(e) {
                 e.stopPropagation();
-                if (e.shiftKey && lastCheckedIndex >= 0) {
+                if ((e.shiftKey || (e.ctrlKey && e.shiftKey)) && lastCheckedIndex >= 0) {
                     var start = Math.min(lastCheckedIndex, idx);
                     var end = Math.max(lastCheckedIndex, idx);
                     for (var i = start; i <= end; i++) {
@@ -573,6 +573,16 @@
                         ctx.rows[i].classList.add('row-selected');
                         var rcb = ctx.rows[i].querySelector('.col-select input');
                         if (rcb) rcb.checked = true;
+                    }
+                } else if (e.ctrlKey) {
+                    if (selected.has(row)) {
+                        selected.delete(row);
+                        row.classList.remove('row-selected');
+                        cb.checked = false;
+                    } else {
+                        selected.add(row);
+                        row.classList.add('row-selected');
+                        cb.checked = true;
                     }
                 } else {
                     if (cb.checked) {
@@ -585,6 +595,27 @@
                 }
                 lastCheckedIndex = idx;
                 updateBulkBar();
+            });
+
+            row.addEventListener('click', function(e) {
+                if (e.target.closest('.col-select, a, button, select, input, form')) return;
+                if (e.shiftKey && lastCheckedIndex >= 0) {
+                    e.preventDefault();
+                    var start = Math.min(lastCheckedIndex, idx);
+                    var end = Math.max(lastCheckedIndex, idx);
+                    for (var i = start; i <= end; i++) {
+                        selected.add(ctx.rows[i]);
+                        ctx.rows[i].classList.add('row-selected');
+                        var rcb = ctx.rows[i].querySelector('.col-select input');
+                        if (rcb) rcb.checked = true;
+                    }
+                    lastCheckedIndex = idx;
+                    updateBulkBar();
+                } else if (e.ctrlKey) {
+                    e.preventDefault();
+                    toggleRowSelection(row);
+                    lastCheckedIndex = idx;
+                }
             });
         });
 

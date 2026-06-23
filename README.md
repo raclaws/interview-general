@@ -2,7 +2,7 @@
 
 A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Current version: v0.2**
+**Current version: v0.3**
 
 ## Features
 
@@ -23,9 +23,14 @@ A lightweight self-hosted webapp for managing interview pipelines and generating
 ### UI
 - **Dark mode** — Catppuccin Mocha palette throughout
 - **Sidebar navigation** — Dashboard, Interview, Pipelines, Candidates, Settings
+- **Lucide icons** — inline SVG icons replacing Unicode characters
 - **Table module** — client-side search, filter, sort, group-by on all list pages
+- **Advanced filters** — pill-based compound filtering with saved custom views
+- **Bulk selection** — checkbox (hover-reveal), Ctrl+Click toggle, Shift+Click range select
+- **Keyboard shortcuts** — global shortcut system with `?` help overlay
 - **Context menus** — right-click actions on table rows
 - **Clickable rows** — navigate to detail by clicking anywhere
+- **Mobile sidebar** — hamburger toggle + close button
 
 ### Admin
 - **Editable sessions** — modify details + results after creation
@@ -257,6 +262,21 @@ LLM settings (base URL, API key, model, system prompt) can be changed from `/set
 - **Python ≥3.12** required. FastAPI ≥0.115, SQLModel 0.0.22.
 
 ## Changelog
+
+### v0.3 (2026-06-23)
+- Lucide inline SVG icons for sidebar navigation
+- Mobile sidebar close button
+- Bulk selection with hover-reveal checkboxes
+- Ctrl+Click toggle and Shift+Click range select on rows
+- Bulk delete action bar
+- Global keyboard shortcut system with `?` help overlay
+- Custom views: save/switch/delete filter presets (pill UI)
+- Advanced filter: pill-based compound filtering
+- Persistent filter/sort/group state via URL params
+- Dashboard revamp: stats cards + upcoming interviews widget
+- NocoDB CV link in candidate snapshot
+- Sprint 1 quick wins: validation, LLM params, copy links, partial scorecard
+- Various bug fixes (context menu, session delete, inline stage edit, group-by)
 
 ### v0.2 (2026-06-18)
 - Dark mode (Catppuccin Mocha) with full hardcoded color removal

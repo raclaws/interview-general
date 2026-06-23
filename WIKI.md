@@ -2,9 +2,9 @@
 
 ## Overview
 
-A lightweight self-hosted webapp for generating on-demand interview assessment sessions. Admin creates a session with candidate context from NocoDB, shares a token link with the interviewer, and AI summarizes the submission.
+A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Status:** P-B (Production Beta)
+**Status:** v0.3 (Production Beta)
 
 ---
 
@@ -12,12 +12,14 @@ A lightweight self-hosted webapp for generating on-demand interview assessment s
 
 | Layer | Tech |
 |-------|------|
-| Backend | Python, FastAPI |
+| Backend | Python 3.12+, FastAPI, uvicorn |
 | Database | SQLite via SQLModel |
-| Frontend | Jinja2 templates, vanilla JS |
+| Frontend | Jinja2 templates, HTMX, vanilla JS |
+| Icons | Lucide (inline SVG) |
 | LLM | OpenAI-compatible client |
 | MCP | FastMCP (SSE transport) |
-| Candidate source | NocoDB REST API (read-only) |
+| Candidate source | NocoDB REST API (optional) |
+| Deploy | Docker, systemd + nginx, Cloudflare Tunnel |
 
 ---
 
@@ -57,11 +59,13 @@ python -m app.mcp_server
 ## Core Flow
 
 1. Admin logs in (`/login`)
-2. Admin creates session (`/session/new`) — searches NocoDB or manual entry, selects template, fills job title + round + interviewer names
-3. App generates unique token links per interviewer
-4. Interviewers open `/i/[token]` — see candidate context (read-only), fill template-based sections, submit
-5. Admin views results at `/session/[id]`, generates AI summary on demand
-6. AI auto-switches: single-eval for 1 interviewer, cross-eval for 2+
+2. Admin creates candidate (manual or NocoDB import) and pipeline
+3. Admin creates session (`/session/new`) — selects candidate/pipeline, template, fills job title + interviewer names
+4. App generates unique token links per interviewer
+5. Interviewers open `/i/[token]` — see candidate context (read-only), accept consent/declaration, fill template-based sections, submit
+6. Admin views results at `/session/[id]`, generates AI summary on demand
+7. AI auto-switches: single-eval prompt for 1 interviewer, cross-eval for 2+
+8. Scorecard auto-aggregates from completed session responses
 
 ---
 
@@ -70,10 +74,16 @@ python -m app.mcp_server
 | Route | Access | Purpose |
 |-------|--------|---------|
 | `/login` | Public | Admin login |
-| `/` | Admin | Dashboard — list sessions with progress |
+| `/` | Admin | Dashboard — stats cards + upcoming interviews |
+| `/sessions` | Admin | Session list with filters, sort, group-by, bulk actions |
 | `/session/new` | Admin | Create session (template picker, multiple interviewers) |
 | `/session/[id]` | Admin | View results, scores side-by-side, AI summary |
 | `/session/[id]/edit` | Admin | Edit session details, add interviewers |
+| `/session/[id]/cancel` | Admin | Cancel/expire a pending session |
+| `/pipelines` | Admin | Pipeline list with stage overview |
+| `/pipeline/[id]` | Admin | Pipeline detail with scorecard |
+| `/candidates` | Admin | Candidate list |
+| `/candidate/[id]` | Admin | Candidate profile + interview history + "Add Interview" |
 | `/templates` | Admin | List/manage interview templates |
 | `/templates/[id]` | Admin | View template sections |
 | `/settings` | Admin | LLM config + system prompt |
@@ -103,12 +113,19 @@ Conditional sections: shown/hidden based on another section's value (JS-driven).
 
 ## UI
 
-- **Sidebar navigation** — fixed left panel (admin pages only), charcoal bg, teal active state
+- **Sidebar navigation** — fixed left panel (admin pages only), Catppuccin Mocha dark bg, accent active state
+- **Lucide icons** — inline SVG stroke icons for sidebar nav + hamburger
 - **Public pages** — standalone clean layout (no sidebar)
-- **Design system** — monochrome + teal (#0d9488) accent, card-based, compact buttons
-- **HTMX** — partial page updates for LLM summary generation (no full reload)
+- **Design system** — Catppuccin Mocha dark mode, card-based, compact buttons
+- **Table module** — `table.js` with search, filter, sort, group-by, custom views, bulk selection
+- **Advanced filters** — pill-based compound filtering with save/switch/delete presets
+- **Bulk selection** — hover-reveal checkboxes, Ctrl+Click toggle, Shift+Click range, bulk delete bar
+- **Keyboard shortcuts** — global system (`?` help overlay, `j/k` nav, `n` new, `e` edit, `Del` delete)
+- **Context menus** — right-click actions on table rows
+- **Clickable rows** — navigate to detail by clicking anywhere (suppressed with Ctrl/Shift modifiers)
+- **HTMX** — partial page updates for LLM summary, stage changes, notes (no full reload)
 - **Perceived performance** — loading states on all submit buttons, HTMX indicators
-- **Responsive** — mobile sidebar collapses to hamburger
+- **Responsive** — mobile sidebar collapses to hamburger with close button
 
 ---
 
@@ -117,11 +134,29 @@ Conditional sections: shown/hidden based on another section's value (JS-driven).
 ### admin_users
 - `id`, `username`, `hashed_password`
 
+### candidates
+- `id`, `email` (unique), `name`, `phone`, `current_position`, `yoe`, `skills`, `languages`, `current_salary`, `expected_salary`, `notice_period`, `created_at`
+
+### pipelines
+- `id`, `candidate_id` (FK), `position`, `business_unit`, `stage`, `notes`, `created_at`
+
+### pipeline_scores (scorecard)
+- `id`, `pipeline_id` (FK), auto-aggregated from completed session responses
+
 ### sessions
-- `id`, `token` (unique, URL-safe), `candidate_id`, `candidate_snapshot` (JSON), `job_title`, `round`, `interviewer_name`, `status` (pending/completed), `created_at`
+- `id`, `candidate_id` (FK), `pipeline_id` (FK), `job_title`, `template_id` (FK), `status` (pending/completed/cancelled), `interview_date`, `created_at`
+
+### interviewers
+- `id`, `session_id` (FK), `interviewer_name`, `token` (unique, URL-safe)
 
 ### responses
-- `id`, `session_id` (FK), `q1`–`q4` (int 1–4), `q5` (bool), `free_text` (optional), `submitted_at`, `summary` (LLM output)
+- `id`, `interviewer_id` (FK), `session_id` (FK), `scores` (JSON), `free_text`, `submitted_at`, `summary` (LLM output)
+
+### templates
+- `id`, `name`, `sections` (JSON — measurement types, options, conditions)
+
+### settings
+- `id`, `key`, `value` — LLM config, system prompt, stored in DB
 
 ---
 
@@ -129,7 +164,7 @@ Conditional sections: shown/hidden based on another section's value (JS-driven).
 
 | Tool | Description |
 |------|-------------|
-| `create_session(candidate_id, job_title, round, interviewer_name)` | Returns shareable URL |
+| `create_session(candidate_id, job_title, round, interviewer_names)` | Returns shareable URLs |
 | `get_session(session_id)` | Returns status, scores, summary |
 | `list_sessions(candidate_id?)` | Lists sessions, optionally filtered |
 
@@ -158,10 +193,7 @@ No auth required (internal agent use).
 
 ## Backlog
 
-- [ ] Move LLM summary generation to admin result page (lazy generation, saves tokens, instant interviewer submission)
-- [ ] Add "Regenerate Summary" button on admin result page
-- [ ] Session expiry (optional TTL)
-- [ ] Candidate snapshot display improvements
+Tracked in Linear (hr-insignia workspace, Claude-Workspace team). See project boards for current sprint and backlog items.
 
 ---
 
@@ -171,30 +203,50 @@ No auth required (internal agent use).
 interview-general/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py
-│   ├── models.py
-│   ├── database.py
-│   ├── auth.py
-│   ├── nocodb.py
-│   ├── llm.py
-│   ├── mcp_server.py
-│   ├── cli.py
+│   ├── main.py          — FastAPI app factory, route registration
+│   ├── models.py        — SQLModel schemas
+│   ├── database.py      — SQLite engine, auto-migration
+│   ├── auth.py          — bcrypt + cookie-based session auth
+│   ├── nocodb.py        — NocoDB API client
+│   ├── llm.py           — OpenAI-compatible LLM client
+│   ├── mcp_server.py    — FastMCP server (SSE)
+│   ├── cli.py           — CLI commands (create-admin)
+│   ├── seed.py          — Default template seeding
 │   └── routes/
 │       ├── __init__.py
-│       ├── admin.py
-│       └── interview.py
+│       ├── admin.py     — Dashboard, session CRUD, settings
+│       ├── interview.py — Token validation, form, submission
+│       └── candidates.py — Candidate/pipeline/scorecard
 ├── templates/
-│   ├── base.html
+│   ├── base_app.html    — Admin layout (sidebar, scripts)
+│   ├── base.html        — Public layout
 │   ├── login.html
 │   ├── dashboard.html
+│   ├── sessions_list.html
 │   ├── session_new.html
+│   ├── session_detail.html
+│   ├── session_edit.html
+│   ├── candidates_list.html
+│   ├── candidate_detail.html
+│   ├── pipelines_list.html
+│   ├── pipeline_detail.html
+│   ├── pipeline_score.html
+│   ├── templates_list.html
+│   ├── template_detail.html
+│   ├── settings.html
 │   ├── interview_form.html
 │   ├── interview_done.html
-│   └── session_detail.html
+│   └── partials/
 ├── static/
-│   └── style.css
+│   ├── style.css        — Catppuccin Mocha theme
+│   ├── table.js         — Table module (filter, sort, group, bulk)
+│   └── shortcuts.js     — Global keyboard shortcuts
 ├── .env.example
 ├── requirements.txt
+├── docker-compose.yml
+├── docker-compose.staging.yml
+├── Dockerfile
+├── README.md
 └── WIKI.md
 ```
 
