@@ -1,11 +1,57 @@
 {% extends "base_app.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block content %}
-<div style="display: flex; align-items: center; justify-content: center; min-height: 60vh; text-align: center;">
-    <div>
-        <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">Dashboard</h1>
-        <p class="row-meta" style="font-size: 0.9rem;">Under development</p>
-        <p class="row-meta" style="margin-top: 0.5rem;">Pipeline funnels, scoring trends, and upcoming interviews will live here.</p>
+<div class="dash-grid">
+    <div class="dash-widget dash-widget--full">
+        <div class="dash-stats">
+            <div class="dash-stat">
+                <span class="dash-stat-value">{{ total_sessions }}</span>
+                <span class="dash-stat-label">Total Sessions</span>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-value">{{ pending_sessions }}</span>
+                <span class="dash-stat-label">Pending</span>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-value">{{ completed_this_week }}</span>
+                <span class="dash-stat-label">Completed This Week</span>
+            </div>
+            <div class="dash-stat">
+                <span class="dash-stat-value">{{ active_candidates }}</span>
+                <span class="dash-stat-label">Active Candidates</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="dash-widget dash-widget--full">
+        <div class="dash-widget-header">
+            <h2>Upcoming Interviews</h2>
+            <a href="/sessions" class="btn-ghost">View all →</a>
+        </div>
+        {% if upcoming %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Position</th>
+                    <th>Interviewer(s)</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in upcoming %}
+                <tr onclick="window.location='/session/{{ item.session.id }}'" style="cursor: pointer;">
+                    <td>{{ item.session.snapshot.get("name", "—") }}</td>
+                    <td>{{ item.session.position or item.session.job_title or "—" }}</td>
+                    <td>{{ item.interviewers | map(attribute='interviewer_name') | join(', ') }}</td>
+                    <td>{{ item.session.interview_date or "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="hint" style="padding: 1.5rem 0;">No upcoming interviews scheduled.</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

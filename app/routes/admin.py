@@ -1,10 +1,10 @@
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func, col
 
 from app.database import get_session
 from app.auth import get_current_admin
@@ -37,7 +37,45 @@ def _render(request: Request, name: str, context: dict = None):
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
-    return _render(request, "dashboard.html", {"admin": admin})
+    total_sessions = db.exec(select(func.count(InterviewSession.id))).one()
+    pending_sessions = db.exec(
+        select(func.count(InterviewSession.id)).where(InterviewSession.status == "pending")
+    ).one()
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    completed_this_week = db.exec(
+        select(func.count(InterviewSession.id)).where(
+            InterviewSession.status == "completed",
+            col(InterviewSession.created_at) >= week_ago,
+        )
+    ).one()
+    active_candidates = db.exec(
+        select(func.count(func.distinct(CandidatePipeline.candidate_id))).where(
+            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES)
+        )
+    ).one()
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    upcoming_sessions = db.exec(
+        select(InterviewSession).where(
+            InterviewSession.status == "pending",
+            col(InterviewSession.interview_date) >= today_str,
+        ).order_by(InterviewSession.interview_date).limit(10)
+    ).all()
+    upcoming = []
+    for s in upcoming_sessions:
+        interviewers = db.exec(
+            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
+        ).all()
+        upcoming.append({"session": s, "interviewers": interviewers})
+
+    return _render(request, "dashboard.html", {
+        "admin": admin,
+        "total_sessions": total_sessions,
+        "pending_sessions": pending_sessions,
+        "completed_this_week": completed_this_week,
+        "active_candidates": active_candidates,
+        "upcoming": upcoming,
+    })
 
 
 @router.get("/sessions", response_class=HTMLResponse)
