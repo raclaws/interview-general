@@ -101,7 +101,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 .sidebar-nav a:hover { color: #cdd6f4; background: #313244; text-decoration: none; }
 .sidebar-nav a.active { color: #cdd6f4; border-left-color: var(--accent); background: #313244; }
-.sidebar-icon { font-size: 0.9rem; width: 1.1rem; text-align: center; }
+.sidebar-icon { width: 18px; height: 18px; vertical-align: middle; flex-shrink: 0; }
 .sidebar-footer {
     padding: 1rem 1.25rem;
     border-top: 1px solid #313244;
