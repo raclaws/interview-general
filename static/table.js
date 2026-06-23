@@ -516,6 +516,136 @@
             }
         });
 
+        // Bulk selection system
+        var selected = new Set();
+        var lastCheckedIndex = -1;
+        var table = container.querySelector('table.table-clean');
+        var thead = table ? table.querySelector('thead') : null;
+        var bulkBar = document.createElement('div');
+        bulkBar.className = 'bulk-bar';
+        bulkBar.style.display = 'none';
+        if (table) table.parentNode.insertBefore(bulkBar, table);
+
+        if (thead) {
+            var headerRow = thead.querySelector('tr');
+            if (headerRow) {
+                var selectAllTh = document.createElement('th');
+                selectAllTh.className = 'col-select';
+                var selectAllCb = document.createElement('input');
+                selectAllCb.type = 'checkbox';
+                selectAllTh.appendChild(selectAllCb);
+                headerRow.insertBefore(selectAllTh, headerRow.firstChild);
+
+                selectAllCb.addEventListener('change', function() {
+                    var visible = getVisibleRows();
+                    visible.forEach(function(row) {
+                        var cb = row.querySelector('.col-select input');
+                        if (selectAllCb.checked) {
+                            selected.add(row);
+                            row.classList.add('row-selected');
+                            if (cb) cb.checked = true;
+                        } else {
+                            selected.delete(row);
+                            row.classList.remove('row-selected');
+                            if (cb) cb.checked = false;
+                        }
+                    });
+                    updateBulkBar();
+                });
+            }
+        }
+
+        ctx.rows.forEach(function(row, idx) {
+            var td = document.createElement('td');
+            td.className = 'col-select';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            td.appendChild(cb);
+            row.insertBefore(td, row.firstChild);
+
+            cb.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (e.shiftKey && lastCheckedIndex >= 0) {
+                    var start = Math.min(lastCheckedIndex, idx);
+                    var end = Math.max(lastCheckedIndex, idx);
+                    for (var i = start; i <= end; i++) {
+                        selected.add(ctx.rows[i]);
+                        ctx.rows[i].classList.add('row-selected');
+                        var rcb = ctx.rows[i].querySelector('.col-select input');
+                        if (rcb) rcb.checked = true;
+                    }
+                } else {
+                    if (cb.checked) {
+                        selected.add(row);
+                        row.classList.add('row-selected');
+                    } else {
+                        selected.delete(row);
+                        row.classList.remove('row-selected');
+                    }
+                }
+                lastCheckedIndex = idx;
+                updateBulkBar();
+            });
+        });
+
+        function toggleRowSelection(row) {
+            var cb = row.querySelector('.col-select input');
+            if (selected.has(row)) {
+                selected.delete(row);
+                row.classList.remove('row-selected');
+                if (cb) cb.checked = false;
+            } else {
+                selected.add(row);
+                row.classList.add('row-selected');
+                if (cb) cb.checked = true;
+            }
+            updateBulkBar();
+        }
+
+        function updateBulkBar() {
+            if (selected.size > 0) {
+                bulkBar.style.display = 'flex';
+                bulkBar.innerHTML = '<span>' + selected.size + ' selected</span>';
+                var delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'bulk-delete-btn';
+                delBtn.textContent = 'Delete';
+                delBtn.addEventListener('click', bulkDelete);
+                bulkBar.appendChild(delBtn);
+            } else {
+                bulkBar.style.display = 'none';
+            }
+        }
+
+        function bulkDelete() {
+            if (!confirm('Delete ' + selected.size + ' item(s)?')) return;
+            var promises = [];
+            selected.forEach(function(row) {
+                var ctx = row.dataset.ctx;
+                if (!ctx) return;
+                try {
+                    var items = JSON.parse(ctx);
+                    var deleteItem = items.find(function(it) { return it.delete; });
+                    if (deleteItem) {
+                        promises.push(
+                            fetch(deleteItem.href, {method: 'POST'}).then(function() {
+                                row.remove();
+                            })
+                        );
+                    }
+                } catch(err) {}
+            });
+            Promise.all(promises).then(function() {
+                selected.clear();
+                updateBulkBar();
+                refreshRows();
+                updateCount();
+            });
+        }
+
+        // Expose toggle for shortcuts.js (x key)
+        container._toggleRowSelection = toggleRowSelection;
+
         // Restore state from URL params and apply
         restoreFromURL();
         updateCount();

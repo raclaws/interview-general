@@ -66,6 +66,19 @@
             return;
         }
 
+        // x — toggle selection on focused row
+        if (e.key === 'x') {
+            var row = getFocusedRow();
+            if (row) {
+                var tableContainer = row.closest('[data-table]');
+                if (tableContainer && tableContainer._toggleRowSelection) {
+                    e.preventDefault();
+                    tableContainer._toggleRowSelection(row);
+                }
+            }
+            return;
+        }
+
         // e — edit focused row
         if (e.key === 'e') {
             var row = getFocusedRow();

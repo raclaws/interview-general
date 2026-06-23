@@ -934,6 +934,32 @@ textarea { resize: vertical; min-height: 80px; }
     font-family: monospace;
 }
 
+/* Bulk selection */
+.row-selected { background: color-mix(in srgb, var(--accent) 10%, var(--bg-card)); }
+.bulk-bar {
+    display: none;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0.85rem;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+.bulk-delete-btn {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: #e64553;
+    color: #fff;
+    cursor: pointer;
+}
+.bulk-delete-btn:hover { background: #d20f39; }
+.col-select { width: 2rem; text-align: center; padding: 0.4rem !important; }
+.col-select input[type="checkbox"] { cursor: pointer; }
+
 /* Done page */
 .done-container { text-align: center; padding: 4rem 2rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
 .done-container h1 { margin-bottom: 1rem; color: var(--accent); }
