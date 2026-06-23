@@ -86,6 +86,7 @@
 document.addEventListener('click', function(e) {
     var row = e.target.closest('.clickable-row');
     if (row && !e.target.closest('a, button, select, input, form')) {
+        if (e.ctrlKey || e.shiftKey) return;
         window.location.href = row.dataset.href;
     }
     // Close any open context menu

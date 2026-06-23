@@ -959,6 +959,9 @@ textarea { resize: vertical; min-height: 80px; }
 .bulk-delete-btn:hover { background: #d20f39; }
 .col-select { width: 2rem; text-align: center; padding: 0.4rem !important; }
 .col-select input[type="checkbox"] { cursor: pointer; }
+tbody .col-select input[type="checkbox"] { opacity: 0; transition: opacity 0.15s; }
+tr:hover .col-select input[type="checkbox"],
+tr.row-selected .col-select input[type="checkbox"] { opacity: 1; }
 
 /* Done page */
 .done-container { text-align: center; padding: 4rem 2rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
