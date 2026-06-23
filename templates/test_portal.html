@@ -8,8 +8,8 @@
         {% if assignment.time_limit %}
         <div class="row-meta"><strong>Time limit:</strong> {{ assignment.time_limit }} day{{ "s" if assignment.time_limit != 1 else "" }}</div>
         {% endif %}
-        {% if assignment.deadline %}
-        <div class="row-meta"><strong>Deadline:</strong> {{ assignment.deadline.strftime("%Y-%m-%d %H:%M") }} UTC</div>
+        {% if effective_deadline %}
+        <div class="row-meta"><strong>Deadline:</strong> {{ effective_deadline.strftime("%Y-%m-%d %H:%M") }} UTC</div>
         {% endif %}
     </div>
 
@@ -37,23 +37,126 @@
     <h2 style="font-size: 1rem; margin-bottom: 0.75rem;">Submit Results</h2>
     <p class="row-meta" style="margin-bottom: 1rem;">Upload your result file or provide a link to your submission.</p>
 
-    <form method="post" action="/t/{{ token }}/submit" enctype="multipart/form-data" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Submitting...'">
+    <div id="submit-error" class="alert alert-danger" style="display: none; margin-bottom: 1rem;"></div>
+
+    <form id="submit-form" method="post" action="/t/{{ token }}/submit" enctype="multipart/form-data">
         <input type="hidden" name="key" value="{{ key }}">
 
         <div class="form-group">
-            <label class="form-label">Upload file{% if assignment.max_upload_size %} <span class="row-meta">(max {{ assignment.max_upload_size }} MB)</span>{% endif %}</label>
-            <input type="file" name="file" class="form-input" {% if assignment.max_upload_size %}onchange="if(this.files[0] && this.files[0].size > {{ assignment.max_upload_size * 1024 * 1024 }}) { alert('File exceeds {{ assignment.max_upload_size }} MB limit'); this.value=''; }"{% endif %}>
+            <label class="form-label">Upload file <span class="row-meta">(max {{ assignment.max_upload_size or 25 }} MB)</span></label>
+            <input type="file" name="file" id="file-input" class="form-input">
+            <div id="file-info" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" class="row-meta"></div>
+        </div>
+
+        <div id="upload-progress" style="display: none; margin: 0.75rem 0;">
+            <div style="background: var(--bg-muted); border-radius: var(--radius-sm); overflow: hidden; height: 6px;">
+                <div id="progress-bar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.2s;"></div>
+            </div>
+            <div id="progress-text" class="row-meta" style="font-size: 0.75rem; margin-top: 0.25rem;">0%</div>
         </div>
 
         <div class="row-meta" style="text-align: center; margin: 0.75rem 0;">— or —</div>
 
         <div class="form-group">
             <label class="form-label">Submission link</label>
-            <input type="url" name="submission_url" class="form-input" placeholder="https://drive.google.com/...">
+            <input type="url" name="submission_url" id="link-input" class="form-input" placeholder="https://drive.google.com/...">
         </div>
 
-        <button type="submit" class="btn" style="width: 100%; margin-top: 0.5rem;">Submit</button>
+        <button type="submit" id="submit-btn" class="btn" style="width: 100%; margin-top: 0.5rem;">Submit</button>
     </form>
+
+    <script>
+    (function() {
+        var maxMB = {{ assignment.max_upload_size or 25 }};
+        var hardCapMB = 100;
+        var effectiveMax = Math.min(maxMB, hardCapMB);
+        var maxBytes = effectiveMax * 1024 * 1024;
+        var blocked = ['exe','bat','sh','cmd','ps1','com','scr','msi','vbs','js','wsf'];
+
+        var fileInput = document.getElementById('file-input');
+        var linkInput = document.getElementById('link-input');
+        var form = document.getElementById('submit-form');
+        var btn = document.getElementById('submit-btn');
+        var errorDiv = document.getElementById('submit-error');
+        var fileInfo = document.getElementById('file-info');
+        var progressDiv = document.getElementById('upload-progress');
+        var progressBar = document.getElementById('progress-bar');
+        var progressText = document.getElementById('progress-text');
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
+        function hideError() { errorDiv.style.display = 'none'; }
+
+        fileInput.addEventListener('change', function() {
+            hideError();
+            if (!this.files[0]) { fileInfo.style.display = 'none'; return; }
+            var f = this.files[0];
+            var ext = f.name.split('.').pop().toLowerCase();
+            if (blocked.indexOf(ext) !== -1) {
+                showError('File type .' + ext + ' is not allowed.');
+                this.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+            if (f.size > maxBytes) {
+                showError('File exceeds ' + effectiveMax + ' MB limit (' + (f.size / 1024 / 1024).toFixed(1) + ' MB selected).');
+                this.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+            fileInfo.textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(2) + ' MB)';
+            fileInfo.style.display = 'block';
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideError();
+            var hasFile = fileInput.files && fileInput.files[0];
+            var hasLink = linkInput.value.trim().length > 0;
+            if (!hasFile && !hasLink) {
+                showError('Please upload a file or provide a submission link.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            if (hasFile) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', form.action, true);
+                xhr.upload.addEventListener('progress', function(ev) {
+                    if (ev.lengthComputable) {
+                        var pct = Math.round((ev.loaded / ev.total) * 100);
+                        progressBar.style.width = pct + '%';
+                        progressText.textContent = pct + '%';
+                    }
+                });
+                progressDiv.style.display = 'block';
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 400) {
+                        window.location.href = xhr.responseURL || '/t/{{ token }}/done';
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = 'Submit';
+                        progressDiv.style.display = 'none';
+                        showError('Upload failed. Please try again.');
+                    }
+                };
+                xhr.onerror = function() {
+                    btn.disabled = false;
+                    btn.textContent = 'Submit';
+                    progressDiv.style.display = 'none';
+                    showError('Network error. Please try again.');
+                };
+                var fd = new FormData(form);
+                xhr.send(fd);
+            } else {
+                form.submit();
+            }
+        });
+    })();
+    </script>
 
     <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
         <p class="row-meta" style="font-size: 0.8rem;">Need help? Contact us via WhatsApp hotline.</p>

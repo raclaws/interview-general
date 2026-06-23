@@ -95,7 +95,7 @@
             <td>
                 {% if t.deadline %}<span class="row-meta">Due: {{ t.deadline.strftime("%Y-%m-%d %H:%M") }}</span>{% endif %}
             </td>
-            <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span></td>
+            <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span>{% if t.is_late %} <span class="badge" style="background: var(--warning-bg); color: var(--warning);">Late</span>{% endif %}</td>
             <td style="display: flex; gap: 0.25rem;">
                 <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ request.base_url }}t/{{ t.token }}'); toast('Link copied')">Link</button>
                 <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ t.password }}'); toast('Password copied')">Pass</button>

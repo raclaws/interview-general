@@ -693,6 +693,22 @@ async def pipelines_list(
 
 # --- CLA-20: Pipeline Detail Page ---
 
+def _annotate_test_assignments(assignments):
+    """Add is_late flag to each test assignment for template rendering."""
+    from datetime import timedelta
+    for a in assignments:
+        deadline = a.deadline
+        if not deadline and a.time_limit:
+            deadline = a.created_at + timedelta(days=a.time_limit)
+        a.is_late = (
+            a.status == "submitted"
+            and a.submitted_at is not None
+            and deadline is not None
+            and a.submitted_at > deadline
+        )
+    return assignments
+
+
 def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate: Candidate):
     """Build context for pipeline detail page."""
     sessions = db.exec(
@@ -824,11 +840,11 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         "culture_completion": f"{culture_completed_ivs}/{culture_total_ivs}",
         "culture_partial": culture_total_ivs > 0 and culture_completed_ivs < culture_total_ivs,
         "stages": PIPELINE_STAGES,
-        "test_assignments": db.exec(
+        "test_assignments": _annotate_test_assignments(db.exec(
             select(TestAssignment)
             .where(TestAssignment.pipeline_id == pipeline.id)
             .order_by(TestAssignment.created_at.desc())
-        ).all(),
+        ).all()),
     }
 
 

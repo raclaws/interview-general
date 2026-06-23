@@ -1,5 +1,6 @@
 import os
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -13,6 +14,10 @@ router = APIRouter()
 UPLOAD_DIR = os.path.join("static", "uploads", "tests")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+DEFAULT_MAX_MB = 25
+HARD_CAP_MB = 100
+BLOCKED_EXTENSIONS = {"exe", "bat", "sh", "cmd", "ps1", "com", "scr", "msi", "vbs", "wsf"}
+
 
 def _render(request: Request, name: str, context: dict = None):
     ctx = context or {}
@@ -25,6 +30,14 @@ def _get_assignment(token: str, db: Session):
     ).first()
 
 
+def _get_effective_deadline(assignment: TestAssignment):
+    if assignment.deadline:
+        return assignment.deadline
+    if assignment.time_limit:
+        return assignment.created_at + timedelta(days=assignment.time_limit)
+    return None
+
+
 def _is_expired(assignment: TestAssignment) -> bool:
     now = datetime.utcnow()
     if assignment.expiry and now > assignment.expiry:
@@ -33,8 +46,8 @@ def _is_expired(assignment: TestAssignment) -> bool:
 
 
 def _is_past_deadline(assignment: TestAssignment) -> bool:
-    now = datetime.utcnow()
-    if assignment.deadline and now > assignment.deadline:
+    deadline = _get_effective_deadline(assignment)
+    if deadline and datetime.utcnow() > deadline:
         return True
     return False
 
@@ -94,6 +107,7 @@ async def test_portal(request: Request, token: str, key: str = "", db: Session =
         "token": token,
         "key": key,
         "past_deadline": _is_past_deadline(assignment),
+        "effective_deadline": _get_effective_deadline(assignment),
     })
 
 
@@ -117,24 +131,38 @@ async def test_submit(
         return RedirectResponse(f"/t/{token}/done", status_code=303)
 
     if file and file.filename:
-        if assignment.max_upload_size:
-            contents = await file.read()
-            if len(contents) > assignment.max_upload_size * 1024 * 1024:
-                return _render(request, "test_portal.html", {
-                    "assignment": assignment,
-                    "token": token,
-                    "key": key,
-                    "past_deadline": _is_past_deadline(assignment),
-                    "error": f"File exceeds maximum size of {assignment.max_upload_size} MB.",
-                })
-            save_path = os.path.join(UPLOAD_DIR, f"{token}_{file.filename}")
-            with open(save_path, "wb") as f:
-                f.write(contents)
-        else:
-            save_path = os.path.join(UPLOAD_DIR, f"{token}_{file.filename}")
-            with open(save_path, "wb") as f:
-                while chunk := await file.read(1024 * 1024):
-                    f.write(chunk)
+        ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+        if ext in BLOCKED_EXTENSIONS:
+            return _render(request, "test_portal.html", {
+                "assignment": assignment,
+                "token": token,
+                "key": key,
+                "past_deadline": _is_past_deadline(assignment),
+                "error": f"File type .{ext} is not allowed.",
+            })
+
+        max_mb = min(assignment.max_upload_size or DEFAULT_MAX_MB, HARD_CAP_MB)
+        max_bytes = max_mb * 1024 * 1024
+
+        safe_name = re.sub(r'[^\w.\-]', '_', file.filename)[:100]
+        save_path = os.path.join(UPLOAD_DIR, f"{token}_{safe_name}")
+
+        total_size = 0
+        with open(save_path, "wb") as f:
+            while chunk := await file.read(1024 * 1024):
+                total_size += len(chunk)
+                if total_size > max_bytes:
+                    f.close()
+                    os.remove(save_path)
+                    return _render(request, "test_portal.html", {
+                        "assignment": assignment,
+                        "token": token,
+                        "key": key,
+                        "past_deadline": _is_past_deadline(assignment),
+                        "error": f"File exceeds maximum size of {max_mb} MB.",
+                    })
+                f.write(chunk)
+
         assignment.submission_url = save_path
     elif submission_url:
         assignment.submission_url = submission_url
