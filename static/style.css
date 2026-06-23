@@ -902,6 +902,38 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .view-save-link:hover { color: var(--text-primary); }
 
+/* Keyboard shortcuts overlay */
+.shortcuts-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+}
+.shortcuts-overlay-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 1.5rem 2rem;
+    min-width: 300px;
+}
+.shortcuts-overlay-card h3 { margin: 0 0 1rem; font-size: 1rem; }
+.shortcuts-overlay-card table { width: 100%; }
+.shortcuts-overlay-card td { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
+.shortcuts-overlay-card td:first-child { text-align: right; width: 40%; }
+.shortcuts-overlay-card kbd {
+    display: inline-block;
+    padding: 0.15rem 0.4rem;
+    background: var(--bg-muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-family: monospace;
+}
+
 /* Done page */
 .done-container { text-align: center; padding: 4rem 2rem; background: var(--bg-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
 .done-container h1 { margin-bottom: 1rem; color: var(--accent); }
