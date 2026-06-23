@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="form-container" style="max-width: 600px; margin: 2rem auto;">
+    <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">{{ assignment.title }}</h1>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        {% if assignment.time_limit %}
+        <div class="row-meta"><strong>Time limit:</strong> {{ assignment.time_limit }} day{{ "s" if assignment.time_limit != 1 else "" }}</div>
+        {% endif %}
+        {% if effective_deadline %}
+        <div class="row-meta"><strong>Deadline:</strong> {{ effective_deadline.strftime("%Y-%m-%d %H:%M") }} UTC</div>
+        {% endif %}
+    </div>
+
+    {% if assignment.instructions %}
+    <div style="background: var(--bg-muted); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 0.875rem;">{{ assignment.instructions }}</div>
+    {% endif %}
+
+    {% if past_deadline %}
+    <div style="background: var(--warning-bg); color: var(--warning); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.25rem;">⚠</span> The deadline for this test has passed. You may still submit, but your submission will be flagged as late.
+    </div>
+    {% endif %}
+
+    {% if error %}
+    <div class="alert alert-danger" style="margin-bottom: 1rem;">{{ error }}</div>
+    {% endif %}
+
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ assignment.external_url }}" target="_blank" rel="noopener" class="btn" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            Open Test
+        </a>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
+
+    <h2 style="font-size: 1rem; margin-bottom: 0.75rem;">Submit Results</h2>
+    <p class="row-meta" style="margin-bottom: 1rem;">Upload your result file or provide a link to your submission.</p>
+
+    <div id="submit-error" class="alert alert-danger" style="display: none; margin-bottom: 1rem;"></div>
+
+    <form id="submit-form" method="post" action="/t/{{ token }}/submit" enctype="multipart/form-data">
+        <input type="hidden" name="key" value="{{ key }}">
+
+        <div class="form-group">
+            <label class="form-label">Upload file <span class="row-meta">(max {{ assignment.max_upload_size or 25 }} MB)</span></label>
+            <input type="file" name="file" id="file-input" class="form-input">
+            <div id="file-info" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" class="row-meta"></div>
+        </div>
+
+        <div id="upload-progress" style="display: none; margin: 0.75rem 0;">
+            <div style="background: var(--bg-muted); border-radius: var(--radius-sm); overflow: hidden; height: 6px;">
+                <div id="progress-bar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.2s;"></div>
+            </div>
+            <div id="progress-text" class="row-meta" style="font-size: 0.75rem; margin-top: 0.25rem;">0%</div>
+        </div>
+
+        <div class="row-meta" style="text-align: center; margin: 0.75rem 0;">— or —</div>
+
+        <div class="form-group">
+            <label class="form-label">Submission link</label>
+            <input type="url" name="submission_url" id="link-input" class="form-input" placeholder="https://drive.google.com/...">
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn" style="width: 100%; margin-top: 0.5rem;">Submit</button>
+    </form>
+
+    <script>
+    (function() {
+        var maxMB = {{ assignment.max_upload_size or 25 }};
+        var hardCapMB = 100;
+        var effectiveMax = Math.min(maxMB, hardCapMB);
+        var maxBytes = effectiveMax * 1024 * 1024;
+        var blocked = ['exe','bat','sh','cmd','ps1','com','scr','msi','vbs','js','wsf'];
+
+        var fileInput = document.getElementById('file-input');
+        var linkInput = document.getElementById('link-input');
+        var form = document.getElementById('submit-form');
+        var btn = document.getElementById('submit-btn');
+        var errorDiv = document.getElementById('submit-error');
+        var fileInfo = document.getElementById('file-info');
+        var progressDiv = document.getElementById('upload-progress');
+        var progressBar = document.getElementById('progress-bar');
+        var progressText = document.getElementById('progress-text');
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+        }
+        function hideError() { errorDiv.style.display = 'none'; }
+
+        fileInput.addEventListener('change', function() {
+            hideError();
+            if (!this.files[0]) { fileInfo.style.display = 'none'; return; }
+            var f = this.files[0];
+            var ext = f.name.split('.').pop().toLowerCase();
+            if (blocked.indexOf(ext) !== -1) {
+                showError('File type .' + ext + ' is not allowed.');
+                this.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+            if (f.size > maxBytes) {
+                showError('File exceeds ' + effectiveMax + ' MB limit (' + (f.size / 1024 / 1024).toFixed(1) + ' MB selected).');
+                this.value = '';
+                fileInfo.style.display = 'none';
+                return;
+            }
+            fileInfo.textContent = f.name + ' (' + (f.size / 1024 / 1024).toFixed(2) + ' MB)';
+            fileInfo.style.display = 'block';
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            hideError();
+            var hasFile = fileInput.files && fileInput.files[0];
+            var hasLink = linkInput.value.trim().length > 0;
+            if (!hasFile && !hasLink) {
+                showError('Please upload a file or provide a submission link.');
+                return;
+            }
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            if (hasFile) {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', form.action, true);
+                xhr.upload.addEventListener('progress', function(ev) {
+                    if (ev.lengthComputable) {
+                        var pct = Math.round((ev.loaded / ev.total) * 100);
+                        progressBar.style.width = pct + '%';
+                        progressText.textContent = pct + '%';
+                    }
+                });
+                progressDiv.style.display = 'block';
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 400) {
+                        window.location.href = xhr.responseURL || '/t/{{ token }}/done';
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = 'Submit';
+                        progressDiv.style.display = 'none';
+                        showError('Upload failed. Please try again.');
+                    }
+                };
+                xhr.onerror = function() {
+                    btn.disabled = false;
+                    btn.textContent = 'Submit';
+                    progressDiv.style.display = 'none';
+                    showError('Network error. Please try again.');
+                };
+                var fd = new FormData(form);
+                xhr.send(fd);
+            } else {
+                form.submit();
+            }
+        });
+    })();
+    </script>
+
+    <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+        <p class="row-meta" style="font-size: 0.8rem;">Need help? Contact us via WhatsApp hotline.</p>
+    </div>
+</div>
+{% endblock %}

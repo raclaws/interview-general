@@ -231,3 +231,23 @@ class TableView(SQLModel, table=True):
     name: str
     config: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class TestAssignment(SQLModel, table=True):
+    __tablename__ = "test_assignments"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pipeline_id: int = Field(foreign_key="candidate_pipelines.id")
+    title: str
+    external_url: str
+    instructions: Optional[str] = None
+    time_limit: Optional[int] = None
+    deadline: Optional[datetime] = None
+    expiry: Optional[datetime] = None
+    max_upload_size: Optional[int] = None
+    token: str = Field(unique=True, index=True)
+    password: str
+    status: str = Field(default="pending")
+    submitted_at: Optional[datetime] = None
+    submission_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)

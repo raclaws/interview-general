@@ -12,6 +12,7 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
+    TestAssignment,
 )
 from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
@@ -692,6 +693,22 @@ async def pipelines_list(
 
 # --- CLA-20: Pipeline Detail Page ---
 
+def _annotate_test_assignments(assignments):
+    """Add is_late flag to each test assignment for template rendering."""
+    from datetime import timedelta
+    for a in assignments:
+        deadline = a.deadline
+        if not deadline and a.time_limit:
+            deadline = a.created_at + timedelta(days=a.time_limit)
+        a.is_late = (
+            a.status == "submitted"
+            and a.submitted_at is not None
+            and deadline is not None
+            and a.submitted_at > deadline
+        )
+    return assignments
+
+
 def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate: Candidate):
     """Build context for pipeline detail page."""
     sessions = db.exec(
@@ -823,6 +840,11 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         "culture_completion": f"{culture_completed_ivs}/{culture_total_ivs}",
         "culture_partial": culture_total_ivs > 0 and culture_completed_ivs < culture_total_ivs,
         "stages": PIPELINE_STAGES,
+        "test_assignments": _annotate_test_assignments(db.exec(
+            select(TestAssignment)
+            .where(TestAssignment.pipeline_id == pipeline.id)
+            .order_by(TestAssignment.created_at.desc())
+        ).all()),
     }
 
 
@@ -921,3 +943,91 @@ async def pipeline_detail_delete(
         return HTMLResponse("", headers={"HX-Trigger": "toast:Pipeline deleted"})
 
     return RedirectResponse("/pipelines", status_code=303)
+
+
+@router.get("/pipeline/{pipeline_id}/assign-test", response_class=HTMLResponse)
+async def assign_test_form(
+    request: Request,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    return _render(request, "test_assign.html", {
+        "admin": admin,
+        "pipeline": pipeline,
+        "candidate": candidate,
+    })
+
+
+@router.post("/pipeline/{pipeline_id}/assign-test")
+async def assign_test_submit(
+    request: Request,
+    pipeline_id: int,
+    title: str = Form(...),
+    external_url: str = Form(...),
+    instructions: str = Form(""),
+    time_limit: int = Form(None),
+    deadline: str = Form(""),
+    expiry: str = Form(""),
+    max_upload_size: int = Form(None),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import secrets
+    from datetime import datetime as dt
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+
+    token = secrets.token_urlsafe(16)
+    password = secrets.token_urlsafe(6)[:8]
+
+    deadline_dt = dt.fromisoformat(deadline) if deadline else None
+    expiry_dt = dt.fromisoformat(expiry) if expiry else None
+
+    assignment = TestAssignment(
+        pipeline_id=pipeline_id,
+        title=title,
+        external_url=external_url,
+        instructions=instructions or None,
+        time_limit=time_limit if time_limit and time_limit > 0 else None,
+        deadline=deadline_dt,
+        expiry=expiry_dt,
+        max_upload_size=max_upload_size if max_upload_size and max_upload_size > 0 else None,
+        token=token,
+        password=password,
+        status="pending",
+    )
+    db.add(assignment)
+    db.commit()
+
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+@router.post("/pipeline/{pipeline_id}/test/{test_id}/delete")
+async def delete_test_assignment(
+    request: Request,
+    pipeline_id: int,
+    test_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    assignment = db.get(TestAssignment, test_id)
+    if not assignment or assignment.pipeline_id != pipeline_id:
+        return HTMLResponse("Not found", status_code=404)
+
+    db.delete(assignment)
+    db.commit()
+
+    if request.headers.get("HX-Request"):
+        return HTMLResponse("", headers={"HX-Trigger": "toast:Test deleted"})
+
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
