@@ -39,7 +39,7 @@
     </div>
     {% endif %}
     {% endif %}
-    {% if pipeline_tests and pipeline_tests.get(p.id) and pipeline_tests[p.id].total > 0 %}
+    {% if pipeline_tests is defined and pipeline_tests and pipeline_tests.get(p.id) and pipeline_tests[p.id].total > 0 %}
     <div style="margin-top: 0.4rem; font-size: 0.8rem;">
         <span style="color: var(--badge-teal);">Tests: {{ pipeline_tests[p.id].submitted }}/{{ pipeline_tests[p.id].total }} submitted</span>
     </div>
