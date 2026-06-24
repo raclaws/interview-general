@@ -1,0 +1,34 @@
+{% extends "base_app.html" %}
+{% block title %}Sessions v2{% endblock %}
+{% block content %}
+<style>
+  #app { display: flex; flex-direction: column; height: calc(100vh - 6rem); }
+  .sv2-controls { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; }
+  .sv2-search { padding: 0.35rem 0.6rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary); font-size: 0.8rem; width: 220px; }
+  .sv2-filter, .sv2-sort { padding: 0.3rem 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-secondary); font-size: 0.8rem; }
+  .sv2-count { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; }
+  .sv2-status { font-size: 0.7rem; color: var(--success); margin-left: 0.5rem; }
+  .sv2-list { flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
+  .sv2-row { display: grid; grid-template-columns: 1.5fr 1fr 60px 80px 80px; align-items: center; padding: 0 1rem; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+  .sv2-row:hover { background: var(--bg-muted); }
+  .sv2-row-primary { display: flex; flex-direction: column; gap: 0.1rem; }
+  .sv2-row-name { color: var(--text-primary); font-weight: 500; font-size: 0.85rem; }
+  .sv2-row-meta { color: var(--text-muted); font-size: 0.75rem; }
+  .sv2-row-info { color: var(--text-muted); font-size: 0.75rem; }
+  .sv2-row-progress { font-size: 0.8rem; color: var(--text-secondary); text-align: center; }
+  .sv2-row-badge { display: inline-block; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; text-align: center; }
+  .sv2-badge-pending { background: var(--warning-bg); color: var(--warning); }
+  .sv2-badge-completed { background: var(--success-bg); color: var(--success); }
+  .sv2-badge-cancelled { background: var(--danger-bg); color: var(--danger); }
+  .sv2-row-date { font-size: 0.75rem; color: var(--text-muted); text-align: right; }
+</style>
+
+<div class="page-header">
+  <h1>Sessions <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 400;">v2 · sync engine</span></h1>
+  <a href="/session/new" class="btn">+ New Session</a>
+</div>
+
+<div id="app"></div>
+
+<script src="/static/sessions-v2/app.js"></script>
+{% endblock %}
