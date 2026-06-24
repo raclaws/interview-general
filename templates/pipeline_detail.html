@@ -9,6 +9,8 @@
 <div class="page-header">
     <h1>{{ pipeline.display_name or (pipeline.position or "—") ~ " · " ~ (pipeline.business_unit or "—") }}</h1>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <a href="/pipeline/{{ pipeline.id }}/export/pdf" class="btn-ghost" onclick="this.style.opacity='0.5'" title="Export PDF"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PDF</a>
+        <a href="/pipeline/{{ pipeline.id }}/export/csv" class="btn-ghost" onclick="this.style.opacity='0.5'" title="Export CSV"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</a>
         <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" class="btn">+ Add Interview</a>
         <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score" class="btn-ghost">◈ Scorecard</a>
         <form method="post" action="/pipeline/{{ pipeline.id }}/delete"
