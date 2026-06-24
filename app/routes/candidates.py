@@ -696,17 +696,20 @@ async def pipelines_list(
 def _annotate_test_assignments(assignments):
     """Add is_late flag to each test assignment for template rendering."""
     from datetime import timedelta
+    result = []
     for a in assignments:
         deadline = a.deadline
         if not deadline and a.time_limit:
             deadline = a.created_at + timedelta(days=a.time_limit)
-        a.is_late = (
+        is_late = (
             a.status == "submitted"
             and a.submitted_at is not None
             and deadline is not None
             and a.submitted_at > deadline
         )
-    return assignments
+        a.__dict__["is_late"] = is_late
+        result.append(a)
+    return result
 
 
 def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate: Candidate):
