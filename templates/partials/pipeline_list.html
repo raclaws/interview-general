@@ -2,7 +2,7 @@
 <div class="pipeline-entry" style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div>
-            <strong>{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</strong>
+            <a href="/pipeline/{{ p.id }}" style="font-weight: 600; color: var(--text-primary); text-decoration: none;">{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</a>
         </div>
         <div style="display: inline-flex; align-items: center; gap: 1rem;">
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
