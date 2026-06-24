@@ -39,6 +39,11 @@
     </div>
     {% endif %}
     {% endif %}
+    {% if pipeline_tests and pipeline_tests.get(p.id) and pipeline_tests[p.id].total > 0 %}
+    <div style="margin-top: 0.4rem; font-size: 0.8rem;">
+        <span class="row-meta">Tests: {{ pipeline_tests[p.id].submitted }}/{{ pipeline_tests[p.id].total }} submitted</span>
+    </div>
+    {% endif %}
     {% if pipeline_sessions and pipeline_sessions.get(p.id) %}
     <div style="margin-top: 0.5rem;">
         <table class="table-clean" style="width: 100%; font-size: 0.8rem;">
