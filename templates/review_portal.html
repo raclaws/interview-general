@@ -34,8 +34,10 @@
                     {% endif %}
                 </td>
                 <td>
-                    {% if item.assignment.submission_url %}
+                    {% if item.assignment.status == "submitted" and item.assignment.submission_url %}
                     <a href="{{ item.assignment.submission_url }}" target="_blank" class="btn-ghost" onclick="event.stopPropagation()">Submission</a>
+                    {% else %}
+                    <span class="badge badge-{{ item.assignment.status }}">{{ item.assignment.status }}</span>
                     {% endif %}
                 </td>
                 <td class="row-meta">{{ item.assignment.submitted_at.strftime("%Y-%m-%d") if item.assignment.submitted_at else "—" }}</td>

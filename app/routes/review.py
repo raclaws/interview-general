@@ -22,7 +22,7 @@ def _get_batch(token: str, db: Session):
 
 
 def _get_review_data(batch: ReviewBatch, db: Session):
-    """Find all submitted test assignments matching this batch's position+BU."""
+    """Find all test assignments matching this batch's position+BU."""
     pipelines = db.exec(
         select(CandidatePipeline).where(
             CandidatePipeline.position == batch.position,
@@ -38,7 +38,6 @@ def _get_review_data(batch: ReviewBatch, db: Session):
         assignments = db.exec(
             select(TestAssignment).where(
                 TestAssignment.pipeline_id == p.id,
-                TestAssignment.status == "submitted",
             )
         ).all()
         for a in assignments:
