@@ -56,8 +56,8 @@
             }
         }
 
-        // c — create new item
-        if (e.key === 'c') {
+        // c — create new item (not with Ctrl/Meta — that's copy)
+        if (e.key === 'c' && !e.ctrlKey && !e.metaKey) {
             var container = document.querySelector('[data-shortcut-new]');
             if (container) {
                 e.preventDefault();
