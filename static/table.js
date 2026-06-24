@@ -21,8 +21,16 @@
             sortDir: null,
             groupField: null,
             focusIndex: -1,
-            advancedRules: []
+            advancedRules: [],
+            showArchived: false
         };
+
+        // Archive toggle config
+        var archiveConfig = null;
+        if (container.dataset.tableArchive) {
+            var parts = container.dataset.tableArchive.split(':');
+            archiveConfig = { field: parts[0], values: parts[1].split(',') };
+        }
 
         function refreshRows() {
             ctx.rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row):not(.group-header)'));
@@ -318,6 +326,7 @@
         function syncToURL() {
             var params = new URLSearchParams();
             if (activeViewId) params.set('view', activeViewId);
+            if (ctx.showArchived) params.set('show_all', '1');
             if (searchInput && searchInput.value) params.set('search', searchInput.value);
             ctx.advancedRules.forEach(function(rule) {
                 params.append('af', rule.field + ':' + rule.op + ':' + rule.value);
@@ -331,6 +340,11 @@
 
         function restoreFromURL() {
             var params = new URLSearchParams(window.location.search);
+            // Restore archive toggle
+            if (params.has('show_all') && archiveToggle) {
+                ctx.showArchived = true;
+                archiveToggle.checked = true;
+            }
             // Restore view if specified
             if (params.has('view')) {
                 var vid = parseInt(params.get('view'));
@@ -392,6 +406,42 @@
             applyAll();
         });
 
+        // Archive toggle UI
+        var archiveToggle = null;
+        if (archiveConfig && controls) {
+            var label = document.createElement('label');
+            label.className = 'archive-toggle';
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = false;
+            label.appendChild(checkbox);
+            label.appendChild(document.createTextNode('Show completed'));
+            controls.appendChild(label);
+            archiveToggle = checkbox;
+
+            checkbox.addEventListener('change', function() {
+                ctx.showArchived = checkbox.checked;
+                applyAll();
+                if (!checkbox.checked) {
+                    ctx.rows.forEach(function(r) { r.classList.remove('row-reveal'); });
+                }
+            });
+        }
+
+        function applyArchiveFilter() {
+            if (!archiveConfig) return;
+            ctx.rows.forEach(function(row) {
+                var val = row.dataset[archiveConfig.field] || '';
+                var isArchived = archiveConfig.values.indexOf(val) !== -1;
+                if (isArchived && !ctx.showArchived) {
+                    row.style.display = 'none';
+                    row.classList.remove('row-reveal');
+                } else if (isArchived && ctx.showArchived) {
+                    row.classList.add('row-reveal');
+                }
+            });
+        }
+
         // Row count indicator
         var countEl = document.createElement('span');
         countEl.className = 'table-count';
@@ -400,7 +450,17 @@
         function updateCount() {
             var visible = getVisibleRows();
             var total = ctx.rows.length;
-            if (visible.length === total) {
+            if (archiveConfig && !ctx.showArchived) {
+                var activeTotal = ctx.rows.filter(function(r) {
+                    return archiveConfig.values.indexOf(r.dataset[archiveConfig.field] || '') === -1;
+                }).length;
+                var archivedCount = total - activeTotal;
+                if (visible.length === activeTotal) {
+                    countEl.textContent = visible.length + ' active' + (archivedCount ? ' · ' + total + ' total' : '');
+                } else {
+                    countEl.textContent = visible.length + ' of ' + activeTotal + ' active · ' + total + ' total';
+                }
+            } else if (visible.length === total) {
                 countEl.textContent = total + ' item' + (total !== 1 ? 's' : '');
             } else {
                 countEl.textContent = visible.length + ' of ' + total;
@@ -421,6 +481,7 @@
         }
 
         function applyAll() {
+            applyArchiveFilter();
             filterRows(ctx, searchInput);
             sortRows(ctx);
             groupRows(ctx);
