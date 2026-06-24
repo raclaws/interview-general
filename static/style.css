@@ -1118,3 +1118,34 @@ mark.search-hl {
     border-color: var(--accent);
     font-weight: 600;
 }
+
+/* Archive toggle */
+.archive-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    user-select: none;
+    margin-left: 0.5rem;
+    white-space: nowrap;
+}
+.archive-toggle input {
+    width: 13px;
+    height: 13px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+.archive-toggle:hover {
+    color: var(--text);
+}
+
+/* Row reveal transition */
+.row-reveal {
+    animation: rowFadeIn 150ms ease-out;
+}
+@keyframes rowFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
