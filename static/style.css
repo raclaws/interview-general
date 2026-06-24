@@ -1149,3 +1149,17 @@ mark.search-hl {
     from { opacity: 0; }
     to { opacity: 1; }
 }
+
+/* Filter empty state */
+.filter-empty-row td {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+.filter-clear-btn {
+    margin-left: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--accent);
+    cursor: pointer;
+}

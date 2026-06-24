@@ -33,9 +33,30 @@
         }
 
         function refreshRows() {
-            ctx.rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row):not(.group-header)'));
+            ctx.rows = Array.from(tbody.querySelectorAll('tr:not(.empty-row):not(.group-header):not(.filter-empty-row)'));
         }
         refreshRows();
+
+        // Contextual empty state for filters
+        var filterEmptyRow = document.createElement('tr');
+        filterEmptyRow.className = 'filter-empty-row';
+        filterEmptyRow.style.display = 'none';
+        var filterEmptyCell = document.createElement('td');
+        filterEmptyCell.setAttribute('colspan', '99');
+        filterEmptyCell.innerHTML = '<span>No items match the current filters</span> <button type="button" class="btn-ghost filter-clear-btn">Clear filters</button>';
+        filterEmptyRow.appendChild(filterEmptyCell);
+        tbody.appendChild(filterEmptyRow);
+
+        filterEmptyCell.querySelector('.filter-clear-btn').addEventListener('click', function() {
+            if (searchInput) searchInput.value = '';
+            ctx.advancedRules = [];
+            syncDropdownFromRules();
+            renderPills();
+            if (sortSelect) { sortSelect.value = ''; ctx.sortField = null; ctx.sortDir = null; sortSelect.classList.remove('sort-active'); }
+            if (groupSelect) { groupSelect.value = ''; ctx.groupField = null; }
+            if (archiveToggle) { archiveToggle.checked = true; ctx.showArchived = true; }
+            applyAll();
+        });
 
         var searchInput = container.querySelector('[data-table-search]');
         var filters = Array.from(container.querySelectorAll('[data-table-filter]'));
@@ -465,6 +486,7 @@
             } else {
                 countEl.textContent = visible.length + ' of ' + total;
             }
+            filterEmptyRow.style.display = (visible.length === 0 && total > 0) ? '' : 'none';
         }
 
         function getVisibleRows() {
