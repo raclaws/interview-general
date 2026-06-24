@@ -41,7 +41,7 @@
     {% endif %}
     {% if pipeline_tests and pipeline_tests.get(p.id) and pipeline_tests[p.id].total > 0 %}
     <div style="margin-top: 0.4rem; font-size: 0.8rem;">
-        <span class="row-meta">Tests: {{ pipeline_tests[p.id].submitted }}/{{ pipeline_tests[p.id].total }} submitted</span>
+        <span style="color: var(--badge-teal);">Tests: {{ pipeline_tests[p.id].submitted }}/{{ pipeline_tests[p.id].total }} submitted</span>
     </div>
     {% endif %}
     {% if pipeline_sessions and pipeline_sessions.get(p.id) %}

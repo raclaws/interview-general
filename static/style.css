@@ -21,6 +21,16 @@
     --warning-bg: #fff3e0;
     --success: #40a02b;
     --success-bg: #e8f5e9;
+    --badge-blue: #1e66f5;
+    --badge-blue-bg: #dce5fc;
+    --badge-teal: #179299;
+    --badge-teal-bg: #d5f0ee;
+    --badge-lavender: #7287fd;
+    --badge-lavender-bg: #e3e7fc;
+    --badge-peach: #fe640b;
+    --badge-peach-bg: #fde8d8;
+    --badge-mauve: #8839ef;
+    --badge-mauve-bg: #ede0fc;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -44,6 +54,16 @@
         --warning-bg: #45352a;
         --success: #a6e3a1;
         --success-bg: #2a4530;
+        --badge-blue: #89b4fa;
+        --badge-blue-bg: #2a3a52;
+        --badge-teal: #94e2d5;
+        --badge-teal-bg: #2a4540;
+        --badge-lavender: #b4befe;
+        --badge-lavender-bg: #2e3050;
+        --badge-peach: #fab387;
+        --badge-peach-bg: #453530;
+        --badge-mauve: #cba6f7;
+        --badge-mauve-bg: #3a2a45;
     }
 }
 
@@ -298,14 +318,16 @@ tr:hover td { background: var(--bg-muted); }
 .badge-pending { background: var(--warning-bg); color: var(--warning); }
 .badge-completed { background: var(--success-bg); color: var(--success); }
 .badge-cancelled { background: var(--danger-bg); color: var(--danger); }
-.badge-screening { background: var(--bg-muted); color: var(--text-secondary); }
-.badge-test { background: var(--bg-muted); color: var(--text-secondary); }
-.badge-interview { background: var(--bg-muted); color: var(--text-secondary); }
-.badge-offer { background: var(--bg-muted); color: var(--text-secondary); }
+.badge-screening { background: var(--badge-blue-bg); color: var(--badge-blue); }
+.badge-test { background: var(--badge-teal-bg); color: var(--badge-teal); }
+.badge-interview { background: var(--badge-lavender-bg); color: var(--badge-lavender); }
+.badge-offer { background: var(--badge-peach-bg); color: var(--badge-peach); }
 .badge-hired { background: var(--success-bg); color: var(--success); }
 .badge-rejected { background: var(--danger-bg); color: var(--danger); }
 .badge-withdrawn { background: var(--bg-muted); color: var(--text-muted); }
-.badge-on_hold { background: var(--bg-muted); color: var(--text-muted); }
+.badge-on_hold { background: var(--badge-mauve-bg); color: var(--badge-mauve); }
+.badge-opened { background: var(--badge-blue-bg); color: var(--badge-blue); }
+.badge-submitted { background: var(--badge-teal-bg); color: var(--badge-teal); }
 
 .inline-select {
     padding: 0.2rem 0.4rem;
