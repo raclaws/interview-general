@@ -35,11 +35,16 @@ def pipeline_csv(pipeline, candidate, session_data, test_assignments=None) -> st
     writer.writerow(["Template", "Interviewers", "Status", "Date", "Completed"])
     for item in session_data:
         s = item["session"]
+        date_val = s.interview_date or s.created_at
+        if hasattr(date_val, 'strftime'):
+            date_str = date_val.strftime("%Y-%m-%d")
+        else:
+            date_str = str(date_val) if date_val else ""
         writer.writerow([
             item["template"].name if item["template"] else "",
             ", ".join(item["interviewers"]),
             s.status,
-            (s.interview_date or s.created_at).strftime("%Y-%m-%d") if (s.interview_date or s.created_at) else "",
+            date_str,
             f"{item['completed']}/{item['total']}",
         ])
     writer.writerow([])
