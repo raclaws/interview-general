@@ -2,7 +2,7 @@ import json as json_mod
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response as FastAPIResponse
 from sqlmodel import Session, select, col
 from sqlalchemy import func, case
 
@@ -1031,3 +1031,117 @@ async def delete_test_assignment(
         return HTMLResponse("", headers={"HX-Trigger": "toast:Test deleted"})
 
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+# --- Export endpoints ---
+
+
+@router.get("/pipeline/{pipeline_id}/export/pdf")
+async def pipeline_export_pdf(
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.export import render_pdf
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    ctx = _pipeline_detail_context(db, pipeline, candidate)
+    ctx["now"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    pdf_bytes = render_pdf("export/pipeline_pdf.html", ctx)
+
+    filename = f"pipeline_{candidate.name.replace(' ', '_')}_{pipeline.position or 'export'}.pdf"
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/pipeline/{pipeline_id}/export/csv")
+async def pipeline_export_csv(
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.export import pipeline_csv
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    ctx = _pipeline_detail_context(db, pipeline, candidate)
+    csv_content = pipeline_csv(pipeline, candidate, ctx["session_data"], ctx.get("test_assignments"))
+
+    filename = f"pipeline_{candidate.name.replace(' ', '_')}_{pipeline.position or 'export'}.csv"
+    return FastAPIResponse(
+        content=csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/pipeline/{pipeline_id}/score/export/pdf")
+async def scorecard_export_pdf(
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.export import render_pdf
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    ctx = _pipeline_detail_context(db, pipeline, candidate)
+    ctx["now"] = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+    pdf_bytes = render_pdf("export/scorecard_pdf.html", ctx)
+
+    filename = f"scorecard_{candidate.name.replace(' ', '_')}_{pipeline.position or 'export'}.pdf"
+    return FastAPIResponse(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/pipeline/{pipeline_id}/score/export/csv")
+async def scorecard_export_csv(
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.export import scorecard_csv
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return HTMLResponse("Not found", status_code=404)
+    candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return HTMLResponse("Not found", status_code=404)
+
+    ctx = _pipeline_detail_context(db, pipeline, candidate)
+    csv_content = scorecard_csv(
+        ctx["hr_data"], ctx["culture_data"],
+        ctx["hr_dimensions"], ctx["culture_dimensions"],
+        ctx["hr_avg"], ctx["culture_avg"],
+        candidate, pipeline,
+    )
+
+    filename = f"scorecard_{candidate.name.replace(' ', '_')}_{pipeline.position or 'export'}.csv"
+    return FastAPIResponse(
+        content=csv_content,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
