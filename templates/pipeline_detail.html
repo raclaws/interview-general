@@ -89,7 +89,7 @@
 <table class="table-clean" style="margin-bottom: 1.5rem;">
     <tbody>
         {% for t in test_assignments %}
-        <tr data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}t/{{ t.token }}"},{"label":"⎘ Copy password","copy":"{{ t.password }}"},{"label":"✕ Delete","href":"/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete","confirm":"Delete this test assignment?","delete":true}]'>
+        <tr class="clickable-row" data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}t/{{ t.token }}"},{"label":"⎘ Copy password","copy":"{{ t.password }}"},{"label":"✕ Delete","href":"/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete","confirm":"Delete this test assignment?","delete":true}]'>
             <td>
                 <div class="col-primary">{{ t.title }}</div>
                 <div class="row-meta">{{ t.external_url[:50] }}{% if t.external_url|length > 50 %}…{% endif %}</div>
@@ -101,6 +101,21 @@
             <td style="white-space: nowrap;">
                 <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ request.base_url }}t/{{ t.token }}'); toast('Link copied')">Link</button>
                 <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ t.password }}'); toast('Password copied')">Pass</button>
+                {% if t.status == "pending" or t.status == "opened" %}
+                <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel" style="display: inline;"
+                      hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel"
+                      hx-confirm="Cancel this test assignment?"
+                      hx-swap="none">
+                    <button type="submit" class="icon-btn icon-btn-warn" style="font-size: 0.7rem;" title="Cancel">⊘</button>
+                </form>
+                {% endif %}
+                <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete" style="display: inline;"
+                      hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete"
+                      hx-confirm="Delete this test assignment?"
+                      hx-swap="none"
+                      hx-on::after-request="this.closest('tr').remove(); toast('Test deleted')">
+                    <button type="submit" class="icon-btn icon-btn-danger" style="font-size: 0.7rem;" title="Delete">✕</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
