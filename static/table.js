@@ -54,7 +54,7 @@
             renderPills();
             if (sortSelect) { sortSelect.value = ''; ctx.sortField = null; ctx.sortDir = null; sortSelect.classList.remove('sort-active'); }
             if (groupSelect) { groupSelect.value = ''; ctx.groupField = null; }
-            if (archiveToggle) { archiveToggle.checked = true; ctx.showArchived = true; }
+            if (archiveToggle) { archiveToggle.classList.add('archive-pill--active'); archiveToggle.textContent = '✓ Show completed'; ctx.showArchived = true; }
             applyAll();
         });
 
@@ -364,7 +364,8 @@
             // Restore archive toggle
             if (params.has('show_all') && archiveToggle) {
                 ctx.showArchived = true;
-                archiveToggle.checked = true;
+                archiveToggle.classList.add('archive-pill--active');
+                archiveToggle.textContent = '✓ Show completed';
             }
             // Restore view if specified
             if (params.has('view')) {
@@ -430,20 +431,19 @@
         // Archive toggle UI
         var archiveToggle = null;
         if (archiveConfig && controls) {
-            var label = document.createElement('label');
-            label.className = 'archive-toggle';
-            var checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.checked = false;
-            label.appendChild(checkbox);
-            label.appendChild(document.createTextNode('Show completed'));
-            controls.appendChild(label);
-            archiveToggle = checkbox;
+            var pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'archive-pill';
+            pill.textContent = 'Show completed';
+            controls.appendChild(pill);
+            archiveToggle = pill;
 
-            checkbox.addEventListener('change', function() {
-                ctx.showArchived = checkbox.checked;
+            pill.addEventListener('click', function() {
+                ctx.showArchived = !ctx.showArchived;
+                pill.classList.toggle('archive-pill--active', ctx.showArchived);
+                pill.textContent = ctx.showArchived ? '✓ Show completed' : 'Show completed';
                 applyAll();
-                if (!checkbox.checked) {
+                if (!ctx.showArchived) {
                     ctx.rows.forEach(function(r) { r.classList.remove('row-reveal'); });
                 }
             });
@@ -454,7 +454,8 @@
             ctx.rows.forEach(function(row) {
                 var val = row.dataset[archiveConfig.field] || '';
                 var isArchived = archiveConfig.values.indexOf(val) !== -1;
-                if (isArchived && !ctx.showArchived) {
+                row._archived = isArchived && !ctx.showArchived;
+                if (row._archived) {
                     row.style.display = 'none';
                     row.classList.remove('row-reveal');
                 } else if (isArchived && ctx.showArchived) {
@@ -832,6 +833,8 @@
         var query = searchInput ? searchInput.value.toLowerCase() : '';
 
         ctx.rows.forEach(function(row) {
+            if (row._archived) { row.style.display = 'none'; return; }
+
             var matchSearch = !query || (row.dataset.search || '').indexOf(query) !== -1;
 
             var matchAdvanced = ctx.advancedRules.every(function(rule) {
