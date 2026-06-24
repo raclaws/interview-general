@@ -12,7 +12,7 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
-    TestAssignment,
+    TestAssignment, ReviewBatch, ReviewScore,
 )
 from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
@@ -1031,6 +1031,80 @@ async def delete_test_assignment(
         return HTMLResponse("", headers={"HX-Trigger": "toast:Test deleted"})
 
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+# --- Review Batch endpoints ---
+
+
+@router.get("/review-batch/new", response_class=HTMLResponse)
+async def review_batch_new_form(
+    request: Request,
+    position: str = "",
+    business_unit: str = "",
+    admin: AdminUser = Depends(get_current_admin),
+):
+    return _render(request, "review_batch_new.html", {
+        "admin": admin,
+        "positions": POSITIONS,
+        "business_units": BUSINESS_UNITS,
+        "prefill_position": position,
+        "prefill_bu": business_unit,
+    })
+
+
+@router.post("/review-batch/new")
+async def review_batch_new_submit(
+    request: Request,
+    reviewer_name: str = Form(...),
+    position: str = Form(...),
+    business_unit: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import secrets
+
+    token = secrets.token_urlsafe(16)
+    batch = ReviewBatch(
+        token=token,
+        reviewer_name=reviewer_name,
+        position=position,
+        business_unit=business_unit,
+    )
+    db.add(batch)
+    db.commit()
+    db.refresh(batch)
+
+    return _render(request, "review_batch_created.html", {
+        "admin": admin,
+        "batch": batch,
+        "link": f"{request.base_url}r/{token}",
+    })
+
+
+@router.get("/review-batches", response_class=HTMLResponse)
+async def review_batches_list(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    batches = db.exec(
+        select(ReviewBatch).order_by(ReviewBatch.created_at.desc())
+    ).all()
+
+    batch_data = []
+    for b in batches:
+        scored = db.exec(
+            select(func.count(ReviewScore.id)).where(
+                ReviewScore.review_batch_id == b.id,
+                ReviewScore.submitted_at != None,
+            )
+        ).one()
+        batch_data.append({"batch": b, "scored": scored})
+
+    return _render(request, "review_batches_list.html", {
+        "admin": admin,
+        "batch_data": batch_data,
+    })
 
 
 # --- Export endpoints ---

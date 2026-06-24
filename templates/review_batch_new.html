@@ -1,0 +1,48 @@
+{% extends "base_app.html" %}
+{% block title %}Create Review Batch{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/sessions">Sessions</a> / <span>New Review Batch</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Create Review Batch</h1>
+</div>
+
+<div class="form-container">
+    <form method="post" action="/review-batch/new" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Creating...'">
+        <div class="form-group">
+            <label class="form-label">Reviewer Name <span class="required">*</span></label>
+            <input type="text" name="reviewer_name" required class="form-input" placeholder="e.g. John Smith">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label class="form-label">Position <span class="required">*</span></label>
+                <select name="position" required class="form-input">
+                    <option value="">Select position...</option>
+                    {% for p in positions %}
+                    <option value="{{ p }}" {% if prefill_position == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Business Unit <span class="required">*</span></label>
+                <select name="business_unit" required class="form-input">
+                    <option value="">Select BU...</option>
+                    {% for bu in business_units %}
+                    <option value="{{ bu }}" {% if prefill_bu == bu %}selected{% endif %}>{{ bu }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+            <button type="submit" class="btn">Create Batch</button>
+            <a href="/review-batches" class="btn-ghost">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

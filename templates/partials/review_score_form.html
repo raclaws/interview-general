@@ -1,0 +1,52 @@
+<div style="background: var(--bg-muted); border-radius: var(--radius-sm); padding: 1rem; margin: 0.5rem 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+        <div>
+            <strong>{{ candidate.name }}</strong>
+            <span class="row-meta"> · {{ assignment.title }}</span>
+        </div>
+        {% if assignment.submission_url %}
+        <a href="{{ assignment.submission_url }}" target="_blank" class="btn-ghost">View Submission ↗</a>
+        {% endif %}
+    </div>
+
+    <form hx-post="/r/{{ token }}/score/{{ assignment.id }}"
+          hx-target="#row-{{ assignment.id }}"
+          hx-swap="outerHTML"
+          hx-on::after-request="this.closest('tr').nextElementSibling.querySelector('[id^=form-]').innerHTML=''; toast('Score saved')">
+
+        <div style="margin-bottom: 0.75rem;">
+            <label class="form-label">Grade</label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                {% for g, label in [("A", "Excellent"), ("B", "Good"), ("C", "Adequate"), ("D", "Below Avg"), ("E", "Poor")] %}
+                <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.85rem;">
+                    <input type="radio" name="grade" value="{{ g }}" {% if score and score.grade == g %}checked{% endif %}>
+                    <span>{{ g }}</span>
+                    <span class="row-meta">({{ label }})</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <label class="form-label">Qualitative Review</label>
+            <textarea name="qualitative" rows="4" class="form-input" placeholder="Strengths, weaknesses, overall assessment...">{{ score.qualitative if score and score.qualitative else "" }}</textarea>
+        </div>
+
+        <div style="margin-bottom: 0.75rem;">
+            <label class="form-label">Verdict</label>
+            <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
+                {% for v in ["pass", "fail", "borderline"] %}
+                <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.85rem;">
+                    <input type="radio" name="verdict" value="{{ v }}" {% if score and score.verdict == v %}checked{% endif %}>
+                    <span>{{ v | title }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn">Save</button>
+            <button type="button" class="btn-ghost" onclick="this.closest('[id^=form-]').innerHTML=''">Cancel</button>
+        </div>
+    </form>
+</div>

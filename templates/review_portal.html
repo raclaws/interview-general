@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Review — {{ batch.position }} · {{ batch.business_unit }}{% endblock %}
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+    <div style="margin-bottom: 1.5rem;">
+        <h1 style="font-size: 1.3rem; margin-bottom: 0.25rem;">Test Review</h1>
+        <div class="row-meta">{{ batch.position }} · {{ batch.business_unit }}</div>
+        <div class="row-meta">Reviewer: <strong>{{ batch.reviewer_name }}</strong></div>
+    </div>
+
+    <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem 1.25rem;">
+            <span style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ scored }}</span>
+            <span class="row-meta"> / {{ total }} scored</span>
+        </div>
+    </div>
+
+    {% if rows %}
+    <table class="table-clean">
+        <tbody>
+            {% for item in rows %}
+            <tr id="row-{{ item.assignment.id }}" class="clickable-row"
+                hx-get="/r/{{ token }}/score/{{ item.assignment.id }}"
+                hx-target="#form-{{ item.assignment.id }}"
+                hx-swap="innerHTML"
+                style="cursor: pointer;">
+                <td>
+                    <div class="col-primary">{{ item.candidate.name }}</div>
+                    <div class="row-meta">{{ item.assignment.title }}</div>
+                </td>
+                <td>
+                    {% if item.candidate.cv_link %}
+                    <a href="{{ item.candidate.cv_link }}" target="_blank" class="btn-ghost" onclick="event.stopPropagation()">CV</a>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if item.assignment.submission_url %}
+                    <a href="{{ item.assignment.submission_url }}" target="_blank" class="btn-ghost" onclick="event.stopPropagation()">Submission</a>
+                    {% endif %}
+                </td>
+                <td class="row-meta">{{ item.assignment.submitted_at.strftime("%Y-%m-%d") if item.assignment.submitted_at else "—" }}</td>
+                <td>
+                    {% if item.score and item.score.submitted_at %}
+                    <span class="badge badge-completed">{{ item.score.grade or "—" }}</span>
+                    {% else %}
+                    <span class="badge badge-pending">—</span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr id="form-row-{{ item.assignment.id }}">
+                <td colspan="5" style="padding: 0;">
+                    <div id="form-{{ item.assignment.id }}"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="row-meta" style="padding: 2rem; text-align: center;">No submitted tests found for this position and business unit.</p>
+    {% endif %}
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.12"></script>
+<script>
+function toast(msg) {
+    var el = document.createElement('div');
+    el.className = 'toast show';
+    el.textContent = msg;
+    var container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+    container.appendChild(el);
+    setTimeout(function() { el.classList.replace('show', 'hide'); setTimeout(function() { el.remove(); }, 300); }, 2000);
+}
+</script>
+{% endblock %}
