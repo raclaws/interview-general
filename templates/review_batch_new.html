@@ -2,7 +2,7 @@
 {% block title %}Create Review Batch{% endblock %}
 {% block breadcrumb %}
 <nav class="breadcrumb">
-    <a href="/sessions">Sessions</a> / <span>New Review Batch</span>
+    <a href="/review-batches">Review Batches</a> / <span>New</span>
 </nav>
 {% endblock %}
 {% block content %}
@@ -10,11 +10,21 @@
     <h1>Create Review Batch</h1>
 </div>
 
+{% if existing_batches is defined and existing_batches %}
+<div style="background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+    <p style="color: var(--warning); font-weight: 600; margin-bottom: 0.5rem;">A review batch for this combination already exists:</p>
+    {% for eb in existing_batches %}
+    <p class="row-meta" style="margin: 0.2rem 0;">• {{ eb.reviewer_name }} — created {{ eb.created_at.strftime("%Y-%m-%d") }}</p>
+    {% endfor %}
+    <p class="row-meta" style="margin-top: 0.5rem;">You can still create another batch (e.g. for a different reviewer).</p>
+</div>
+{% endif %}
+
 <div class="form-container">
     <form method="post" action="/review-batch/new" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Creating...'">
         <div class="form-group">
             <label class="form-label">Reviewer Name <span class="required">*</span></label>
-            <input type="text" name="reviewer_name" required class="form-input" placeholder="e.g. John Smith">
+            <input type="text" name="reviewer_name" required class="form-input" placeholder="e.g. John Smith" value="{{ prefill_reviewer or '' }}">
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
@@ -39,8 +49,12 @@
             </div>
         </div>
 
+        {% if existing_batches is defined and existing_batches %}
+        <input type="hidden" name="confirm" value="yes">
+        {% endif %}
+
         <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
-            <button type="submit" class="btn">Create Batch</button>
+            <button type="submit" class="btn">{% if existing_batches is defined and existing_batches %}Create Anyway{% else %}Create Batch{% endif %}</button>
             <a href="/review-batches" class="btn-ghost">Cancel</a>
         </div>
     </form>

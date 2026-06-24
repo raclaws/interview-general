@@ -1105,10 +1105,30 @@ async def review_batch_new_submit(
     reviewer_name: str = Form(...),
     position: str = Form(...),
     business_unit: str = Form(...),
+    confirm: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
     import secrets
+
+    # Check for existing batches with same Position+BU
+    existing = db.exec(
+        select(ReviewBatch).where(
+            ReviewBatch.position == position,
+            ReviewBatch.business_unit == business_unit,
+        )
+    ).all()
+
+    if existing and confirm != "yes":
+        return _render(request, "review_batch_new.html", {
+            "admin": admin,
+            "positions": POSITIONS,
+            "business_units": BUSINESS_UNITS,
+            "prefill_position": position,
+            "prefill_bu": business_unit,
+            "prefill_reviewer": reviewer_name,
+            "existing_batches": existing,
+        })
 
     token = secrets.token_urlsafe(16)
     batch = ReviewBatch(
