@@ -61,4 +61,21 @@
         </tbody>
     </table>
 </div>
+<script>
+(function() {
+    var t0 = performance.now();
+    window.addEventListener('load', function() {
+        var loadTime = performance.now() - t0;
+        var rowCount = document.querySelectorAll('.table-clean tbody tr:not(.empty-row)').length;
+        fetch('/perf/log', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                page: '/sessions',
+                metrics: { loadMs: Math.round(loadTime), rows: rowCount, tti: Math.round(performance.now() - performance.timing.navigationStart) }
+            })
+        }).catch(function() {});
+    });
+})();
+</script>
 {% endblock %}
