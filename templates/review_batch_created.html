@@ -1,0 +1,26 @@
+{% extends "base_app.html" %}
+{% block title %}Review Batch Created{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Review Batch Created</h1>
+</div>
+
+<div style="background: var(--success-bg); border: 1px solid var(--success); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+    <p style="color: var(--success); font-weight: 600; margin-bottom: 0.5rem;">Batch ready for {{ batch.reviewer_name }}</p>
+    <p class="row-meta">{{ batch.position }} · {{ batch.business_unit }}</p>
+</div>
+
+<div style="margin-bottom: 1.5rem;">
+    <label class="form-label">Review Link</label>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" readonly value="{{ link }}" class="form-input" style="flex: 1; font-size: 0.8rem;" id="review-link">
+        <button type="button" class="btn" onclick="navigator.clipboard.writeText(document.getElementById('review-link').value); this.textContent='Copied!'; setTimeout(()=>this.textContent='Copy', 1500)">Copy</button>
+    </div>
+    <p class="row-meta" style="margin-top: 0.25rem;">Share this link with the reviewer. No login required.</p>
+</div>
+
+<div style="display: flex; gap: 0.5rem;">
+    <a href="/review-batches" class="btn-ghost">View All Batches</a>
+    <a href="/review-batch/new" class="btn-ghost">Create Another</a>
+</div>
+{% endblock %}

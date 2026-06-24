@@ -251,3 +251,26 @@ class TestAssignment(SQLModel, table=True):
     submitted_at: Optional[datetime] = None
     submission_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ReviewBatch(SQLModel, table=True):
+    __tablename__ = "review_batches"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    token: str = Field(unique=True, index=True)
+    reviewer_name: str
+    position: str
+    business_unit: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ReviewScore(SQLModel, table=True):
+    __tablename__ = "review_scores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    review_batch_id: int = Field(foreign_key="review_batches.id")
+    test_assignment_id: int = Field(foreign_key="test_assignments.id")
+    grade: Optional[str] = None
+    qualitative: Optional[str] = None
+    verdict: Optional[str] = None
+    submitted_at: Optional[datetime] = None

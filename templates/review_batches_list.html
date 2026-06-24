@@ -1,0 +1,28 @@
+{% extends "base_app.html" %}
+{% block title %}Review Batches{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Review Batches</h1>
+    <a href="/review-batch/new" class="btn">+ New Batch</a>
+</div>
+
+{% if batch_data %}
+<table class="table-clean">
+    <tbody>
+        {% for item in batch_data %}
+        <tr class="clickable-row" data-href="/r/{{ item.batch.token }}"
+            data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}r/{{ item.batch.token }}"}]'>
+            <td>
+                <div class="col-primary">{{ item.batch.reviewer_name }}</div>
+                <div class="row-meta">{{ item.batch.position }} · {{ item.batch.business_unit }}</div>
+            </td>
+            <td class="row-meta">{{ item.scored }} scored</td>
+            <td class="row-meta">{{ item.batch.created_at.strftime("%Y-%m-%d") }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="row-meta" style="padding: 2rem; text-align: center;">No review batches yet. <a href="/review-batch/new" class="btn-ghost">Create one</a></p>
+{% endif %}
+{% endblock %}

@@ -15,6 +15,7 @@ from app.routes.candidates import router as candidates_router
 from app.routes.test_portal import router as test_portal_router
 from app.routes.sync import router as sync_router
 from app.routes.perf import router as perf_router
+from app.routes.review import router as review_router
 
 app = FastAPI(title="Interview Form Summarizer")
 
@@ -41,6 +42,7 @@ app.include_router(candidates_router)
 app.include_router(test_portal_router)
 app.include_router(sync_router)
 app.include_router(perf_router)
+app.include_router(review_router)
 
 
 @app.on_event("startup")

@@ -1,0 +1,28 @@
+<tr id="row-{{ assignment.id }}" class="clickable-row"
+    hx-get="/r/{{ token }}/score/{{ assignment.id }}"
+    hx-target="#form-{{ assignment.id }}"
+    hx-swap="innerHTML"
+    style="cursor: pointer;">
+    <td>
+        <div class="col-primary">{{ candidate.name }}</div>
+        <div class="row-meta">{{ assignment.title }}</div>
+    </td>
+    <td>
+        {% if candidate.cv_link %}
+        <a href="{{ candidate.cv_link }}" target="_blank" class="btn-ghost" onclick="event.stopPropagation()">CV</a>
+        {% endif %}
+    </td>
+    <td>
+        {% if assignment.submission_url %}
+        <a href="{{ assignment.submission_url }}" target="_blank" class="btn-ghost" onclick="event.stopPropagation()">Submission</a>
+        {% endif %}
+    </td>
+    <td class="row-meta">{{ assignment.submitted_at.strftime("%Y-%m-%d") if assignment.submitted_at else "—" }}</td>
+    <td>
+        {% if score and score.submitted_at %}
+        <span class="badge badge-completed">{{ score.grade or "—" }}</span>
+        {% else %}
+        <span class="badge badge-pending">—</span>
+        {% endif %}
+    </td>
+</tr>
