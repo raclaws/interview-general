@@ -1015,6 +1015,29 @@ async def assign_test_submit(
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
 
 
+@router.post("/pipeline/{pipeline_id}/test/{test_id}/cancel")
+async def cancel_test_assignment(
+    request: Request,
+    pipeline_id: int,
+    test_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    assignment = db.get(TestAssignment, test_id)
+    if not assignment or assignment.pipeline_id != pipeline_id:
+        return HTMLResponse("Not found", status_code=404)
+
+    if assignment.status in ("pending", "opened"):
+        assignment.status = "cancelled"
+        db.add(assignment)
+        db.commit()
+
+    if request.headers.get("HX-Request"):
+        return HTMLResponse("", headers={"HX-Trigger": "toast:Test cancelled"})
+
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
 @router.post("/pipeline/{pipeline_id}/test/{test_id}/delete")
 async def delete_test_assignment(
     request: Request,
