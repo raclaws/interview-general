@@ -58,6 +58,7 @@
                     </form>
                 </td>
                 <td>{{ item.session_count.completed }}/{{ item.session_count.total }}</td>
+                <td>{% if item.test_count.total %}<span class="row-meta">T {{ item.test_count.submitted }}/{{ item.test_count.total }}</span>{% else %}<span class="row-meta">—</span>{% endif %}</td>
                 <td>
                     {% if item.scores.hr_avg or item.scores.culture_avg %}
                     <span class="row-meta">HR {{ item.scores.hr_avg }} · C {{ item.scores.culture_avg }}</span>

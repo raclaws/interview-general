@@ -111,12 +111,21 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
         pid = s.pipeline_id or 0
         pipeline_sessions.setdefault(pid, []).append(entry)
 
+    pipeline_tests = {}
+    for p in pipelines:
+        tests = db.exec(
+            select(TestAssignment).where(TestAssignment.pipeline_id == p.id)
+        ).all()
+        submitted = len([t for t in tests if t.status == "submitted"])
+        pipeline_tests[p.id] = {"total": len(tests), "submitted": submitted}
+
     return {
         "pipelines": pipelines,
         "candidate": candidate,
         "stages": PIPELINE_STAGES,
         "pipeline_scores": pipeline_scores,
         "pipeline_sessions": pipeline_sessions,
+        "pipeline_tests": pipeline_tests,
     }
 
 
@@ -664,6 +673,16 @@ async def pipelines_list(
     all_scores = db.exec(select(PipelineScore)).all()
     scores_map = {s.pipeline_id: s for s in all_scores}
 
+    # Batch query 4: test assignment counts per pipeline
+    all_tests = db.exec(select(TestAssignment)).all()
+    test_counts: dict = {}
+    for t in all_tests:
+        if t.pipeline_id not in test_counts:
+            test_counts[t.pipeline_id] = {"total": 0, "submitted": 0}
+        test_counts[t.pipeline_id]["total"] += 1
+        if t.status == "submitted":
+            test_counts[t.pipeline_id]["submitted"] += 1
+
     pipeline_data = []
     bus_set = set()
     for pipeline, candidate in results:
@@ -671,12 +690,14 @@ async def pipelines_list(
         hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
         culture_avg = round(sc.culture_total / 4, 1) if sc and sc.culture_total else 0
         counts = session_counts.get(pipeline.id, {"total": 0, "completed": 0})
+        tc = test_counts.get(pipeline.id, {"total": 0, "submitted": 0})
         if pipeline.business_unit:
             bus_set.add(pipeline.business_unit)
         pipeline_data.append({
             "pipeline": pipeline,
             "candidate": candidate,
             "session_count": counts,
+            "test_count": tc,
             "scores": {"hr_avg": hr_avg, "culture_avg": culture_avg},
         })
 

@@ -4,11 +4,21 @@
             <strong>{{ candidate.name }}</strong>
             <span class="row-meta"> · {{ assignment.title }}</span>
         </div>
-        {% if assignment.submission_url %}
-        <a href="{{ assignment.submission_url }}" target="_blank" class="btn-ghost">View Submission ↗</a>
-        {% endif %}
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{{ assignment.external_url }}" target="_blank" class="btn-ghost">Test Link ↗</a>
+            {% if assignment.submission_url %}
+            <a href="{{ assignment.submission_url }}" target="_blank" class="btn" style="font-size: 0.75rem;">View Submission ↗</a>
+            {% else %}
+            <span class="badge badge-pending">Not submitted</span>
+            {% endif %}
+        </div>
     </div>
 
+    {% if assignment.status != "submitted" %}
+    <div style="background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-sm); padding: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--warning);">
+        Candidate has not yet submitted this test. Review is blocked until submission is received.
+    </div>
+    {% else %}
     <form hx-post="/r/{{ token }}/score/{{ assignment.id }}"
           hx-target="#row-{{ assignment.id }}"
           hx-swap="outerHTML"
@@ -49,4 +59,5 @@
             <button type="button" class="btn-ghost" onclick="this.closest('[id^=form-]').innerHTML=''">Cancel</button>
         </div>
     </form>
+    {% endif %}
 </div>
