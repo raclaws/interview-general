@@ -1,5 +1,6 @@
 import json
 import secrets
+import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form
@@ -11,6 +12,7 @@ from app.auth import get_current_admin
 from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
+from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
 
@@ -76,6 +78,11 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         "active_candidates": active_candidates,
         "upcoming": upcoming,
     })
+
+
+@router.get("/sessions-v2", response_class=HTMLResponse)
+async def sessions_v2(request: Request, admin: AdminUser = Depends(get_current_admin)):
+    return _render(request, "sessions_v2.html", {"admin": admin})
 
 
 @router.get("/sessions", response_class=HTMLResponse)
@@ -360,6 +367,13 @@ async def session_new_submit(
         db.add(interviewer)
     db.commit()
 
+    # Broadcast to sync clients
+    interviewers = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)).all()
+    template = db.get(Template, session.template_id) if session.template_id else None
+    pipeline = db.get(CandidatePipeline, session.pipeline_id) if session.pipeline_id else None
+    from app.routes.sync import _serialize_session
+    asyncio.create_task(sync_hub.broadcast("sessions", "insert", str(session.id), _serialize_session(session, interviewers, template, pipeline)))
+
     if is_htmx:
         return HTMLResponse("", headers={"HX-Redirect": f"/session/{session.id}"})
     return RedirectResponse("/sessions", status_code=303)
@@ -486,6 +500,7 @@ async def cancel_session(
         session.status = "cancelled"
         db.add(session)
         db.commit()
+        asyncio.create_task(sync_hub.broadcast("sessions", "update", str(session_id), {"status": "cancelled"}))
     if request.headers.get("HX-Request") == "true":
         return HTMLResponse(
             f'<span class="badge badge-cancelled">cancelled</span>',
@@ -525,6 +540,7 @@ async def delete_session(
 
     db.delete(session)
     db.commit()
+    asyncio.create_task(sync_hub.broadcast("sessions", "delete", str(session_id)))
     if request.headers.get("HX-Request") == "true":
         return HTMLResponse("")
     return RedirectResponse(next or "/sessions", status_code=303)
