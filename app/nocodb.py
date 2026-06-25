@@ -46,46 +46,63 @@ def _records_url() -> str:
     return f"{_base_url()}/api/v1/db/data/noco/{NOCODB_BASE_ID}/{NOCODB_TABLE_ID}"
 
 
+NOCODB_TIMEOUT = 10.0
+
+
 async def search_candidates(query: str) -> list[dict]:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            _records_url(),
-            headers=_headers(),
-            params={
-                "where": f"(Full-Name,like,%{query}%)",
-                "fields": "Id,Full-Name,Current Formal Positions,Email",
-                "limit": 20,
-            },
-        )
-        if resp.status_code != 200:
-            return []
-        data = resp.json()
-        records = data.get("list", [])
-        return [
-            {
-                "id": r.get("Id"),
-                "name": r.get("Full-Name", ""),
-                "position": r.get("Current Formal Positions", ""),
-                "email": r.get("Email", ""),
-            }
-            for r in records
-        ]
+    try:
+        async with httpx.AsyncClient(timeout=NOCODB_TIMEOUT) as client:
+            resp = await client.get(
+                _records_url(),
+                headers=_headers(),
+                params={
+                    "where": f"(Full-Name,like,%{query}%)",
+                    "fields": "Id,Full-Name,Current Formal Positions,Email",
+                    "limit": 20,
+                },
+            )
+            if resp.status_code != 200:
+                return [{"_error": f"NocoDB returned {resp.status_code}"}]
+            data = resp.json()
+            records = data.get("list", [])
+            return [
+                {
+                    "id": r.get("Id"),
+                    "name": r.get("Full-Name", ""),
+                    "position": r.get("Current Formal Positions", ""),
+                    "email": r.get("Email", ""),
+                }
+                for r in records
+            ]
+    except httpx.TimeoutException:
+        return [{"_error": "NocoDB request timed out"}]
+    except httpx.ConnectError:
+        return [{"_error": "Cannot connect to NocoDB"}]
+    except Exception as e:
+        return [{"_error": f"NocoDB error: {str(e)[:100]}"}]
 
 
 async def fetch_candidate(row_id: int) -> dict | None:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(
-            f"{_records_url()}/{row_id}",
-            headers=_headers(),
-        )
-        if resp.status_code != 200:
-            return None
-        record = resp.json()
-        snapshot = {}
-        for noco_field, key in FIELD_MAPPING.items():
-            snapshot[key] = record.get(noco_field, "")
-        snapshot["id"] = record.get("Id")
-        return snapshot
+    try:
+        async with httpx.AsyncClient(timeout=NOCODB_TIMEOUT) as client:
+            resp = await client.get(
+                f"{_records_url()}/{row_id}",
+                headers=_headers(),
+            )
+            if resp.status_code != 200:
+                return {"_error": f"NocoDB returned {resp.status_code}"}
+            record = resp.json()
+            snapshot = {}
+            for noco_field, key in FIELD_MAPPING.items():
+                snapshot[key] = record.get(noco_field, "")
+            snapshot["id"] = record.get("Id")
+            return snapshot
+    except httpx.TimeoutException:
+        return {"_error": "NocoDB request timed out"}
+    except httpx.ConnectError:
+        return {"_error": "Cannot connect to NocoDB"}
+    except Exception as e:
+        return {"_error": f"NocoDB error: {str(e)[:100]}"}
 
 
 def upsert_candidate_from_nocodb(snapshot: dict, nocodb_id: int) -> Candidate:

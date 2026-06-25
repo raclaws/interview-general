@@ -36,17 +36,19 @@
 
             <div class="form-group">
                 <label class="form-label">Max Upload Size (MB)</label>
-                <input type="number" name="max_upload_size" min="1" class="form-input" placeholder="e.g. 10">
+                <input type="number" name="max_upload_size" min="1" value="25" class="form-input">
             </div>
 
             <div class="form-group">
                 <label class="form-label">Deadline</label>
-                <input type="datetime-local" name="deadline" class="form-input">
+                <input type="datetime-local" name="deadline" class="form-input" min="{{ today }}T00:00">
+                <p class="hint">Cannot be earlier than today.</p>
             </div>
 
             <div class="form-group">
                 <label class="form-label">Expiry</label>
-                <input type="datetime-local" name="expiry" class="form-input">
+                <input type="datetime-local" name="expiry" class="form-input" min="{{ today }}T00:00">
+                <p class="hint">Link becomes invalid after this date.</p>
             </div>
         </div>
 

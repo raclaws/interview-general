@@ -12,7 +12,7 @@
 
 {% if existing_batches is defined and existing_batches %}
 <div style="background: var(--warning-bg); border: 1px solid var(--warning); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
-    <p style="color: var(--warning); font-weight: 600; margin-bottom: 0.5rem;">A review batch for this combination already exists:</p>
+    <p style="color: var(--warning); font-weight: 600; margin-bottom: 0.5rem;">A review batch for this job already exists:</p>
     {% for eb in existing_batches %}
     <p class="row-meta" style="margin: 0.2rem 0;">• {{ eb.reviewer_name }} — created {{ eb.created_at.strftime("%Y-%m-%d") }}</p>
     {% endfor %}
@@ -27,26 +27,14 @@
             <input type="text" name="reviewer_name" required class="form-input" placeholder="e.g. John Smith" value="{{ prefill_reviewer or '' }}">
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-                <label class="form-label">Position <span class="required">*</span></label>
-                <select name="position" required class="form-input">
-                    <option value="">Select position...</option>
-                    {% for p in positions %}
-                    <option value="{{ p }}" {% if prefill_position == p %}selected{% endif %}>{{ p }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Business Unit <span class="required">*</span></label>
-                <select name="business_unit" required class="form-input">
-                    <option value="">Select BU...</option>
-                    {% for bu in business_units %}
-                    <option value="{{ bu }}" {% if prefill_bu == bu %}selected{% endif %}>{{ bu }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="form-group">
+            <label class="form-label">Job <span class="required">*</span></label>
+            <select name="job_id" required class="form-input">
+                <option value="">Select job...</option>
+                {% for j in jobs %}
+                <option value="{{ j.id }}" {% if prefill_job_id == j.id %}selected{% endif %}>{{ j.title }}</option>
+                {% endfor %}
+            </select>
         </div>
 
         {% if existing_batches is defined and existing_batches %}

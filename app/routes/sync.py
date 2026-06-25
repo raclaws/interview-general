@@ -14,7 +14,8 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
-    InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser
+    InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
+    Job, BusinessUnit,
 )
 
 
@@ -64,6 +65,21 @@ router = APIRouter(prefix="/sync")
 
 def _serialize_session(s: InterviewSession, interviewers, template, pipeline) -> dict:
     snapshot = json.loads(s.candidate_snapshot) if s.candidate_snapshot else {}
+    position = ""
+    business_unit = ""
+    if pipeline:
+        if pipeline.job_id:
+            from app.database import engine
+            from sqlmodel import Session as DBSession
+            with DBSession(engine) as db:
+                job = db.get(Job, pipeline.job_id)
+                if job:
+                    position = job.position or ""
+                    bu = db.get(BusinessUnit, job.business_unit_id)
+                    business_unit = bu.name if bu else ""
+        else:
+            position = pipeline.position or ""
+            business_unit = pipeline.business_unit or ""
     return {
         "id": str(s.id),
         "candidateName": snapshot.get("name", ""),
@@ -73,8 +89,8 @@ def _serialize_session(s: InterviewSession, interviewers, template, pipeline) ->
         "templateName": template.name if template else "",
         "templateId": s.template_id,
         "pipelineId": s.pipeline_id,
-        "position": pipeline.position if pipeline else "",
-        "businessUnit": pipeline.business_unit if pipeline else "",
+        "position": position,
+        "businessUnit": business_unit,
         "interviewerCount": len(interviewers),
         "completedCount": len([i for i in interviewers if i.status == "completed"]),
         "interviewers": [{"name": i.interviewer_name, "token": i.token} for i in interviewers],

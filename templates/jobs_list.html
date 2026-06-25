@@ -1,0 +1,61 @@
+{% extends "base_app.html" %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Jobs</h1>
+    <a href="/job/new" class="btn">+ New Job</a>
+</div>
+
+<div data-table data-table-archive="status:closed,cancelled" data-table-fields='[{"key":"status","label":"Status","type":"select","options":["open","closed","on_hold","cancelled"]},{"key":"bu","label":"Business Unit","type":"select","options":[]},{"key":"priority","label":"Priority","type":"select","options":["urgent","high","normal","low"]},{"key":"date","label":"Date","type":"date"}]'>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search jobs..." class="table-search">
+        <select data-table-filter="status" class="table-filter">
+            <option value="">All Status</option>
+            <option value="open">Open</option>
+            <option value="on_hold">On Hold</option>
+            <option value="closed">Closed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+        <select data-table-filter="priority" class="table-filter">
+            <option value="">All Priority</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="normal">Normal</option>
+            <option value="low">Low</option>
+        </select>
+        <select data-table-sort class="table-filter">
+            <option value="">Sort</option>
+            <option value="date:desc" data-sort-type="date">Newest first</option>
+            <option value="date:asc" data-sort-type="date">Oldest first</option>
+            <option value="name:asc" data-sort-type="string">Title A-Z</option>
+        </select>
+    </div>
+
+    <table class="table-clean">
+        <tbody>
+            {% for item in job_data %}
+            <tr data-search="{{ item.job.title | lower }}" data-status="{{ item.job.status }}" data-bu="{{ item.bu.name if item.bu else '' }}" data-priority="{{ item.job.priority }}" data-name="{{ item.job.title | lower }}" data-date="{{ item.job.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/job/{{ item.job.id }}" data-ctx='[{"label":"Edit","href":"/job/{{ item.job.id }}/edit"},{"label":"Close","href":"/job/{{ item.job.id }}/close","confirm":"Close this job?"}]'>
+                <td>
+                    <div class="col-primary">{{ item.job.title }}</div>
+                    <div class="row-meta">{{ item.job.job_type }} · {{ item.bu.name if item.bu else "—" }}{% if item.job.recruiter %} · {{ item.job.recruiter }}{% endif %}</div>
+                </td>
+                <td style="text-align: right;">
+                    <span class="badge badge-{{ item.job.status }}">{{ item.job.status | replace("_", " ") | title }}</span>
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <span class="row-meta">{{ item.filled }}/{{ item.job.headcount }} filled · {{ item.pipeline_count }} candidates</span>
+                </td>
+                <td style="text-align: right;">
+                    {% if item.job.priority == "urgent" %}<span class="badge badge-urgent">Urgent</span>
+                    {% elif item.job.priority == "high" %}<span class="badge badge-high">High</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if not job_data %}
+    <p class="row-meta" style="padding: 2rem; text-align: center;">No jobs yet. <a href="/job/new">Create your first job.</a></p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -54,31 +54,21 @@
 
 <details class="add-pipeline-form" style="margin-top: 1rem;">
     <summary class="btn-ghost">+ New Opening</summary>
-    <p class="hint" style="margin-top: 0.5rem;">Each opening (position + BU) gets its own pipeline. Sessions and scores roll up here.</p>
+    <p class="hint" style="margin-top: 0.5rem;">Select a job to create a pipeline for this candidate.</p>
     <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
           hx-post="/candidate/{{ candidate.id }}/pipeline"
           hx-target="#pipeline-section"
           hx-swap="innerHTML"
+          hx-on::after-request="this.reset();this.closest('details').removeAttribute('open')"
           style="margin-top: 0.5rem;">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-            <div>
-                <label for="pl-position">Position *</label>
-                <select id="pl-position" name="position" required>
-                    <option value="">— Select —</option>
-                    {% for p in positions %}
-                    <option value="{{ p }}">{{ p }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div>
-                <label for="pl-bu">Business Unit *</label>
-                <select id="pl-bu" name="business_unit" required>
-                    <option value="">— Select —</option>
-                    {% for bu in business_units %}
-                    <option value="{{ bu }}">{{ bu }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <div class="form-group">
+            <label for="pl-job">Job *</label>
+            <select id="pl-job" name="job_id" required>
+                <option value="">— Select Job —</option>
+                {% for j in jobs %}
+                <option value="{{ j.id }}">{{ j.title }}</option>
+                {% endfor %}
+            </select>
         </div>
         <label for="pl-stage">Stage</label>
         <select id="pl-stage" name="stage">

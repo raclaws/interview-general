@@ -1,0 +1,177 @@
+{% extends "base_app.html" %}
+{% block title %}Add Candidate{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/candidates">Candidates</a> / <span>New</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Add Candidate</h1>
+</div>
+
+{% if error %}
+<div class="form-error" style="margin-bottom: 1rem;">{{ error }}</div>
+{% endif %}
+
+<div class="form-container" style="max-width: 600px;">
+    <div class="toggle-group" style="margin-bottom: 1rem;">
+        <label class="toggle-label">
+            <input type="radio" name="entry_toggle" value="nocodb" checked onchange="document.getElementById('nocodb-section').style.display='block';document.getElementById('manual-section').style.display='none';">
+            Search NocoDB
+        </label>
+        <label class="toggle-label">
+            <input type="radio" name="entry_toggle" value="manual" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='block';">
+            Manual Entry
+        </label>
+    </div>
+
+    <div id="nocodb-section">
+        <form method="post" action="/candidate/new">
+            <input type="hidden" name="mode" value="nocodb">
+            <label class="form-label">Search candidate</label>
+            <input type="text" id="candidate_search" placeholder="Type name..." autocomplete="off" class="form-input">
+            <div id="candidate_results" style="margin: 0.5rem 0;"></div>
+            <input type="hidden" id="candidate_id" name="candidate_id">
+            <p id="candidate_selected" class="hint"></p>
+            <button type="submit" class="btn" style="margin-top: 0.75rem;">Add Candidate</button>
+        </form>
+    </div>
+
+    <div id="manual-section" style="display: none;">
+        <form method="post" action="/candidate/new">
+            <input type="hidden" name="mode" value="manual">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Name <span class="required">*</span></label>
+                    <input type="text" name="name" required class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email <span class="required">*</span></label>
+                    <input type="email" name="email" required class="form-input">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" name="phone" class="form-input" pattern="[0-9+\-\s()]*" placeholder="e.g. +62 812 3456 7890">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Current Position</label>
+                    <input type="text" name="current_position" class="form-input">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Years of Experience</label>
+                    <input type="number" name="yoe" min="0" max="50" class="form-input" placeholder="e.g. 3">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Languages</label>
+                    <input type="text" name="languages" class="form-input" placeholder="Python, Java, Go">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Cloud</label>
+                    <input type="text" name="cloud" class="form-input" placeholder="AWS, GCP">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tools</label>
+                    <input type="text" name="tools" class="form-input" placeholder="Docker, K8s">
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Working Arrangement</label>
+                    <select name="working_arrangement" class="form-input">
+                        <option value="">— Select —</option>
+                        <option value="Remote">Remote</option>
+                        <option value="Hybrid">Hybrid</option>
+                        <option value="On-site">On-site</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notice Period</label>
+                    <select name="notice_period" class="form-input">
+                        <option value="">— Select —</option>
+                        <option value="Immediately">Immediately</option>
+                        <option value="1 week">1 week</option>
+                        <option value="2 weeks">2 weeks</option>
+                        <option value="1 month">1 month</option>
+                        <option value="2 months">2 months</option>
+                        <option value="3 months">3 months</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                <div class="form-group">
+                    <label class="form-label">Current Salary</label>
+                    <input type="number" name="current_salary" min="0" class="form-input" placeholder="e.g. 15000000">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expected Salary</label>
+                    <input type="number" name="expected_salary" min="0" class="form-input" placeholder="e.g. 20000000">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">CV / Resume Link</label>
+                <input type="url" name="cv_link" class="form-input" placeholder="https://..." pattern="https?://.+">
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button type="submit" class="btn">Create Candidate</button>
+                <a href="/candidates" class="btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+(function() {
+    const searchInput = document.getElementById("candidate_search");
+    const resultsDiv = document.getElementById("candidate_results");
+    const idInput = document.getElementById("candidate_id");
+    const hint = document.getElementById("candidate_selected");
+    let debounce;
+    if (!searchInput) return;
+    searchInput.addEventListener("input", function() {
+        clearTimeout(debounce);
+        const q = this.value.trim();
+        if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
+        debounce = setTimeout(async () => {
+            try {
+                const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
+                const data = await resp.json();
+                if (data.length && data[0]._error) {
+                    resultsDiv.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
+                    return;
+                }
+                resultsDiv.innerHTML = data.map(c =>
+                    `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}" style="cursor:pointer;padding:0.3rem 0;">
+                        <strong>${c.name}</strong> <span class="row-meta">${c.email || ""}</span>
+                    </div>`
+                ).join("");
+                resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
+                    el.addEventListener("click", () => {
+                        idInput.value = el.dataset.id;
+                        hint.textContent = `Selected: ${el.dataset.name}`;
+                        resultsDiv.innerHTML = "";
+                        searchInput.value = el.dataset.name;
+                    });
+                });
+            } catch(e) {
+                resultsDiv.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
+            }
+        }, 300);
+    });
+})();
+</script>
+{% endblock %}
