@@ -48,7 +48,7 @@
                     <div class="row-meta">{{ item.session.job_title }} · {{ item.template.name if item.template else "—" }}</div>
                 </td>
                 <td>
-                    {% if item.pipeline %}<span class="row-meta">{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}</span>{% endif %}
+                    {% if item.pipeline %}<span class="row-meta">{% if item.job_title %}{{ item.job_title }}{% else %}{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% endif %}</span>{% endif %}
                 </td>
                 <td>{{ item.completed }}/{{ item.total }}</td>
                 <td><span id="status-{{ item.session.id }}" class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>

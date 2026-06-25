@@ -244,3 +244,222 @@ def seed_templates(engine):
             db.add(s)
 
         db.commit()
+
+
+def seed_managed_data(engine):
+    """Seed BusinessUnit, managed lists, and placeholder Job. Idempotent — finds or creates each."""
+    from app.models import BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType, Job
+
+    with Session(engine) as db:
+        # Seed BUs (find or create)
+        bu_names = ["Markethac", "APEX", "EXONIA", "1011", "R&D", "Group Support", "LUPIN"]
+        for name in bu_names:
+            existing = db.exec(select(BusinessUnit).where(BusinessUnit.name == name)).first()
+            if not existing:
+                db.add(BusinessUnit(name=name))
+
+        # Seed positions (find or create)
+        positions = [
+            "Data Analyst", "Data Engineer", "Data Scientist",
+            "Machine Learning Engineer / AI Engineer", "Data Quality Control",
+            "Data Governance", "Fullstack Developer", "QA Engineer",
+            "Project Manager", "CRM Strategist", "CRM Operation",
+            "CRM Assistant", "Account Manager", "Business Analyst",
+            "Digital Marketing", "Design Graphic",
+        ]
+        existing_positions = {mp.title for mp in db.exec(select(ManagedPosition)).all()}
+        for i, title in enumerate(positions):
+            if title not in existing_positions:
+                db.add(ManagedPosition(title=title, order=i))
+
+        # Seed levels (find or create)
+        levels = [
+            "L1 — Junior", "L2 — Mid", "L3 — Senior", "L4 — Lead", "L5 — Principal",
+        ]
+        existing_levels = {ml.label for ml in db.exec(select(ManagedLevel)).all()}
+        for i, label in enumerate(levels):
+            if label not in existing_levels:
+                db.add(ManagedLevel(label=label, order=i))
+
+        # Seed job types (find or create)
+        job_types = ["Full-time", "Intern", "Contract", "Part-time"]
+        existing_types = {jt.label for jt in db.exec(select(ManagedJobType)).all()}
+        for i, label in enumerate(job_types):
+            if label not in existing_types:
+                db.add(ManagedJobType(label=label, order=i))
+
+        db.commit()
+
+        # Create _UNASSIGNED placeholder Job if not exists
+        unassigned = db.exec(
+            select(Job).where(Job.position == "_Unassigned", Job.status == "closed")
+        ).first()
+        if not unassigned:
+            first_bu = db.exec(select(BusinessUnit)).first()
+            if first_bu:
+                db.add(Job(
+                    title="_Unassigned",
+                    title_locked=True,
+                    position="_Unassigned",
+                    level="_",
+                    job_type="Full-time",
+                    business_unit_id=first_bu.id,
+                    headcount=0,
+                    status="closed",
+                ))
+                db.commit()
+
+
+def migrate_legacy_job_ids(engine):
+    """Backfill job_id on pipelines/batches that have position+BU strings but no job_id.
+    Idempotent — detects orphans by checking job_id IS NULL with position/BU present.
+    Runs every startup, no-ops if nothing to migrate."""
+    from app.models import BusinessUnit, Job, CandidatePipeline, ReviewBatch, PIPELINE_ENDED_STAGES
+
+    with Session(engine) as db:
+        orphan_pipelines = db.exec(
+            select(CandidatePipeline).where(
+                CandidatePipeline.job_id == None,
+                CandidatePipeline.position != None,
+            )
+        ).all()
+
+        orphan_batches = db.exec(
+            select(ReviewBatch).where(
+                ReviewBatch.job_id == None,
+                ReviewBatch.position != None,
+            )
+        ).all()
+
+        if not orphan_pipelines and not orphan_batches:
+            return
+
+        # Build BU name -> id map (normalized)
+        bus = db.exec(select(BusinessUnit)).all()
+        bu_map = {b.name.strip().lower(): b.id for b in bus}
+        bu_name_map = {b.name.strip().lower(): b.name for b in bus}
+        first_bu = bus[0] if bus else None
+        if not first_bu:
+            return
+
+        def resolve_bu(bu_str):
+            """Find BU by normalized name, create if missing."""
+            if not bu_str or not bu_str.strip():
+                return first_bu.id
+            key = bu_str.strip().lower()
+            if key in bu_map:
+                return bu_map[key]
+            # BU doesn't exist — create it
+            new_bu = BusinessUnit(name=bu_str.strip())
+            db.add(new_bu)
+            db.flush()
+            bu_map[key] = new_bu.id
+            bu_name_map[key] = new_bu.name
+            return new_bu.id
+
+        # Find or create _Unassigned job (by status+position, not title)
+        unassigned = db.exec(
+            select(Job).where(Job.position == "_Unassigned", Job.status == "closed")
+        ).first()
+        if not unassigned:
+            unassigned = Job(
+                title="_Unassigned", title_locked=True, position="_Unassigned",
+                level="_", job_type="Full-time", business_unit_id=first_bu.id,
+                headcount=0, status="closed",
+            )
+            db.add(unassigned)
+            db.commit()
+            db.refresh(unassigned)
+
+        # Build existing job lookup from DB (normalized keys)
+        existing_jobs = db.exec(select(Job).where(Job.position != "_Unassigned")).all()
+        job_lookup = {}
+        for j in existing_jobs:
+            bu = db.get(BusinessUnit, j.business_unit_id)
+            key = (j.position.strip().lower(), bu.name.strip().lower() if bu else "")
+            job_lookup[key] = j.id
+
+        def get_or_create_job(position_str, bu_str, pipelines_for_key):
+            """Find or create Job. Infer status and headcount from pipeline stages."""
+            key = (
+                (position_str or "_Unassigned").strip().lower(),
+                (bu_str or "").strip().lower(),
+            )
+            if key in job_lookup:
+                return job_lookup[key]
+
+            bu_id = resolve_bu(bu_str)
+            pos_display = (position_str or "_Unassigned").strip()
+            bu_display = bu_str.strip() if bu_str else ""
+
+            # Infer status: if ALL pipelines for this combo are ended → closed
+            all_ended = all(
+                p.stage in PIPELINE_ENDED_STAGES for p in pipelines_for_key
+            ) if pipelines_for_key else False
+
+            # Infer headcount: at least the number of hired pipelines
+            hired_count = len([p for p in pipelines_for_key if p.stage == "hired"])
+            headcount = max(1, hired_count)
+
+            job = Job(
+                title=f"{pos_display} — {bu_display}" if bu_display else pos_display,
+                title_locked=False,
+                position=pos_display,
+                level="L2 — Mid",
+                job_type="Full-time",
+                business_unit_id=bu_id,
+                headcount=headcount,
+                status="closed" if all_ended else "open",
+            )
+            db.add(job)
+            db.flush()
+            job_lookup[key] = job.id
+            return job.id
+
+        # Group orphan pipelines by (position, BU) for status inference
+        from collections import defaultdict
+        pipeline_groups = defaultdict(list)
+        for p in orphan_pipelines:
+            key = (
+                (p.position or "_Unassigned").strip().lower(),
+                (p.business_unit or "").strip().lower(),
+            )
+            pipeline_groups[key].append(p)
+
+        # Backfill pipelines
+        for p in orphan_pipelines:
+            key = (
+                (p.position or "_Unassigned").strip().lower(),
+                (p.business_unit or "").strip().lower(),
+            )
+            p.job_id = get_or_create_job(p.position, p.business_unit, pipeline_groups[key])
+            db.add(p)
+
+        # Backfill review batches
+        for b in orphan_batches:
+            b.job_id = get_or_create_job(b.position, b.business_unit, [])
+            db.add(b)
+
+        # Catch any pipelines with no position at all
+        null_pipelines = db.exec(
+            select(CandidatePipeline).where(CandidatePipeline.job_id == None)
+        ).all()
+        for p in null_pipelines:
+            p.job_id = unassigned.id
+            db.add(p)
+
+        # Seed ManagedPosition for any position strings not already in the list
+        from app.models import ManagedPosition
+        existing_positions = {mp.title.strip().lower() for mp in db.exec(select(ManagedPosition)).all()}
+        all_positions_in_data = set()
+        for p in orphan_pipelines:
+            if p.position and p.position.strip() and p.position.strip() != "_Unassigned":
+                all_positions_in_data.add(p.position.strip())
+
+        max_order = len(existing_positions)
+        for pos in sorted(all_positions_in_data):
+            if pos.lower() not in existing_positions:
+                db.add(ManagedPosition(title=pos, order=max_order))
+                max_order += 1
+
+        db.commit()

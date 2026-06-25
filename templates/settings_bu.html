@@ -1,0 +1,75 @@
+<h2 style="margin-bottom: 1rem;">Business Units</h2>
+
+<table class="table-clean">
+    <tbody>
+        {% for bu in business_units %}
+        <tr id="bu-row-{{ bu.id }}">
+            <td>
+                <div class="col-primary" style="display: flex; align-items: center; gap: 0.5rem;">
+                    {{ bu.name }}
+                    {% if not bu.is_active %}<span class="badge" style="font-size: 0.7rem;">Inactive</span>{% endif %}
+                </div>
+                <div class="row-meta">
+                    {% if bu.head %}Head: {{ bu.head }}{% endif %}
+                    {% if bu.head and bu.default_recruiter %} · {% endif %}
+                    {% if bu.default_recruiter %}Recruiter: {{ bu.default_recruiter }}{% endif %}
+                    {% if not bu.head and not bu.default_recruiter %}No head or recruiter assigned{% endif %}
+                </div>
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+                <button class="btn-icon" title="Edit" onclick="var f=document.getElementById('bu-edit-{{ bu.id }}'); f.hidden=!f.hidden;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                </button>
+                <form method="post" action="/settings/business-units/{{ bu.id }}/deactivate"
+                      hx-post="/settings/business-units/{{ bu.id }}/deactivate"
+                      hx-target="closest .settings-content" hx-swap="innerHTML"
+                      hx-confirm="{% if bu.is_active %}Deactivate '{{ bu.name }}'? It will be hidden from pickers but preserved for existing records.{% else %}Re-activate '{{ bu.name }}'?{% endif %}"
+                      style="display: inline;">
+                    <button type="submit" class="btn-icon" title="{{ 'Activate' if not bu.is_active else 'Deactivate' }}">
+                        {% if bu.is_active %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>{% else %}<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>{% endif %}
+                    </button>
+                </form>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" style="padding: 0;">
+                <form id="bu-edit-{{ bu.id }}" hidden method="post" action="/settings/business-units/{{ bu.id }}"
+                      hx-post="/settings/business-units/{{ bu.id }}"
+                      hx-target="closest .settings-content" hx-swap="innerHTML"
+                      style="padding: 0.75rem; background: var(--surface-raised); border-radius: var(--radius-md); margin: 0.25rem 0;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;">
+                        <input type="text" name="name" value="{{ bu.name }}" required class="form-input" placeholder="Name">
+                        <input type="text" name="head" value="{{ bu.head or '' }}" class="form-input" placeholder="BU Head">
+                        <input type="text" name="default_recruiter" value="{{ bu.default_recruiter or '' }}" class="form-input" placeholder="Default Recruiter">
+                    </div>
+                    <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                        <button type="submit" class="btn" style="font-size: 0.8rem;">Save</button>
+                        <button type="button" class="btn-ghost" style="font-size: 0.8rem;" onclick="document.getElementById('bu-edit-{{ bu.id }}').hidden=true">Cancel</button>
+                    </div>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<form method="post" action="/settings/business-units"
+      hx-post="/settings/business-units"
+      hx-target="closest .settings-content" hx-swap="innerHTML"
+      style="margin-top: 1rem; padding: 1rem; border: 1px dashed var(--border); border-radius: var(--radius-md);">
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+        <div>
+            <label class="form-label" style="font-size: 0.75rem;">Name *</label>
+            <input type="text" name="name" required class="form-input" placeholder="New BU name">
+        </div>
+        <div>
+            <label class="form-label" style="font-size: 0.75rem;">Head</label>
+            <input type="text" name="head" class="form-input" placeholder="BU Head">
+        </div>
+        <div>
+            <label class="form-label" style="font-size: 0.75rem;">Default Recruiter</label>
+            <input type="text" name="default_recruiter" class="form-input" placeholder="Recruiter">
+        </div>
+        <button type="submit" class="btn">Add</button>
+    </div>
+</form>

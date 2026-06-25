@@ -10,7 +10,7 @@
 
     <div style="display: flex; gap: 1.5rem; margin-bottom: 1.5rem;">
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem 1.25rem;">
-            <span style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ scored }}</span>
+            <span id="scored-count" style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">{{ scored }}</span>
             <span class="row-meta"> / {{ total }} scored</span>
         </div>
     </div>
@@ -77,5 +77,24 @@ function toast(msg) {
     container.appendChild(el);
     setTimeout(function() { el.classList.replace('show', 'hide'); setTimeout(function() { el.remove(); }, 300); }, 2000);
 }
+document.body.addEventListener('htmx:beforeSwap', function(e) {
+    var trigger = e.detail.xhr.getResponseHeader('HX-Trigger');
+    if (trigger && trigger.startsWith('toast:')) {
+        toast(trigger.substring(6));
+        // Update scored count
+        var el = document.getElementById('scored-count');
+        if (el) {
+            var badges = document.querySelectorAll('.badge');
+            var scored = 0;
+            badges.forEach(function(b) { if (b.textContent.trim().match(/^[A-E]$/)) scored++; });
+            setTimeout(function() {
+                var newScored = document.querySelectorAll('.badge');
+                var count = 0;
+                newScored.forEach(function(b) { if (b.textContent.trim().match(/^[A-E]$/)) count++; });
+                el.textContent = count;
+            }, 100);
+        }
+    }
+});
 </script>
 {% endblock %}

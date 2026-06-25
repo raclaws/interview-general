@@ -605,6 +605,15 @@ td.col-primary, .col-primary {
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
+.table-clean td a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.table-clean td a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
 .group-header td {
     background: var(--bg-muted);
     font-weight: 600;
@@ -641,7 +650,7 @@ label {
     font-size: 0.85rem;
     color: var(--text-primary);
 }
-input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="email"], select, textarea {
+input[type="text"], input[type="password"], input[type="number"], input[type="date"], input[type="email"], input[type="url"], input[type="tel"], input[type="datetime-local"], select, textarea {
     width: 100%;
     padding: 0.6rem 0.75rem;
     border: 1px solid var(--border);
@@ -651,7 +660,7 @@ input[type="text"], input[type="password"], input[type="number"], input[type="da
     background: var(--bg-card);
     color: var(--text-primary);
 }
-input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="date"]:focus, select:focus, textarea:focus {
+input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="email"]:focus, input[type="url"]:focus, input[type="tel"]:focus, input[type="datetime-local"]:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--border-focus);
     box-shadow: 0 0 0 3px rgba(114, 135, 253, 0.15);

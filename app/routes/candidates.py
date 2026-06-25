@@ -12,9 +12,8 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
-    TestAssignment, ReviewBatch, ReviewScore,
+    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit,
 )
-from app.routes.admin import POSITIONS, BUSINESS_UNITS
 
 router = APIRouter()
 
@@ -217,6 +216,120 @@ async def candidates_list(
     })
 
 
+@router.get("/candidate/new", response_class=HTMLResponse)
+async def candidate_new_form(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+):
+    return _render(request, "candidate_new.html", {"admin": admin})
+
+
+@router.post("/candidate/new")
+async def candidate_new_submit(
+    request: Request,
+    mode: str = Form("manual"),
+    candidate_id: int = Form(None),
+    name: str = Form(""),
+    email: str = Form(""),
+    phone: str = Form(""),
+    current_position: str = Form(""),
+    yoe: str = Form(""),
+    languages: str = Form(""),
+    cloud: str = Form(""),
+    tools: str = Form(""),
+    working_arrangement: str = Form(""),
+    current_salary: str = Form(""),
+    expected_salary: str = Form(""),
+    notice_period: str = Form(""),
+    cv_link: str = Form(""),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    if mode == "nocodb" and candidate_id:
+        from app.nocodb import fetch_candidate
+        snapshot = await fetch_candidate(candidate_id)
+        if not snapshot or snapshot.get("_error") or not snapshot.get("email"):
+            error_msg = snapshot.get("_error", "Candidate not found in NocoDB.") if snapshot else "Candidate not found in NocoDB."
+            return _render(request, "candidate_new.html", {
+                "admin": admin,
+                "error": error_msg,
+            })
+        email_val = snapshot.get("email", "").strip()
+        existing = db.exec(select(Candidate).where(Candidate.email == email_val)).first()
+        if existing:
+            existing.name = snapshot.get("name", existing.name)
+            existing.phone = snapshot.get("phone") or existing.phone
+            existing.current_position = snapshot.get("current_position") or existing.current_position
+            existing.yoe = snapshot.get("yoe") or existing.yoe
+            existing.languages = snapshot.get("languages") or existing.languages
+            existing.cloud = snapshot.get("cloud") or existing.cloud
+            existing.tools = snapshot.get("tools") or existing.tools
+            existing.working_arrangement = snapshot.get("working_arrangement") or existing.working_arrangement
+            existing.current_salary = snapshot.get("current_salary") or existing.current_salary
+            existing.expected_salary = snapshot.get("expected_salary") or existing.expected_salary
+            existing.notice_period = snapshot.get("notice_period") or existing.notice_period
+            existing.cv_link = snapshot.get("cv_link") or existing.cv_link
+            existing.nocodb_id = candidate_id
+            existing.updated_at = datetime.utcnow()
+            db.add(existing)
+            db.commit()
+            return RedirectResponse(f"/candidate/{existing.id}", status_code=303)
+        candidate = Candidate(
+            name=snapshot.get("name", ""),
+            email=email_val,
+            phone=snapshot.get("phone") or None,
+            nocodb_id=candidate_id,
+            current_position=snapshot.get("current_position") or None,
+            yoe=snapshot.get("yoe") or None,
+            languages=snapshot.get("languages") or None,
+            cloud=snapshot.get("cloud") or None,
+            tools=snapshot.get("tools") or None,
+            working_arrangement=snapshot.get("working_arrangement") or None,
+            current_salary=snapshot.get("current_salary") or None,
+            expected_salary=snapshot.get("expected_salary") or None,
+            notice_period=snapshot.get("notice_period") or None,
+            cv_link=snapshot.get("cv_link") or None,
+        )
+        db.add(candidate)
+        db.commit()
+        db.refresh(candidate)
+        return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
+
+    if not name.strip() or not email.strip():
+        return _render(request, "candidate_new.html", {
+            "admin": admin,
+            "error": "Name and email are required.",
+        })
+
+    existing = db.exec(select(Candidate).where(Candidate.email == email.strip())).first()
+    if existing:
+        return _render(request, "candidate_new.html", {
+            "admin": admin,
+            "error": f"A candidate with email '{email.strip()}' already exists. <a href='/candidate/{existing.id}'>View {existing.name}</a>",
+        })
+
+    candidate = Candidate(
+        name=name.strip(),
+        email=email.strip(),
+        phone=phone.strip() or None,
+        current_position=current_position.strip() or None,
+        yoe=yoe.strip() or None,
+        languages=languages.strip() or None,
+        cloud=cloud.strip() or None,
+        tools=tools.strip() or None,
+        working_arrangement=working_arrangement.strip() or None,
+        current_salary=current_salary.strip() or None,
+        expected_salary=expected_salary.strip() or None,
+        notice_period=notice_period.strip() or None,
+        cv_link=cv_link.strip() or None,
+    )
+    db.add(candidate)
+    db.commit()
+    db.refresh(candidate)
+
+    return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
+
+
 @router.get("/candidate/{candidate_id}", response_class=HTMLResponse)
 async def candidate_detail(
     request: Request,
@@ -321,8 +434,7 @@ async def candidate_detail(
         "pipeline_sessions": pipeline_sessions,
         "admin": admin,
         "stages": PIPELINE_STAGES,
-        "positions": POSITIONS,
-        "business_units": BUSINESS_UNITS,
+        "jobs": db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all(),
         "templates": templates,
     })
 
@@ -387,8 +499,7 @@ async def candidate_edit_submit(
 async def pipeline_create(
     request: Request,
     candidate_id: int,
-    position: str = Form(""),
-    business_unit: str = Form(""),
+    job_id: int = Form(...),
     stage: str = Form("screening"),
     notes: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
@@ -398,27 +509,46 @@ async def pipeline_create(
     if not candidate:
         return HTMLResponse("Not found", status_code=404)
 
-    pos = position.strip() or None
-    bu = business_unit.strip() or None
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Job not found", status_code=404)
 
-    # Auto-generate display_name: Position MMYY #N — BU
+    bu = db.get(BusinessUnit, job.business_unit_id)
+    pos = job.position
+    bu_name = bu.name if bu else "N/A"
+
+    # Block duplicate active pipeline for same job
+    from app.models import PIPELINE_ENDED_STAGES
+    active_dup = db.exec(
+        select(CandidatePipeline).where(
+            CandidatePipeline.candidate_id == candidate.id,
+            CandidatePipeline.job_id == job_id,
+            CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
+        )
+    ).first()
+    if active_dup:
+        if request.headers.get("HX-Request"):
+            return HTMLResponse(f'<div class="form-error">An active pipeline for this job already exists.</div>')
+        return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+    # Auto-generate display_name from job title
     mmyy = datetime.utcnow().strftime("%m%y")
     existing = db.exec(
         select(CandidatePipeline).where(
             CandidatePipeline.candidate_id == candidate.id,
-            CandidatePipeline.position == pos,
-            CandidatePipeline.business_unit == bu,
+            CandidatePipeline.job_id == job_id,
         )
     ).all()
     same_month = [p for p in existing if p.created_at.strftime("%m%y") == mmyy]
     seq = len(same_month) + 1
-    display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
+    display_name = f"{pos} {mmyy} #{seq} — {bu_name}"
 
     pipeline = CandidatePipeline(
         candidate_id=candidate.id,
+        job_id=job_id,
         display_name=display_name,
         position=pos,
-        business_unit=bu,
+        business_unit=bu_name,
         stage=stage if stage in PIPELINE_STAGES else "screening",
         notes=notes.strip() or None,
         created_at=datetime.utcnow(),
@@ -453,8 +583,24 @@ async def pipeline_update_stage(
         db.add(pipeline)
         db.commit()
 
+    # Auto-close check
+    toast_msg = "Stage updated"
+    if stage == "hired" and pipeline.job_id:
+        job = db.get(Job, pipeline.job_id)
+        if job and job.status == "open":
+            filled = len(db.exec(
+                select(CandidatePipeline).where(
+                    CandidatePipeline.job_id == job.id,
+                    CandidatePipeline.stage == "hired",
+                )
+            ).all())
+            if filled >= job.headcount:
+                toast_msg = f"Stage updated — Job \"{job.title}\" reached headcount ({filled}/{job.headcount})"
+
     if request.headers.get("HX-Request"):
-        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
+        resp = _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
+        resp.headers["HX-Trigger"] = f"toast:{toast_msg}"
+        return resp
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
@@ -685,6 +831,13 @@ async def pipelines_list(
 
     pipeline_data = []
     bus_set = set()
+    # Batch load jobs for job_title display
+    job_ids = set(p.job_id for p, _ in results if p.job_id)
+    jobs_map = {}
+    if job_ids:
+        jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
+        jobs_map = {j.id: j.title for j in jobs_list}
+
     for pipeline, candidate in results:
         sc = scores_map.get(pipeline.id)
         hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
@@ -699,6 +852,7 @@ async def pipelines_list(
             "session_count": counts,
             "test_count": tc,
             "scores": {"hr_avg": hr_avg, "culture_avg": culture_avg},
+            "job_title": jobs_map.get(pipeline.job_id, ""),
         })
 
     views = db.exec(select(TableView).where(TableView.page == "/pipelines")).all()
@@ -888,6 +1042,7 @@ async def pipeline_detail(
 
     ctx = _pipeline_detail_context(db, pipeline, candidate)
     ctx["admin"] = admin
+    ctx["job"] = db.get(Job, pipeline.job_id) if pipeline.job_id else None
     return _render(request, "pipeline_detail.html", ctx)
 
 
@@ -914,9 +1069,34 @@ async def pipeline_detail_update_stage(
             f'<option value="{s}" {"selected" if s == pipeline.stage else ""}>{s.replace("_", " ").title()}</option>'
             for s in PIPELINE_STAGES
         )
+        select_html = f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" hx-target="this" hx-swap="outerHTML" hx-trigger="change" class="inline-select">{options}</select>'
+
+        # Auto-close prompt: check if job headcount is met
+        toast_msg = "Stage updated"
+        close_prompt = ""
+        if stage == "hired" and pipeline.job_id:
+            job = db.get(Job, pipeline.job_id)
+            if job and job.status == "open":
+                filled = len(db.exec(
+                    select(CandidatePipeline).where(
+                        CandidatePipeline.job_id == job.id,
+                        CandidatePipeline.stage == "hired",
+                    )
+                ).all())
+                if filled >= job.headcount:
+                    close_prompt = (
+                        f'<div class="toast-prompt" id="close-prompt">'
+                        f'<p>Job "{job.title}" reached headcount ({filled}/{job.headcount}). Close this job?</p>'
+                        f'<form method="post" action="/job/{job.id}/close" hx-post="/job/{job.id}/close" style="display:inline;">'
+                        f'<button type="submit" class="btn" style="font-size:0.8rem;">Close Job</button></form>'
+                        f' <button class="btn-ghost" style="font-size:0.8rem;" onclick="this.closest(\'.toast-prompt\').remove()">Keep Open</button>'
+                        f'</div>'
+                    )
+                    toast_msg = "Stage updated — headcount reached"
+
         return HTMLResponse(
-            f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" hx-target="this" hx-swap="outerHTML" hx-trigger="change" class="inline-select">{options}</select>',
-            headers={"HX-Trigger": "toast:Stage updated"},
+            select_html + close_prompt,
+            headers={"HX-Trigger": f"toast:{toast_msg}"},
         )
 
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
@@ -987,6 +1167,7 @@ async def assign_test_form(
         "admin": admin,
         "pipeline": pipeline,
         "candidate": candidate,
+        "today": datetime.utcnow().strftime("%Y-%m-%d"),
     })
 
 
@@ -1011,6 +1192,20 @@ async def assign_test_submit(
     if not pipeline:
         return HTMLResponse("Not found", status_code=404)
 
+    # Dup check: same URL already assigned to this pipeline
+    existing_test = db.exec(
+        select(TestAssignment).where(
+            TestAssignment.pipeline_id == pipeline_id,
+            TestAssignment.external_url == external_url.strip(),
+            TestAssignment.status != "cancelled",
+        )
+    ).first()
+    if existing_test:
+        return HTMLResponse(
+            f'<div class="form-error">This test URL is already assigned to this pipeline (status: {existing_test.status}).</div>',
+            status_code=400,
+        )
+
     token = secrets.token_urlsafe(16)
     password = secrets.token_urlsafe(6)[:8]
 
@@ -1022,10 +1217,10 @@ async def assign_test_submit(
         title=title,
         external_url=external_url,
         instructions=instructions or None,
-        time_limit=time_limit if time_limit and time_limit > 0 else None,
+        time_limit=min(365, max(1, time_limit)) if time_limit and time_limit > 0 else None,
         deadline=deadline_dt,
         expiry=expiry_dt,
-        max_upload_size=max_upload_size if max_upload_size and max_upload_size > 0 else None,
+        max_upload_size=min(100, max(1, max_upload_size)) if max_upload_size and max_upload_size > 0 else 25,
         token=token,
         password=password,
         status="pending",
@@ -1086,16 +1281,15 @@ async def delete_test_assignment(
 @router.get("/review-batch/new", response_class=HTMLResponse)
 async def review_batch_new_form(
     request: Request,
-    position: str = "",
-    business_unit: str = "",
+    job_id: str = "",
     admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
 ):
+    jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all()
     return _render(request, "review_batch_new.html", {
         "admin": admin,
-        "positions": POSITIONS,
-        "business_units": BUSINESS_UNITS,
-        "prefill_position": position,
-        "prefill_bu": business_unit,
+        "jobs": jobs,
+        "prefill_job_id": int(job_id) if job_id else None,
     })
 
 
@@ -1103,29 +1297,30 @@ async def review_batch_new_form(
 async def review_batch_new_submit(
     request: Request,
     reviewer_name: str = Form(...),
-    position: str = Form(...),
-    business_unit: str = Form(...),
+    job_id: int = Form(...),
     confirm: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
     import secrets
 
-    # Check for existing batches with same Position+BU
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Job not found", status_code=404)
+
+    bu = db.get(BusinessUnit, job.business_unit_id)
+
+    # Check for existing batches with same job
     existing = db.exec(
-        select(ReviewBatch).where(
-            ReviewBatch.position == position,
-            ReviewBatch.business_unit == business_unit,
-        )
+        select(ReviewBatch).where(ReviewBatch.job_id == job_id)
     ).all()
 
     if existing and confirm != "yes":
+        jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all()
         return _render(request, "review_batch_new.html", {
             "admin": admin,
-            "positions": POSITIONS,
-            "business_units": BUSINESS_UNITS,
-            "prefill_position": position,
-            "prefill_bu": business_unit,
+            "jobs": jobs,
+            "prefill_job_id": job_id,
             "prefill_reviewer": reviewer_name,
             "existing_batches": existing,
         })
@@ -1134,8 +1329,9 @@ async def review_batch_new_submit(
     batch = ReviewBatch(
         token=token,
         reviewer_name=reviewer_name,
-        position=position,
-        business_unit=business_unit,
+        job_id=job_id,
+        position=job.position,
+        business_unit=bu.name if bu else "",
     )
     db.add(batch)
     db.commit()

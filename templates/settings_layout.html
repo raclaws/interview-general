@@ -1,0 +1,62 @@
+{% extends "base_app.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Settings</h1>
+</div>
+
+<div class="settings-shell">
+    <nav class="settings-nav">
+        <a href="/settings" class="settings-tab {% if active_tab == 'llm' %}active{% endif %}"
+           hx-get="/settings" hx-target=".settings-content" hx-push-url="true">LLM</a>
+        <a href="/settings/business-units" class="settings-tab {% if active_tab == 'business-units' %}active{% endif %}"
+           hx-get="/settings/business-units" hx-target=".settings-content" hx-push-url="true">Business Units</a>
+        <a href="/settings/positions" class="settings-tab {% if active_tab == 'positions' %}active{% endif %}"
+           hx-get="/settings/positions" hx-target=".settings-content" hx-push-url="true">Positions</a>
+        <a href="/settings/levels" class="settings-tab {% if active_tab == 'levels' %}active{% endif %}"
+           hx-get="/settings/levels" hx-target=".settings-content" hx-push-url="true">Levels</a>
+        <a href="/settings/job-types" class="settings-tab {% if active_tab == 'job-types' %}active{% endif %}"
+           hx-get="/settings/job-types" hx-target=".settings-content" hx-push-url="true">Job Types</a>
+        <a href="/templates" class="settings-tab {% if active_tab == 'templates' %}active{% endif %}">Templates</a>
+    </nav>
+    <div class="settings-content">
+        {% if tab_content %}
+            {% include tab_content %}
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.settings-shell {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 2rem;
+    min-height: 400px;
+}
+.settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.settings-tab {
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.875rem;
+    transition: background 0.1s;
+}
+.settings-tab:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+.settings-tab.active {
+    background: var(--surface-active);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.settings-content {
+    min-width: 0;
+}
+</style>
+{% endblock %}

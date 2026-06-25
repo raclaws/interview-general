@@ -1,0 +1,256 @@
+{% extends "base_app.html" %}
+{% block title %}{{ job.title }}{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/jobs">Jobs</a> / <span>{{ job.title }}</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>{{ job.title }}</h1>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/job/{{ job.id }}/edit" class="btn-ghost">Edit</a>
+        {% if job.status == "open" %}
+        <form method="post" action="/job/{{ job.id }}/close" onsubmit="return confirm('Close this job?')">
+            <button type="submit" class="btn-ghost" style="color: var(--warning);">Close Job</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+    <div>
+        <div style="margin-bottom: 1rem;">
+            <span class="badge badge-{{ job.status }}">{{ job.status | replace("_", " ") | title }}</span>
+            {% if job.priority in ("urgent", "high") %}
+            <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
+            {% endif %}
+        </div>
+        <table class="meta-table">
+            <tr><td class="row-meta">Position</td><td>{{ job.position }}</td></tr>
+            <tr><td class="row-meta">Level</td><td>{{ job.level }}</td></tr>
+            <tr><td class="row-meta">Type</td><td>{{ job.job_type }}</td></tr>
+            <tr><td class="row-meta">Business Unit</td><td>{{ bu.name if bu else "—" }}</td></tr>
+            <tr><td class="row-meta">Headcount</td><td>{{ filled }}/{{ job.headcount }} filled</td></tr>
+            <tr><td class="row-meta">Recruiter</td><td>{{ job.recruiter or "—" }}</td></tr>
+            <tr><td class="row-meta">Backup</td><td>{{ job.backup_recruiter or "—" }}</td></tr>
+            <tr><td class="row-meta">Hiring Manager</td><td>{{ job.hiring_manager or "—" }}</td></tr>
+            {% if job.salary_range_min or job.salary_range_max %}
+            <tr><td class="row-meta">Salary Range</td><td>{{ job.salary_range_min or "—" }} – {{ job.salary_range_max or "—" }}</td></tr>
+            {% endif %}
+            <tr><td class="row-meta">Target Date</td><td>{{ job.target_date or "—" }}</td></tr>
+            {% if job.closed_date %}
+            <tr><td class="row-meta">Closed Date</td><td>{{ job.closed_date }}</td></tr>
+            {% endif %}
+            {% if job.source %}
+            <tr><td class="row-meta">Source</td><td>{{ job.source }}</td></tr>
+            {% endif %}
+        </table>
+    </div>
+    <div>
+        {% if job.description %}
+        <h3 style="margin-bottom: 0.5rem;">Description</h3>
+        <p style="white-space: pre-wrap; font-size: 0.9rem;">{{ job.description }}</p>
+        {% endif %}
+
+        {% if job.notes %}
+        <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Notes</h3>
+        <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);">{{ job.notes }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div id="job-links" style="margin-bottom: 2rem;">
+    {% include "partials/job_links.html" %}
+</div>
+
+<h2 style="margin-bottom: 1rem;">Pipelines ({{ pipelines | length }})</h2>
+
+<details style="margin-bottom: 1rem;">
+    <summary class="btn-ghost">+ Add Candidate</summary>
+    <div style="margin-top: 0.75rem; padding: 1rem; border: 1px dashed var(--border); border-radius: var(--radius-md);">
+        <div class="toggle-group" style="margin-bottom: 0.75rem;">
+            <label class="toggle-label">
+                <input type="radio" name="add_mode" value="existing" checked onchange="document.getElementById('existing-section').style.display='block';document.getElementById('new-section').style.display='none';">
+                Existing Candidate
+            </label>
+            <label class="toggle-label">
+                <input type="radio" name="add_mode" value="new" onchange="document.getElementById('existing-section').style.display='none';document.getElementById('new-section').style.display='block';">
+                New Candidate
+            </label>
+        </div>
+
+        <div id="existing-section">
+            <form method="post" action="/job/{{ job.id }}/add-candidate"
+                  hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                <input type="hidden" name="mode" value="existing">
+                <label class="form-label">Search local candidates</label>
+                <input type="text" id="job-candidate-search" placeholder="Type name..." autocomplete="off" class="form-input">
+                <div id="job-candidate-results" style="margin: 0.5rem 0;"></div>
+                <input type="hidden" id="job-candidate-id" name="candidate_id">
+                <p id="job-candidate-selected" class="hint"></p>
+                <button type="submit" class="btn" style="margin-top: 0.5rem;">Add to Pipeline</button>
+            </form>
+        </div>
+
+        <div id="new-section" style="display: none;">
+            <div class="toggle-group" style="margin-bottom: 0.5rem;">
+                <label class="toggle-label">
+                    <input type="radio" name="new_source" value="nocodb" checked onchange="document.getElementById('job-nocodb-section').style.display='block';document.getElementById('job-manual-section').style.display='none';">
+                    Import from NocoDB
+                </label>
+                <label class="toggle-label">
+                    <input type="radio" name="new_source" value="manual" onchange="document.getElementById('job-nocodb-section').style.display='none';document.getElementById('job-manual-section').style.display='block';">
+                    Manual Entry
+                </label>
+            </div>
+
+            <div id="job-nocodb-section">
+                <form method="post" action="/job/{{ job.id }}/add-candidate"
+                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                    <input type="hidden" name="mode" value="nocodb">
+                    <label class="form-label">Search NocoDB</label>
+                    <input type="text" id="job-nocodb-input" placeholder="Type name..." autocomplete="off" class="form-input">
+                    <div id="job-nocodb-results" style="margin: 0.5rem 0;"></div>
+                    <input type="hidden" id="job-nocodb-id" name="nocodb_id">
+                    <p id="job-nocodb-selected" class="hint"></p>
+                    <button type="submit" class="btn" style="margin-top: 0.5rem;">Import & Add to Pipeline</button>
+                </form>
+            </div>
+
+            <div id="job-manual-section" style="display: none;">
+                <form method="post" action="/job/{{ job.id }}/add-candidate"
+                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                    <input type="hidden" name="mode" value="new">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                        <div>
+                            <label class="form-label">Name *</label>
+                            <input type="text" name="name" required class="form-input">
+                        </div>
+                        <div>
+                            <label class="form-label">Email *</label>
+                            <input type="email" name="email" required class="form-input">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                        <div>
+                            <label class="form-label">Phone</label>
+                            <input type="tel" name="phone" class="form-input">
+                        </div>
+                        <div>
+                            <label class="form-label">Current Position</label>
+                            <input type="text" name="current_position" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 0.5rem;">
+                        <label class="form-label">CV Link</label>
+                        <input type="url" name="cv_link" class="form-input" placeholder="https://...">
+                    </div>
+                    <button type="submit" class="btn" style="margin-top: 0.5rem;">Create & Add to Pipeline</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</details>
+
+<script>
+(function() {
+    // Local DB search
+    const searchInput = document.getElementById("job-candidate-search");
+    const resultsDiv = document.getElementById("job-candidate-results");
+    const idInput = document.getElementById("job-candidate-id");
+    const hint = document.getElementById("job-candidate-selected");
+    let debounce;
+    if (searchInput) {
+        searchInput.addEventListener("input", function() {
+            clearTimeout(debounce);
+            const q = this.value.trim();
+            if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
+            debounce = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
+                    const data = await resp.json();
+                    if (data.length && data[0]._error) {
+                        resultsDiv.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
+                        return;
+                    }
+                    resultsDiv.innerHTML = data.map(c =>
+                        `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}" style="cursor:pointer;padding:0.3rem 0;">
+                            <strong>${c.name}</strong> <span class="row-meta">${c.email || ""}</span>
+                        </div>`
+                    ).join("");
+                    resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
+                        el.addEventListener("click", () => {
+                            idInput.value = el.dataset.id;
+                            hint.textContent = `Selected: ${el.dataset.name}`;
+                            resultsDiv.innerHTML = "";
+                            searchInput.value = el.dataset.name;
+                        });
+                    });
+                } catch(e) {
+                    resultsDiv.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
+                }
+            }, 300);
+        });
+    }
+
+    // NocoDB search
+    const nocoInput = document.getElementById("job-nocodb-input");
+    const nocoResults = document.getElementById("job-nocodb-results");
+    const nocoIdInput = document.getElementById("job-nocodb-id");
+    const nocoHint = document.getElementById("job-nocodb-selected");
+    let nocoDebounce;
+    if (nocoInput) {
+        nocoInput.addEventListener("input", function() {
+            clearTimeout(nocoDebounce);
+            const q = this.value.trim();
+            if (q.length < 2) { nocoResults.innerHTML = ""; return; }
+            nocoDebounce = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
+                    const data = await resp.json();
+                    if (data.length && data[0]._error) {
+                        nocoResults.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
+                        return;
+                    }
+                    nocoResults.innerHTML = data.map(c =>
+                        `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}" style="cursor:pointer;padding:0.3rem 0;">
+                            <strong>${c.name}</strong> <span class="row-meta">${c.email || ""}</span>
+                        </div>`
+                    ).join("");
+                    nocoResults.querySelectorAll(".candidate-item").forEach(el => {
+                        el.addEventListener("click", () => {
+                            nocoIdInput.value = el.dataset.id;
+                            nocoHint.textContent = `Selected: ${el.dataset.name}`;
+                            nocoResults.innerHTML = "";
+                            nocoInput.value = el.dataset.name;
+                        });
+                    });
+                } catch(e) {
+                    nocoResults.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
+                }
+            }, 300);
+        });
+    }
+})();
+</script>
+{% if pipeline_data %}
+<table class="table-clean">
+    <tbody>
+        {% for item in pipeline_data %}
+        <tr class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"View candidate","href":"/candidate/{{ item.candidate.id }}"}]'>
+            <td>
+                <div class="col-primary">{{ item.candidate.name if item.candidate else "—" }}</div>
+                <div class="row-meta">{{ item.pipeline.display_name or "—" }} · {{ item.pipeline.stage | replace("_", " ") | title }}</div>
+            </td>
+            <td style="text-align: right;">
+                <span class="row-meta">{{ item.pipeline.updated_at.strftime("%Y-%m-%d") }}</span>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="row-meta">No candidates in pipeline for this job yet.</p>
+{% endif %}
+{% endblock %}

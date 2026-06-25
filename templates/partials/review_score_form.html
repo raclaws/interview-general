@@ -22,10 +22,11 @@
     <form hx-post="/r/{{ token }}/score/{{ assignment.id }}"
           hx-target="#row-{{ assignment.id }}"
           hx-swap="outerHTML"
-          hx-on::after-request="this.closest('tr').nextElementSibling.querySelector('[id^=form-]').innerHTML=''; toast('Score saved')">
+          hx-on::after-request="this.closest('tr').nextElementSibling.querySelector('[id^=form-]').innerHTML=''; toast('Score saved')"
+          onsubmit="var g=this.querySelector('input[name=grade]:checked'); var v=this.querySelector('input[name=verdict]:checked'); if(!g||!v){alert('Grade and Verdict are required.');return false;}">
 
         <div style="margin-bottom: 0.75rem;">
-            <label class="form-label">Grade</label>
+            <label class="form-label">Grade <span class="required">*</span></label>
             <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
                 {% for g, label in [("A", "Excellent"), ("B", "Good"), ("C", "Adequate"), ("D", "Below Avg"), ("E", "Poor")] %}
                 <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.85rem;">
@@ -38,12 +39,12 @@
         </div>
 
         <div style="margin-bottom: 0.75rem;">
-            <label class="form-label">Qualitative Review</label>
+            <label class="form-label">Qualitative Review <span class="row-meta">(optional)</span></label>
             <textarea name="qualitative" rows="4" class="form-input" placeholder="Strengths, weaknesses, overall assessment...">{{ score.qualitative if score and score.qualitative else "" }}</textarea>
         </div>
 
         <div style="margin-bottom: 0.75rem;">
-            <label class="form-label">Verdict</label>
+            <label class="form-label">Verdict <span class="required">*</span></label>
             <div style="display: flex; gap: 1rem; margin-top: 0.25rem;">
                 {% for v in ["pass", "fail", "borderline"] %}
                 <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-size: 0.85rem;">

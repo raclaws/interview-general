@@ -25,16 +25,13 @@
     <div class="detail-section">
         <h2>Session Info</h2>
         {% if pipeline %}
-        <p><strong>Pipeline:</strong> <a href="/candidate/{{ session.candidate_id }}">{{ pipeline.display_name or (pipeline.position or "—") ~ " · " ~ (pipeline.business_unit or "—") }}</a></p>
+        <p><strong>Pipeline:</strong> <a href="/pipeline/{{ pipeline.id }}">{{ pipeline.display_name or "—" }}</a></p>
+        {% if job %}
+        <p><strong>Job:</strong> <a href="/job/{{ job.id }}">{{ job.title }}</a></p>
+        {% endif %}
         {% endif %}
         <p><strong>Template:</strong> {{ template.name if template else "—" }}</p>
         <p><strong>Job Title:</strong> {{ session.job_title }}</p>
-        {% if session.position %}
-        <p><strong>Position:</strong> {{ session.position }}</p>
-        {% endif %}
-        {% if session.business_unit %}
-        <p><strong>Business Unit:</strong> {{ session.business_unit }}</p>
-        {% endif %}
         <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
         <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
         <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
