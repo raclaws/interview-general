@@ -160,7 +160,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 /* Main (public pages) */
 main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 
-/* Buttons */
+/* Buttons — 5 classes: .btn, .btn-ghost, .btn-danger, .btn-icon, .btn-pill */
 .btn {
     display: inline-block;
     background: var(--accent-hover);
@@ -172,28 +172,83 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
     font-size: 0.8rem;
     font-weight: 500;
     text-decoration: none;
-    transition: background 0.15s, transform 0.1s;
+    transition: background 0.15s;
     line-height: 1.4;
 }
-.btn:hover { background: var(--accent); color: #fff; text-decoration: none; transform: translateY(-1px); }
-.btn-secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--border); padding: 0.35rem 0.75rem; }
-.btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
-.btn-danger { background: var(--danger); padding: 0.35rem 0.75rem; }
-.btn-danger:hover { background: var(--danger); opacity: 0.85; }
-.btn-ghost { background: none; border: none; color: var(--accent); padding: 0; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
-.btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
-.btn-copy {
-    background: var(--bg-muted);
-    color: var(--text-secondary);
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--border);
+.btn:hover { background: var(--accent); color: #fff; text-decoration: none; }
+.btn-ghost {
+    display: inline-block;
+    background: none;
+    border: none;
+    color: var(--accent);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
     cursor: pointer;
-    font-size: 0.7rem;
-    border-radius: var(--radius-sm);
-    margin-left: 0.4rem;
-    transition: background 0.15s;
+    text-decoration: none;
+    transition: color 0.15s;
 }
-.btn-copy:hover { background: var(--border); }
+.btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); }
+.btn-danger {
+    display: inline-block;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+.btn-danger:hover { color: var(--danger); }
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+    padding: 0;
+    opacity: 0.5;
+}
+.btn-icon:hover { opacity: 1; color: var(--accent); text-decoration: none; }
+.btn-icon-warn:hover { color: var(--warning); }
+.btn-icon-danger:hover { color: var(--danger); }
+.btn-pill {
+    display: inline-block;
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+    border-radius: 20px;
+    cursor: pointer;
+    text-decoration: none;
+    transition: border-color 0.15s, color 0.15s;
+}
+.btn-pill:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+
+/* Legacy compat — aliases to new system */
+.btn-secondary { background: none; border: none; color: var(--accent); padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn-secondary:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
+.btn-copy { opacity: 0.5; background: none; border: none; color: var(--text-muted); font-size: 0.7rem; padding: 0.1rem 0.3rem; cursor: pointer; }
+.btn-copy:hover { opacity: 1; color: var(--accent); }
+.btn-score { display: inline-block; background: none; border: none; color: var(--accent); padding: 0.35rem 0.75rem; font-size: 0.8rem; font-weight: 500; cursor: pointer; text-decoration: none; }
+.btn-score:hover { text-decoration: underline; color: var(--accent-hover); }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; font-size: 0.9rem; color: var(--text-muted); background: none; border: none; border-radius: var(--radius-sm); cursor: pointer; text-decoration: none; opacity: 0.5; padding: 0; transition: all 0.15s; }
+.icon-btn:hover { opacity: 1; color: var(--accent); text-decoration: none; transform: none; }
+.icon-btn.icon-btn-warn:hover { color: var(--warning); }
+.icon-btn.icon-btn-danger:hover { color: var(--danger); }
+.btn-danger-sm { opacity: 0.5; background: none; border: none; color: var(--text-muted); font-size: 0.7rem; padding: 0.1rem 0.3rem; cursor: pointer; }
+.btn-danger-sm:hover { opacity: 1; color: var(--danger); transform: none; }
 
 /* Page header */
 .page-header {
@@ -225,31 +280,31 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
     cursor: pointer;
     font-size: 0.85rem;
     font-weight: 600;
-    transition: background 0.15s, transform 0.1s;
+    transition: background 0.15s;
 }
 .form-container button[type="submit"]:hover,
 .add-pipeline-form button[type="submit"]:hover,
-.submit-btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.submit-btn:hover { background: var(--accent-hover); }
 /* Override for buttons inside action groups — never full-width */
-.action-row button, .summary-block button, .detail-section button.btn-secondary, .detail-section button.btn {
+.action-row button, .summary-block button, .detail-section button.btn-ghost, .detail-section button.btn {
     width: auto;
     margin-top: 0;
     padding: 0.4rem 0.85rem;
     font-size: 0.8rem;
     font-weight: 500;
 }
-/* Ensure .btn-secondary always overrides submit styling */
-button.btn-secondary {
-    background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border);
+/* Ensure .btn-ghost always overrides submit styling */
+button.btn-ghost {
+    background: none;
+    color: var(--accent);
+    border: none;
     width: auto;
     margin-top: 0;
     padding: 0.35rem 0.75rem;
     font-size: 0.8rem;
     font-weight: 500;
 }
-button.btn-secondary:hover { background: var(--bg-muted); border-color: var(--text-muted); transform: none; color: var(--text-primary); }
+button.btn-ghost:hover { text-decoration: underline; color: var(--accent-hover); }
 nav button[type="submit"] {
     all: unset;
     color: var(--text-muted);
@@ -305,7 +360,7 @@ th { background: var(--bg-muted); font-weight: 600; color: var(--text-primary); 
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: var(--bg-muted); }
 
-/* Badges */
+/* Badges — 4 semantic colors: success, danger, warning, active */
 .badge {
     display: inline-block;
     padding: 0.2rem 0.6rem;
@@ -315,19 +370,18 @@ tr:hover td { background: var(--bg-muted); }
     letter-spacing: 0.02em;
     text-transform: capitalize;
 }
-.badge-pending { background: var(--warning-bg); color: var(--warning); }
-.badge-completed { background: var(--success-bg); color: var(--success); }
-.badge-cancelled { background: var(--danger-bg); color: var(--danger); }
-.badge-screening { background: var(--badge-blue-bg); color: var(--badge-blue); }
-.badge-test { background: var(--badge-teal-bg); color: var(--badge-teal); }
-.badge-interview { background: var(--badge-lavender-bg); color: var(--badge-lavender); }
-.badge-offer { background: var(--badge-peach-bg); color: var(--badge-peach); }
-.badge-hired { background: var(--success-bg); color: var(--success); }
-.badge-rejected { background: var(--danger-bg); color: var(--danger); }
-.badge-withdrawn { background: var(--bg-muted); color: var(--text-muted); }
-.badge-on_hold { background: var(--badge-mauve-bg); color: var(--badge-mauve); }
-.badge-opened { background: var(--badge-blue-bg); color: var(--badge-blue); }
-.badge-submitted { background: var(--badge-teal-bg); color: var(--badge-teal); }
+/* Success (green): positive terminal states */
+.badge-completed, .badge-hired, .badge-closed { background: var(--success-bg); color: var(--success); }
+/* Danger (red): negative terminal states */
+.badge-cancelled, .badge-rejected { background: var(--danger-bg); color: var(--danger); }
+/* Warning (peach): needs attention */
+.badge-pending, .badge-urgent, .badge-late { background: var(--warning-bg); color: var(--warning); }
+/* Active (lavender): in-progress, non-terminal */
+.badge-screening, .badge-test, .badge-interview, .badge-offer,
+.badge-on_hold, .badge-opened, .badge-submitted, .badge-open,
+.badge-high, .badge-normal { background: var(--badge-lavender-bg); color: var(--badge-lavender); }
+/* Neutral: inactive/withdrawn — no color emphasis */
+.badge-withdrawn, .badge-low { background: var(--bg-muted); color: var(--text-muted); }
 
 .inline-select {
     padding: 0.2rem 0.4rem;
@@ -336,29 +390,6 @@ tr:hover td { background: var(--bg-muted); }
     border: 1px solid var(--border);
     background: var(--bg-card);
     color: var(--text-primary);
-}
-
-.btn-danger-sm {
-    background: none;
-    border: 1px solid transparent;
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    padding: 0.1rem 0.3rem;
-    border-radius: 4px;
-    cursor: pointer;
-    line-height: 1;
-    opacity: 0.5;
-    transition: all 0.15s;
-    width: auto;
-    margin-top: 0;
-    font-weight: 400;
-}
-.btn-danger-sm:hover {
-    opacity: 1;
-    color: var(--danger);
-    border-color: var(--danger-bg);
-    background: var(--danger-bg);
-    transform: none;
 }
 
 .dropdown-menu {
@@ -390,34 +421,6 @@ tr:hover td { background: var(--bg-muted); }
 }
 .dropdown-menu a:hover { background: var(--bg-muted); }
 
-.btn-subtle {
-    color: var(--text-muted);
-    font-size: 0.85rem;
-    text-decoration: none;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-}
-.btn-subtle:hover {
-    opacity: 1;
-    color: var(--accent);
-    text-decoration: none;
-}
-
-.btn-score {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-decoration: none;
-    padding: 0.2rem 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    transition: all 0.15s;
-}
-.btn-score:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    text-decoration: none;
-}
 
 .link-subtle {
     color: var(--text-secondary);
@@ -429,47 +432,6 @@ tr:hover td { background: var(--bg-muted); }
     text-decoration: underline;
 }
 
-.icon-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    background: none;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    text-decoration: none;
-    transition: all 0.15s;
-    margin-top: 0;
-    padding: 0;
-    font-weight: 400;
-    width: auto;
-    min-width: 1.75rem;
-}
-.icon-btn:hover {
-    color: var(--accent);
-    background: var(--accent-light);
-    border-color: var(--accent);
-    text-decoration: none;
-    transform: none;
-}
-.icon-btn.icon-btn-warn:hover {
-    color: var(--warning);
-    background: var(--warning-bg);
-    border-color: var(--warning-bg);
-}
-.icon-btn-danger {
-    opacity: 0.5;
-}
-.icon-btn.icon-btn-danger:hover {
-    opacity: 1;
-    color: var(--danger);
-    background: var(--danger-bg);
-    border-color: var(--danger-bg);
-}
 
 .score-grid {
     display: grid;
@@ -1108,6 +1070,7 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     background: var(--bg-card);
     color: var(--text-secondary);
     border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
     border-radius: var(--radius-sm);
     padding: 0.5rem 0.85rem;
     font-size: 0.8rem;
@@ -1118,6 +1081,9 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     transition: opacity 0.12s ease, transform 0.12s ease;
     pointer-events: auto;
 }
+.toast-success { border-left-color: var(--success); }
+.toast-error { border-left-color: var(--danger); }
+.toast-warning { border-left-color: var(--warning); }
 .toast.show {
     opacity: 1;
     transform: translateY(0);

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Interview Form{% endblock %}</title>
-    <link rel="stylesheet" href="/static/style.css?v=6">
+    <link rel="stylesheet" href="/static/style.css?v=7">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/static/table.js?v=5"></script>
     <script src="/static/shortcuts.js?v=2"></script>
@@ -18,22 +18,22 @@
                 <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Dashboard
                 </a>
-                <a href="/jobs" class="{% if '/job' in request.url.path and '/job-types' not in request.url.path %}active{% endif %}">
+                <a href="/jobs" class="{% if request.url.path.startswith('/job') and '/job-types' not in request.url.path %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M22 13a18.15 18.15 0 0 1-20 0"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg> Jobs
                 </a>
-                <a href="/candidates" class="{% if '/candidate' in request.url.path %}active{% endif %}">
+                <a href="/candidates" class="{% if request.url.path.startswith('/candidate') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Candidates
                 </a>
-                <a href="/pipelines" class="{% if '/pipeline' in request.url.path and '/candidate' not in request.url.path %}active{% endif %}">
+                <a href="/pipelines" class="{% if request.url.path.startswith('/pipeline') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> Pipelines
                 </a>
-                <a href="/sessions" class="{% if '/session' in request.url.path %}active{% endif %}">
+                <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="8" y="3" rx="1"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M12 15h.01"/></svg> Interview
                 </a>
-                <a href="/review-batches" class="{% if '/review' in request.url.path %}active{% endif %}">
+                <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Test
                 </a>
-                <a href="/settings" class="{% if '/settings' in request.url.path or '/templates' in request.url.path %}active{% endif %}">
+                <a href="/settings" class="{% if request.url.path.startswith('/settings') or request.url.path.startswith('/templates') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Settings
                 </a>
             </nav>
@@ -56,9 +56,9 @@
     container.className = 'toast-container';
     document.body.appendChild(container);
 
-    window.toast = function(message) {
+    window.toast = function(message, severity) {
         var el = document.createElement('div');
-        el.className = 'toast';
+        el.className = 'toast' + (severity ? ' toast-' + severity : '');
         el.textContent = message;
         container.appendChild(el);
         requestAnimationFrame(function() { el.classList.add('show'); });
@@ -73,7 +73,9 @@
     };
 
     document.body.addEventListener('toast', function(e) {
-        toast(e.detail.value || e.detail);
+        var detail = e.detail;
+        if (typeof detail === 'string') { toast(detail); return; }
+        toast(detail.value || detail.message || '', detail.severity || '');
     });
 
     // CLA-43: Update row data-stage after inline select swap, re-run table grouping

@@ -90,9 +90,9 @@
                   hx-swap="innerHTML"
                   hx-indicator="#summary-spinner"
                   style="display:inline;">
-                <button type="submit" class="btn btn-secondary">{% if session.aggregate_summary %}Regenerate{% else %}Generate Summary{% endif %}</button>
+                <button type="submit" class="btn-ghost">{% if session.aggregate_summary %}Regenerate{% else %}Generate Summary{% endif %}</button>
             </form>
-            <button type="button" class="btn btn-secondary" onclick="copyAsMarkdown()">Copy as Markdown</button>
+            <button type="button" class="btn-ghost" onclick="copyAsMarkdown()">Copy as Markdown</button>
         </div>
     </div>
 
