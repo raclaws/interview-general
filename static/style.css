@@ -1126,6 +1126,8 @@ mark.search-hl {
     padding: 0.2rem 0.6rem;
     cursor: pointer;
     white-space: nowrap;
+    min-width: 110px;
+    text-align: center;
     margin-left: 0.5rem;
     transition: background 150ms, color 150ms, border-color 150ms;
 }
@@ -1137,7 +1139,6 @@ mark.search-hl {
     background: var(--accent);
     color: var(--bg-page);
     border-color: var(--accent);
-    font-weight: 600;
 }
 .archive-pill--active:hover {
     opacity: 0.85;
