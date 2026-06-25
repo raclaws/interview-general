@@ -154,7 +154,9 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
     padding-bottom: 0;
 }
 .layout-list .page-header,
-.layout-list .table-controls { flex-shrink: 0; }
+.layout-list .table-controls,
+.layout-list .sync-subcontrols,
+.layout-list .filter-pills { flex-shrink: 0; }
 .layout-list .sync-table-wrap {
     flex: 1;
     overflow-y: auto;
@@ -343,13 +345,31 @@ nav button[type="submit"]:hover { color: #fff; }
 .table-controls {
     display: flex;
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    align-items: center;
+    margin-bottom: 0.25rem;
     flex-wrap: wrap;
 }
+.sync-subcontrols {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.sync-add-btn {
+    opacity: 1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.3rem;
+    margin-left: auto;
+}
+.sync-add-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
 .table-search {
-    flex: 1;
-    min-width: 180px;
-    padding: 0.45rem 0.75rem;
+    flex: 0 1 240px;
+    min-width: 140px;
+    padding: 0.4rem 0.65rem;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     font-size: 0.8rem;
@@ -574,6 +594,9 @@ td.col-primary, .col-primary {
 .table-clean {
     width: 100%;
     border-collapse: collapse;
+}
+.layout-list .table-clean {
+    table-layout: fixed;
 }
 .table-clean td {
     padding: 0.6rem 0.75rem;
@@ -807,7 +830,7 @@ textarea { resize: vertical; min-height: 80px; }
 }
 
 /* Advanced filter pills */
-.filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.filter-pills { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; margin-bottom: 0.75rem; }
 .filter-pill {
     display: inline-flex;
     align-items: center;
@@ -842,7 +865,7 @@ textarea { resize: vertical; min-height: 80px; }
 .filter-popover {
     position: absolute;
     top: 100%;
-    left: 0;
+    right: 0;
     margin-top: 0.25rem;
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -850,9 +873,65 @@ textarea { resize: vertical; min-height: 80px; }
     box-shadow: var(--shadow-md);
     padding: 0.75rem;
     display: flex;
+    flex-direction: column;
     gap: 0.4rem;
-    align-items: center;
     z-index: 100;
+    min-width: 200px;
+}
+.sync-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    z-index: 100;
+    min-width: 200px;
+}
+.sync-menu select, .sync-menu input {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    width: 100%;
+}
+.sync-menu .btn {
+    margin-top: 0.25rem;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+    width: 100%;
+}
+.sync-menu-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0.4rem 0.1rem;
+}
+.sync-menu-item {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.sync-menu-item:hover {
+    background: var(--bg-muted);
+    color: var(--text-primary);
+}
+.sync-menu-item.active {
+    background: var(--accent-light);
+    color: var(--accent);
 }
 .filter-popover select, .filter-popover input {
     font-size: 0.8rem;
@@ -1123,6 +1202,12 @@ mark.search-hl {
     margin-left: auto;
     align-self: center;
 }
+.sync-table-wrap .table-count {
+    display: block;
+    margin-left: 0;
+    padding: 0.5rem 0.75rem;
+    text-align: right;
+}
 
 /* Active sort indicator */
 .table-filter.sort-active {
@@ -1141,7 +1226,6 @@ mark.search-hl {
     padding: 0.25rem 0.65rem;
     cursor: pointer;
     white-space: nowrap;
-    margin-left: 0.5rem;
     transition: background 150ms, color 150ms, border-color 150ms;
 }
 .archive-pill:hover {

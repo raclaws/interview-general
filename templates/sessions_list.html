@@ -4,48 +4,28 @@
 {% block content %}
 <div class="page-header">
     <h1>Interview Sessions</h1>
-    <a href="/session/new" class="btn">+ New Session</a>
 </div>
 
 <div data-sync-table="sessions"
      data-sync-search-fields="candidateName,jobTitle"
      data-sync-archive-field="status"
      data-sync-archive-values="completed,cancelled"
-     data-sync-default-sort="createdAt:desc">
+     data-sync-default-sort="createdAt:desc"
+     data-sync-filter-fields='[{"key":"status","label":"Status","type":"select","options":["pending","completed","cancelled"]},{"key":"templateName","label":"Template","type":"select","options":[{% for t in template_names %}"{{ t }}"{% if not loop.last %},{% endif %}{% endfor %}]},{"key":"candidateName","label":"Candidate","type":"text"},{"key":"position","label":"Position","type":"text"},{"key":"businessUnit","label":"Business Unit","type":"text"},{"key":"createdAt","label":"Date","type":"date"}]'
+     data-sync-display-options='{"sort":[{"value":"createdAt:desc","label":"Newest first","type":"date"},{"value":"createdAt:asc","label":"Oldest first","type":"date"},{"value":"candidateName:asc","label":"Name A-Z"},{"value":"candidateName:desc","label":"Name Z-A"}],"group":[{"value":"status","label":"Status"},{"value":"templateName","label":"Template"}]}'>
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search candidate or job title..." class="table-search">
-        <select data-table-filter="status" class="table-filter">
-            <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-        </select>
-        <select data-table-filter="templateName" class="table-filter">
-            <option value="">All Templates</option>
-            {% for t in template_names %}
-            <option value="{{ t }}">{{ t }}</option>
-            {% endfor %}
-        </select>
-        <select data-table-sort class="table-filter">
-            <option value="">Sort</option>
-            <option value="createdAt:desc" data-sort-type="date">Newest first</option>
-            <option value="createdAt:asc" data-sort-type="date">Oldest first</option>
-            <option value="candidateName:asc" data-sort-type="string">Name A-Z</option>
-            <option value="candidateName:desc" data-sort-type="string">Name Z-A</option>
-        </select>
-        <select data-table-groupby class="table-filter">
-            <option value="">Group by</option>
-            <option value="status">Status</option>
-            <option value="templateName">Template</option>
-        </select>
+        <a href="/session/new" class="btn-icon sync-add-btn" title="New session"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
+    </div>
+    <div class="sync-subcontrols">
         <button type="button" class="archive-pill">Show completed</button>
-        <span class="table-count"></span>
     </div>
 
     <div class="sync-table-wrap">
         <table class="table-clean">
             <tbody></tbody>
         </table>
+        <span class="table-count"></span>
     </div>
 </div>
 
@@ -83,5 +63,5 @@ window.__syncConfig = {
     }
 };
 </script>
-<script src="/static/sync-list.js?v=1"></script>
+<script src="/static/sync-list.js?v=2"></script>
 {% endblock %}
