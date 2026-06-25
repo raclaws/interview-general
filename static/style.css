@@ -605,6 +605,15 @@ td.col-primary, .col-primary {
     border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
+.table-clean td a {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+.table-clean td a:hover {
+    color: var(--accent);
+    text-decoration: none;
+}
 .group-header td {
     background: var(--bg-muted);
     font-weight: 600;
