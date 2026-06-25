@@ -80,43 +80,11 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
     })
 
 
-@router.get("/sessions-v2", response_class=HTMLResponse)
-async def sessions_v2(request: Request, admin: AdminUser = Depends(get_current_admin)):
-    return _render(request, "sessions_v2.html", {"admin": admin})
-
-
 @router.get("/sessions", response_class=HTMLResponse)
 async def sessions_list(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
-    sessions = db.exec(
-        select(InterviewSession).order_by(InterviewSession.created_at.desc())
-    ).all()
-    # Batch load jobs for display
-    from app.models import Job
-    pipeline_ids = set(s.pipeline_id for s in sessions if s.pipeline_id)
-    pipelines_map = {}
-    jobs_map = {}
-    if pipeline_ids:
-        pips = db.exec(select(CandidatePipeline).where(CandidatePipeline.id.in_(pipeline_ids))).all()
-        pipelines_map = {p.id: p for p in pips}
-        job_ids = set(p.job_id for p in pips if p.job_id)
-        if job_ids:
-            jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
-            jobs_map = {j.id: j.title for j in jobs_list}
-
-    session_data = []
-    for s in sessions:
-        interviewers = db.exec(
-            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
-        ).all()
-        total = len(interviewers)
-        completed = len([i for i in interviewers if i.status == "completed"])
-        template = db.get(Template, s.template_id) if s.template_id else None
-        pipeline = pipelines_map.get(s.pipeline_id)
-        job_title = jobs_map.get(pipeline.job_id, "") if pipeline and pipeline.job_id else ""
-        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline, "job_title": job_title})
-    views = db.exec(select(TableView).where(TableView.page == "/sessions")).all()
-    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
-    return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin, "views": views_data})
+    templates = db.exec(select(Template)).all()
+    template_names = sorted(set(t.name for t in templates))
+    return _render(request, "sessions_list.html", {"admin": admin, "template_names": template_names})
 
 
 @router.post("/views")

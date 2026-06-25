@@ -54,7 +54,7 @@
             renderPills();
             if (sortSelect) { sortSelect.value = ''; ctx.sortField = null; ctx.sortDir = null; sortSelect.classList.remove('sort-active'); }
             if (groupSelect) { groupSelect.value = ''; ctx.groupField = null; }
-            if (archiveToggle) { archiveToggle.classList.add('archive-pill--active'); archiveToggle.textContent = '✓ Show completed'; ctx.showArchived = true; }
+            if (archiveToggle) { archiveToggle.classList.add('archive-pill--active'); ctx.showArchived = true; }
             applyAll();
         });
 
@@ -365,7 +365,6 @@
             if (params.has('show_all') && archiveToggle) {
                 ctx.showArchived = true;
                 archiveToggle.classList.add('archive-pill--active');
-                archiveToggle.textContent = '✓ Show completed';
             }
             // Restore view if specified
             if (params.has('view')) {
@@ -441,7 +440,6 @@
             pill.addEventListener('click', function() {
                 ctx.showArchived = !ctx.showArchived;
                 pill.classList.toggle('archive-pill--active', ctx.showArchived);
-                pill.textContent = ctx.showArchived ? '✓ Show completed' : 'Show completed';
                 applyAll();
                 if (!ctx.showArchived) {
                     ctx.rows.forEach(function(r) { r.classList.remove('row-reveal'); });

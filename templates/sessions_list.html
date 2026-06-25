@@ -1,12 +1,17 @@
 {% extends "base_app.html" %}
 {% block title %}Interview{% endblock %}
+{% block main_class %}layout-list{% endblock %}
 {% block content %}
 <div class="page-header">
     <h1>Interview Sessions</h1>
     <a href="/session/new" class="btn">+ New Session</a>
 </div>
 
-<div data-table data-table-archive="status:completed,cancelled" data-table-fields='[{"key":"status","label":"Status","type":"select","options":["pending","completed","cancelled"]},{"key":"template","label":"Template","type":"select","options":[{% set ns = namespace(items=[]) %}{% for item in session_data %}{% if item.template and item.template.name not in ns.items %}{% set ns.items = ns.items + [item.template.name] %}{% endif %}{% endfor %}{% for t in ns.items %}"{{ t }}"{% if not loop.last %},{% endif %}{% endfor %}]},{"key":"date","label":"Date","type":"date"}]' data-table-views='{{ views | tojson }}' data-table-page="/sessions" data-shortcut-new="/session/new">
+<div data-sync-table="sessions"
+     data-sync-search-fields="candidateName,jobTitle"
+     data-sync-archive-field="status"
+     data-sync-archive-values="completed,cancelled"
+     data-sync-default-sort="createdAt:desc">
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search candidate or job title..." class="table-search">
         <select data-table-filter="status" class="table-filter">
@@ -15,67 +20,68 @@
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
         </select>
-        <select data-table-filter="template" class="table-filter">
+        <select data-table-filter="templateName" class="table-filter">
             <option value="">All Templates</option>
-            {% set template_names = [] %}
-            {% for item in session_data %}
-            {% if item.template and item.template.name not in template_names %}
-            {% if template_names.append(item.template.name) %}{% endif %}
-            <option value="{{ item.template.name }}">{{ item.template.name }}</option>
-            {% endif %}
+            {% for t in template_names %}
+            <option value="{{ t }}">{{ t }}</option>
             {% endfor %}
         </select>
         <select data-table-sort class="table-filter">
             <option value="">Sort</option>
-            <option value="date:desc" data-sort-type="date">Newest first</option>
-            <option value="date:asc" data-sort-type="date">Oldest first</option>
-            <option value="candidate:asc" data-sort-type="string">Name A-Z</option>
-            <option value="candidate:desc" data-sort-type="string">Name Z-A</option>
+            <option value="createdAt:desc" data-sort-type="date">Newest first</option>
+            <option value="createdAt:asc" data-sort-type="date">Oldest first</option>
+            <option value="candidateName:asc" data-sort-type="string">Name A-Z</option>
+            <option value="candidateName:desc" data-sort-type="string">Name Z-A</option>
         </select>
         <select data-table-groupby class="table-filter">
             <option value="">Group by</option>
             <option value="status">Status</option>
-            <option value="template">Template</option>
+            <option value="templateName">Template</option>
         </select>
+        <button type="button" class="archive-pill">Show completed</button>
+        <span class="table-count"></span>
     </div>
 
-    <table class="table-clean">
-        <tbody>
-            {% for item in session_data %}
-            <tr data-search="{{ item.session.snapshot.get('name', '') | lower }} {{ item.session.job_title | lower }}" data-status="{{ item.session.status }}" data-template="{{ item.template.name if item.template else '' }}" data-date="{{ item.session.created_at.strftime('%Y-%m-%d') }}" data-candidate="{{ item.session.snapshot.get('name', '') | lower }}" class="clickable-row" data-href="/session/{{ item.session.id }}" data-ctx='[{% for iv in item.interviewers %}{"label":"⎘ Copy link · {{ iv.interviewer_name }}","copy":"{{ request.base_url }}i/{{ iv.token }}"},{% endfor %}{% if item.session.candidate_id %}{"label":"↗ View candidate","href":"/candidate/{{ item.session.candidate_id }}"},{% endif %}{"label":"✎ Edit session","href":"/session/{{ item.session.id }}/edit"}{% if item.session.status == "pending" %},{"label":"⊘ Cancel","href":"/session/{{ item.session.id }}/cancel","confirm":"Cancel this session?"}{% endif %},{"label":"✕ Delete","href":"/session/{{ item.session.id }}/delete","confirm":"Delete permanently?","delete":true}]'>
-                <td>
-                    <div class="col-primary">{% if item.session.candidate_id %}<a href="/candidate/{{ item.session.candidate_id }}">{{ item.session.snapshot.get("name", "—") }}</a>{% else %}{{ item.session.snapshot.get("name", "—") }}{% endif %}</div>
-                    <div class="row-meta">{{ item.session.job_title }} · {{ item.template.name if item.template else "—" }}</div>
-                </td>
-                <td>
-                    {% if item.pipeline %}<span class="row-meta">{% if item.job_title %}{{ item.job_title }}{% else %}{{ item.pipeline.position or "—" }} · {{ item.pipeline.business_unit or "—" }}{% endif %}</span>{% endif %}
-                </td>
-                <td>{{ item.completed }}/{{ item.total }}</td>
-                <td><span id="status-{{ item.session.id }}" class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
-                <td class="row-meta">{{ item.session.created_at.strftime("%Y-%m-%d") }}</td>
-            </tr>
-            {% endfor %}
-            {% if not session_data %}
-            <tr class="empty-row"><td colspan="5" style="text-align:center; padding:2rem;">No sessions yet. <a href="/session/new" class="btn-ghost">Create your first session</a></td></tr>
-            {% endif %}
-        </tbody>
-    </table>
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+    </div>
 </div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load sessions.</p>
+</noscript>
+
 <script>
-(function() {
-    var t0 = performance.now();
-    window.addEventListener('load', function() {
-        var loadTime = performance.now() - t0;
-        var rowCount = document.querySelectorAll('.table-clean tbody tr:not(.empty-row)').length;
-        fetch('/perf/log', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                page: '/sessions',
-                metrics: { loadMs: Math.round(loadTime), rows: rowCount, tti: Math.round(performance.now() - performance.timing.navigationStart) }
-            })
-        }).catch(function() {});
-    });
-})();
+window.__syncConfig = {
+    renderRow: function(r) {
+        var name = r.candidateName || '—';
+        var nameHtml = r.candidateId
+            ? '<a href="/candidate/' + r.candidateId + '">' + name + '</a>'
+            : name;
+        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '';
+        return '<tr class="clickable-row" data-href="/session/' + r.id + '">' +
+            '<td><div class="col-primary">' + nameHtml + '</div>' +
+            '<div class="row-meta">' + (r.jobTitle || '') + ' · ' + (r.templateName || '—') + '</div></td>' +
+            '<td class="row-meta">' + (r.position || '—') + ' · ' + (r.businessUnit || '—') + '</td>' +
+            '<td>' + (r.completedCount || 0) + '/' + (r.interviewerCount || 0) + '</td>' +
+            '<td><span class="badge badge-' + r.status + '">' + r.status + '</span></td>' +
+            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            '</tr>';
+    },
+    contextMenu: function(r, baseUrl) {
+        var items = [];
+        (r.interviewers || []).forEach(function(iv) {
+            items.push({label: '⎘ Copy link · ' + iv.name, copy: baseUrl + '/i/' + iv.token});
+        });
+        if (r.candidateId) items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        items.push({label: '✎ Edit session', href: '/session/' + r.id + '/edit'});
+        if (r.status === 'pending') items.push({label: '⊘ Cancel', href: '/session/' + r.id + '/cancel', confirm: 'Cancel this session?'});
+        items.push({label: '✕ Delete', href: '/session/' + r.id + '/delete', confirm: 'Delete permanently?', 'delete': true});
+        return items;
+    }
+};
 </script>
+<script src="/static/sync-list.js?v=1"></script>
 {% endblock %}

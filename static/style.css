@@ -146,6 +146,20 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
     max-width: 100%;
     overflow-x: hidden;
 }
+.main-content.layout-list {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    padding-bottom: 0;
+}
+.layout-list .page-header,
+.layout-list .table-controls { flex-shrink: 0; }
+.layout-list .sync-table-wrap {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
 .hamburger {
     display: none;
     background: none;
@@ -500,8 +514,7 @@ tr:hover td { background: var(--bg-muted); }
 }
 
 .clickable-row {
-    cursor: pointer;
-    transition: background 0.1s;
+    transition: background 0.08s ease-in, background 0.15s ease-out;
 }
 .clickable-row:hover {
     background: var(--bg-muted);
@@ -1053,6 +1066,8 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     .page-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     .form-actions { justify-content: stretch; }
     .form-actions button[type="submit"] { width: 100%; }
+    .table-search { flex: none; width: 100%; }
+    .table-controls { gap: 0.4rem; }
 }
 
 /* Toast notifications */
@@ -1123,22 +1138,20 @@ mark.search-hl {
     background: transparent;
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 0.2rem 0.6rem;
+    padding: 0.25rem 0.65rem;
     cursor: pointer;
     white-space: nowrap;
-    min-width: 110px;
-    text-align: center;
     margin-left: 0.5rem;
     transition: background 150ms, color 150ms, border-color 150ms;
 }
 .archive-pill:hover {
-    color: var(--text);
+    color: var(--text-primary);
     border-color: var(--text-muted);
 }
 .archive-pill--active {
-    background: var(--accent);
-    color: var(--bg-page);
-    border-color: var(--accent);
+    background: var(--bg-muted);
+    color: var(--text-primary);
+    border-color: var(--text-muted);
 }
 .archive-pill--active:hover {
     opacity: 0.85;

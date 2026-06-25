@@ -99,16 +99,7 @@ def _serialize_session(s: InterviewSession, interviewers, template, pipeline) ->
     }
 
 
-@router.get("/hydrate")
-async def hydrate(
-    table: str = Query("sessions"),
-    since: int | None = Query(None),
-    admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_session),
-):
-    if table != "sessions":
-        return []
-
+def _hydrate_sessions(db: Session, since: int | None):
     query = select(InterviewSession)
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
@@ -124,8 +115,25 @@ async def hydrate(
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
         results.append(_serialize_session(s, interviewers, template, pipeline))
-
     return results
+
+
+_HYDRATE_DISPATCH = {
+    "sessions": _hydrate_sessions,
+}
+
+
+@router.get("/hydrate")
+async def hydrate(
+    table: str = Query("sessions"),
+    since: int | None = Query(None),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    handler = _HYDRATE_DISPATCH.get(table)
+    if not handler:
+        return []
+    return handler(db, since)
 
 
 @router.websocket("/ws")
