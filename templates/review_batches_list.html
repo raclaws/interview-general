@@ -1,28 +1,51 @@
 {% extends "base_app.html" %}
 {% block title %}Review Batches{% endblock %}
+{% block main_class %}layout-list{% endblock %}
 {% block content %}
 <div class="page-header">
     <h1>Review Batches</h1>
-    <a href="/review-batch/new" class="btn">+ New Batch</a>
 </div>
 
-{% if batch_data %}
-<table class="table-clean">
-    <tbody>
-        {% for item in batch_data %}
-        <tr class="clickable-row" data-href="/r/{{ item.batch.token }}"
-            data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}r/{{ item.batch.token }}"}]'>
-            <td>
-                <div class="col-primary">{{ item.batch.reviewer_name }}</div>
-                <div class="row-meta">{{ item.batch.position }} · {{ item.batch.business_unit }}</div>
-            </td>
-            <td class="row-meta">{{ item.scored }} scored</td>
-            <td class="row-meta">{{ item.batch.created_at.strftime("%Y-%m-%d") }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p class="row-meta" style="padding: 2rem; text-align: center;">No review batches yet. <a href="/review-batch/new" class="btn-ghost">Create one</a></p>
-{% endif %}
+<div data-sync-table="review_batches"
+     data-sync-search-fields="reviewerName,position,businessUnit"
+     data-sync-default-sort="createdAt:desc"
+     data-sync-filter-fields='[{"key":"reviewerName","label":"Reviewer","type":"text"},{"key":"position","label":"Position","type":"text"},{"key":"businessUnit","label":"Business Unit","type":"text"}]'
+     data-sync-display-options='{"sort":[{"value":"createdAt:desc","label":"Newest first","type":"date"},{"value":"createdAt:asc","label":"Oldest first","type":"date"},{"value":"reviewerName:asc","label":"Reviewer A-Z"}],"group":[]}'>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search reviewer or position..." class="table-search">
+        <a href="/review-batch/new" class="btn-icon sync-add-btn" title="New batch"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
+    </div>
+    <div class="sync-subcontrols"></div>
+
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+        <span class="table-count"></span>
+    </div>
+</div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load review batches.</p>
+</noscript>
+
+<script>
+window.__syncConfig = {
+    renderRow: function(r) {
+        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '';
+        return '<tr class="clickable-row" data-href="/r/' + r.token + '">' +
+            '<td><div class="col-primary">' + (r.reviewerName || '—') + '</div>' +
+            '<div class="row-meta">' + (r.position || '—') + ' · ' + (r.businessUnit || '—') + '</div></td>' +
+            '<td class="row-meta">' + (r.scored || 0) + ' scored</td>' +
+            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            '</tr>';
+    },
+    contextMenu: function(r, baseUrl) {
+        return [
+            {label: '⎘ Copy link', copy: baseUrl + '/r/' + r.token}
+        ];
+    }
+};
+</script>
+<script src="/static/sync-list.js?v=2"></script>
 {% endblock %}

@@ -1,3 +1,4 @@
+import asyncio
 import json
 from datetime import datetime
 
@@ -11,8 +12,34 @@ from app.models import (
     AdminUser, Job, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType,
     CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES,
 )
+from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
+
+
+def _serialize_job_for_broadcast(job: Job, bu: BusinessUnit | None, db: Session) -> dict:
+    from sqlalchemy import func
+    pipeline_count = db.exec(
+        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id)
+    ).one()
+    filled = db.exec(
+        select(func.count(CandidatePipeline.id)).where(
+            CandidatePipeline.job_id == job.id, CandidatePipeline.stage == "hired"
+        )
+    ).one()
+    return {
+        "id": str(job.id),
+        "title": job.title,
+        "status": job.status,
+        "priority": job.priority,
+        "jobType": job.job_type,
+        "buName": bu.name if bu else "",
+        "recruiter": job.recruiter or "",
+        "headcount": job.headcount,
+        "filled": filled,
+        "pipelineCount": pipeline_count,
+        "updatedAt": int(job.updated_at.timestamp() * 1000) if job.updated_at else 0,
+    }
 
 
 def _render(request: Request, name: str, context: dict = None):
@@ -50,28 +77,9 @@ async def jobs_list(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    jobs = db.exec(
-        select(Job).where(Job.title != "_Unassigned").order_by(Job.updated_at.desc())
-    ).all()
-
-    job_data = []
-    for job in jobs:
-        bu = db.get(BusinessUnit, job.business_unit_id)
-        filled = _filled_count(db, job.id)
-        pipeline_count = len(db.exec(
-            select(CandidatePipeline).where(CandidatePipeline.job_id == job.id)
-        ).all())
-        job_data.append({
-            "job": job,
-            "bu": bu,
-            "filled": filled,
-            "pipeline_count": pipeline_count,
-        })
-
-    return _render(request, "jobs_list.html", {
-        "admin": admin,
-        "job_data": job_data,
-    })
+    bus = db.exec(select(BusinessUnit).where(BusinessUnit.is_active == True)).all()
+    bu_names = sorted(b.name for b in bus)
+    return _render(request, "jobs_list.html", {"admin": admin, "bu_names": bu_names})
 
 
 @router.get("/job/new", response_class=HTMLResponse)
@@ -136,6 +144,8 @@ async def job_new_submit(
     db.add(job)
     db.commit()
     db.refresh(job)
+
+    asyncio.create_task(sync_hub.broadcast("jobs", "insert", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
 
     return RedirectResponse(f"/job/{job.id}", status_code=303)
 
@@ -246,6 +256,9 @@ async def job_edit_submit(
     db.add(job)
     db.commit()
 
+    bu = db.get(BusinessUnit, job.business_unit_id)
+    asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
+
     return RedirectResponse(f"/job/{job.id}", status_code=303)
 
 
@@ -266,8 +279,37 @@ async def job_close(
     db.add(job)
     db.commit()
 
+    bu = db.get(BusinessUnit, job.business_unit_id)
+    asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
+
     if request.headers.get("HX-Request"):
-        return HTMLResponse("", headers={"HX-Redirect": f"/job/{job.id}"})
+        return HTMLResponse("")
+
+    return RedirectResponse(f"/job/{job.id}", status_code=303)
+
+
+@router.post("/job/{job_id}/reopen")
+async def job_reopen(
+    request: Request,
+    job_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Not found", status_code=404)
+
+    job.status = "open"
+    job.closed_date = None
+    job.updated_at = datetime.utcnow()
+    db.add(job)
+    db.commit()
+
+    bu = db.get(BusinessUnit, job.business_unit_id)
+    asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
+
+    if request.headers.get("HX-Request"):
+        return HTMLResponse("")
 
     return RedirectResponse(f"/job/{job.id}", status_code=303)
 

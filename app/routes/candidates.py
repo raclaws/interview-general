@@ -1,3 +1,4 @@
+import asyncio
 import json as json_mod
 from datetime import datetime
 
@@ -14,8 +15,29 @@ from app.models import (
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
     TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit,
 )
+from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
+
+
+def _candidate_broadcast(candidate: Candidate, db: Session) -> dict:
+    pipelines = db.exec(
+        select(CandidatePipeline).where(CandidatePipeline.candidate_id == candidate.id)
+    ).all()
+    stages = list(set(p.stage for p in pipelines if p.stage))
+    session_count = db.exec(
+        select(func.count(InterviewSession.id)).where(InterviewSession.candidate_id == candidate.id)
+    ).one()
+    return {
+        "id": str(candidate.id),
+        "name": candidate.name,
+        "email": candidate.email or "",
+        "currentPosition": candidate.current_position or "",
+        "stages": ",".join(stages),
+        "pipelineCount": len(pipelines),
+        "sessionCount": session_count,
+        "updatedAt": int(candidate.updated_at.timestamp() * 1000) if candidate.updated_at else 0,
+    }
 
 
 def _render(request: Request, name: str, context: dict = None):
@@ -132,88 +154,8 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
 async def candidates_list(
     request: Request,
     admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_session),
 ):
-    from sqlalchemy import literal_column
-    from sqlalchemy.orm import aliased
-
-    candidates = db.exec(
-        select(Candidate).order_by(Candidate.updated_at.desc())
-    ).all()
-    candidate_ids = [c.id for c in candidates]
-
-    # Pipeline counts + stages in one query
-    pipeline_rows = db.exec(
-        select(
-            CandidatePipeline.candidate_id,
-            func.count(CandidatePipeline.id).label("pipeline_count"),
-            func.group_concat(CandidatePipeline.stage).label("stages_csv"),
-        )
-        .where(CandidatePipeline.candidate_id.in_(candidate_ids))
-        .group_by(CandidatePipeline.candidate_id)
-    ).all() if candidate_ids else []
-    pipeline_map = {r[0]: {"count": r[1], "stages_csv": r[2] or ""} for r in pipeline_rows}
-
-    # Session counts per candidate
-    session_rows = db.exec(
-        select(
-            InterviewSession.candidate_id,
-            func.count(InterviewSession.id).label("session_count"),
-        )
-        .where(InterviewSession.candidate_id.in_(candidate_ids))
-        .group_by(InterviewSession.candidate_id)
-    ).all() if candidate_ids else []
-    session_map = {r[0]: r[1] for r in session_rows}
-
-    # Latest activity: max of candidate.updated_at, pipeline.updated_at, session.created_at
-    pipeline_latest = db.exec(
-        select(
-            CandidatePipeline.candidate_id,
-            func.max(CandidatePipeline.updated_at).label("latest"),
-        )
-        .where(CandidatePipeline.candidate_id.in_(candidate_ids))
-        .group_by(CandidatePipeline.candidate_id)
-    ).all() if candidate_ids else []
-    pipeline_latest_map = {r[0]: r[1] for r in pipeline_latest}
-
-    session_latest = db.exec(
-        select(
-            InterviewSession.candidate_id,
-            func.max(InterviewSession.created_at).label("latest"),
-        )
-        .where(InterviewSession.candidate_id.in_(candidate_ids))
-        .group_by(InterviewSession.candidate_id)
-    ).all() if candidate_ids else []
-    session_latest_map = {r[0]: r[1] for r in session_latest}
-
-    candidate_data = []
-    for c in candidates:
-        p_info = pipeline_map.get(c.id, {"count": 0, "stages_csv": ""})
-        s_count = session_map.get(c.id, 0)
-        stages = [s for s in p_info["stages_csv"].split(",") if s] if p_info["stages_csv"] else []
-
-        dates = [c.updated_at]
-        if c.id in pipeline_latest_map and pipeline_latest_map[c.id]:
-            dates.append(pipeline_latest_map[c.id])
-        if c.id in session_latest_map and session_latest_map[c.id]:
-            dates.append(session_latest_map[c.id])
-        latest_activity = max(dates)
-
-        candidate_data.append({
-            "candidate": c,
-            "pipeline_count": p_info["count"],
-            "session_count": s_count,
-            "stages": stages,
-            "latest_activity": latest_activity,
-        })
-    views = db.exec(select(TableView).where(TableView.page == "/candidates")).all()
-    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
-    return _render(request, "candidates_list.html", {
-        "candidate_data": candidate_data,
-        "admin": admin,
-        "stages": PIPELINE_STAGES,
-        "views": views_data,
-    })
+    return _render(request, "candidates_list.html", {"admin": admin})
 
 
 @router.get("/candidate/new", response_class=HTMLResponse)
@@ -273,6 +215,7 @@ async def candidate_new_submit(
             existing.updated_at = datetime.utcnow()
             db.add(existing)
             db.commit()
+            asyncio.create_task(sync_hub.broadcast("candidates", "update", str(existing.id), _candidate_broadcast(existing, db)))
             return RedirectResponse(f"/candidate/{existing.id}", status_code=303)
         candidate = Candidate(
             name=snapshot.get("name", ""),
@@ -293,6 +236,7 @@ async def candidate_new_submit(
         db.add(candidate)
         db.commit()
         db.refresh(candidate)
+        asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
         return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
 
     if not name.strip() or not email.strip():
@@ -326,6 +270,8 @@ async def candidate_new_submit(
     db.add(candidate)
     db.commit()
     db.refresh(candidate)
+
+    asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
 
     return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
 
@@ -652,6 +598,8 @@ async def pipeline_delete(
     db.delete(pipeline)
     db.commit()
 
+    asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pipeline_id)))
+
     if request.headers.get("HX-Request"):
         return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
@@ -795,75 +743,9 @@ async def pipelines_list(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    # Batch query 1: all pipelines joined with candidate
-    results = db.exec(
-        select(CandidatePipeline, Candidate)
-        .join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
-        .order_by(CandidatePipeline.updated_at.desc())
-    ).all()
-
-    # Batch query 2: session counts grouped by pipeline_id
-    session_counts_rows = db.exec(
-        select(
-            InterviewSession.pipeline_id,
-            func.count(SessionInterviewer.id).label("total"),
-            func.sum(case((SessionInterviewer.status == "completed", 1), else_=0)).label("completed"),
-        )
-        .join(SessionInterviewer, SessionInterviewer.session_id == InterviewSession.id)
-        .where(InterviewSession.pipeline_id != None)
-        .group_by(InterviewSession.pipeline_id)
-    ).all()
-    session_counts = {row[0]: {"total": row[1], "completed": int(row[2] or 0)} for row in session_counts_rows}
-
-    # Batch query 3: scores from PipelineScore table
-    all_scores = db.exec(select(PipelineScore)).all()
-    scores_map = {s.pipeline_id: s for s in all_scores}
-
-    # Batch query 4: test assignment counts per pipeline
-    all_tests = db.exec(select(TestAssignment)).all()
-    test_counts: dict = {}
-    for t in all_tests:
-        if t.pipeline_id not in test_counts:
-            test_counts[t.pipeline_id] = {"total": 0, "submitted": 0}
-        test_counts[t.pipeline_id]["total"] += 1
-        if t.status == "submitted":
-            test_counts[t.pipeline_id]["submitted"] += 1
-
-    pipeline_data = []
-    bus_set = set()
-    # Batch load jobs for job_title display
-    job_ids = set(p.job_id for p, _ in results if p.job_id)
-    jobs_map = {}
-    if job_ids:
-        jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
-        jobs_map = {j.id: j.title for j in jobs_list}
-
-    for pipeline, candidate in results:
-        sc = scores_map.get(pipeline.id)
-        hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
-        culture_avg = round(sc.culture_total / 4, 1) if sc and sc.culture_total else 0
-        counts = session_counts.get(pipeline.id, {"total": 0, "completed": 0})
-        tc = test_counts.get(pipeline.id, {"total": 0, "submitted": 0})
-        if pipeline.business_unit:
-            bus_set.add(pipeline.business_unit)
-        pipeline_data.append({
-            "pipeline": pipeline,
-            "candidate": candidate,
-            "session_count": counts,
-            "test_count": tc,
-            "scores": {"hr_avg": hr_avg, "culture_avg": culture_avg},
-            "job_title": jobs_map.get(pipeline.job_id, ""),
-        })
-
-    views = db.exec(select(TableView).where(TableView.page == "/pipelines")).all()
-    views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
-    return _render(request, "pipelines_list.html", {
-        "pipeline_data": pipeline_data,
-        "admin": admin,
-        "stages": PIPELINE_STAGES,
-        "business_units": sorted(bus_set),
-        "views": views_data,
-    })
+    bus = db.exec(select(BusinessUnit).where(BusinessUnit.is_active == True)).all()
+    bu_names = sorted(b.name for b in bus)
+    return _render(request, "pipelines_list.html", {"admin": admin, "bu_names": bu_names})
 
 
 # --- CLA-20: Pipeline Detail Page ---
@@ -1143,8 +1025,10 @@ async def pipeline_detail_delete(
     db.delete(pipeline)
     db.commit()
 
+    asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pipeline_id)))
+
     if request.headers.get("HX-Request"):
-        return HTMLResponse("", headers={"HX-Trigger": "toast:Pipeline deleted"})
+        return HTMLResponse("", headers={"HX-Redirect": "/pipelines"})
 
     return RedirectResponse("/pipelines", status_code=303)
 
@@ -1348,26 +1232,8 @@ async def review_batch_new_submit(
 async def review_batches_list(
     request: Request,
     admin: AdminUser = Depends(get_current_admin),
-    db: Session = Depends(get_session),
 ):
-    batches = db.exec(
-        select(ReviewBatch).order_by(ReviewBatch.created_at.desc())
-    ).all()
-
-    batch_data = []
-    for b in batches:
-        scored = db.exec(
-            select(func.count(ReviewScore.id)).where(
-                ReviewScore.review_batch_id == b.id,
-                ReviewScore.submitted_at != None,
-            )
-        ).one()
-        batch_data.append({"batch": b, "scored": scored})
-
-    return _render(request, "review_batches_list.html", {
-        "admin": admin,
-        "batch_data": batch_data,
-    })
+    return _render(request, "review_batches_list.html", {"admin": admin})
 
 
 # --- Export endpoints ---

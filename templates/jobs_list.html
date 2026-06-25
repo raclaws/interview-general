@@ -1,61 +1,62 @@
 {% extends "base_app.html" %}
 {% block title %}Jobs{% endblock %}
+{% block main_class %}layout-list{% endblock %}
 {% block content %}
 <div class="page-header">
     <h1>Jobs</h1>
-    <a href="/job/new" class="btn">+ New Job</a>
 </div>
 
-<div data-table data-table-archive="status:closed,cancelled" data-table-fields='[{"key":"status","label":"Status","type":"select","options":["open","closed","on_hold","cancelled"]},{"key":"bu","label":"Business Unit","type":"select","options":[]},{"key":"priority","label":"Priority","type":"select","options":["urgent","high","normal","low"]},{"key":"date","label":"Date","type":"date"}]'>
+<div data-sync-table="jobs"
+     data-sync-search-fields="title,buName,recruiter"
+     data-sync-archive-field="status"
+     data-sync-archive-values="closed,cancelled"
+     data-sync-default-sort="updatedAt:desc"
+     data-sync-filter-fields='[{"key":"status","label":"Status","type":"select","options":["open","on_hold","closed","cancelled"]},{"key":"priority","label":"Priority","type":"select","options":["urgent","high","normal","low"]},{"key":"buName","label":"Business Unit","type":"select","options":[{% for bu in bu_names %}"{{ bu }}"{% if not loop.last %},{% endif %}{% endfor %}]},{"key":"recruiter","label":"Recruiter","type":"text"}]'
+     data-sync-display-options='{"sort":[{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"title:asc","label":"Title A-Z"},{"value":"title:desc","label":"Title Z-A"}],"group":[{"value":"status","label":"Status"},{"value":"buName","label":"Business Unit"},{"value":"priority","label":"Priority"}]}'>
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search jobs..." class="table-search">
-        <select data-table-filter="status" class="table-filter">
-            <option value="">All Status</option>
-            <option value="open">Open</option>
-            <option value="on_hold">On Hold</option>
-            <option value="closed">Closed</option>
-            <option value="cancelled">Cancelled</option>
-        </select>
-        <select data-table-filter="priority" class="table-filter">
-            <option value="">All Priority</option>
-            <option value="urgent">Urgent</option>
-            <option value="high">High</option>
-            <option value="normal">Normal</option>
-            <option value="low">Low</option>
-        </select>
-        <select data-table-sort class="table-filter">
-            <option value="">Sort</option>
-            <option value="date:desc" data-sort-type="date">Newest first</option>
-            <option value="date:asc" data-sort-type="date">Oldest first</option>
-            <option value="name:asc" data-sort-type="string">Title A-Z</option>
-        </select>
+        <a href="/job/new" class="btn-icon sync-add-btn" title="New job"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
+    </div>
+    <div class="sync-subcontrols">
+        <button type="button" class="archive-pill">Show closed</button>
     </div>
 
-    <table class="table-clean">
-        <tbody>
-            {% for item in job_data %}
-            <tr data-search="{{ item.job.title | lower }}" data-status="{{ item.job.status }}" data-bu="{{ item.bu.name if item.bu else '' }}" data-priority="{{ item.job.priority }}" data-name="{{ item.job.title | lower }}" data-date="{{ item.job.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/job/{{ item.job.id }}" data-ctx='[{"label":"Edit","href":"/job/{{ item.job.id }}/edit"},{"label":"Add candidate","href":"/job/{{ item.job.id }}#add-candidate"},{"label":"View pipelines","href":"/pipelines?job={{ item.job.id }}"},{% if item.job.status == "open" %}{"label":"Close job","href":"/job/{{ item.job.id }}/close","confirm":"Close this job?"}{% else %}{"label":"Reopen (edit)","href":"/job/{{ item.job.id }}/edit"}{% endif %}]'>
-                <td>
-                    <div class="col-primary">{{ item.job.title }}</div>
-                    <div class="row-meta">{{ item.job.job_type }} · {{ item.bu.name if item.bu else "—" }}{% if item.job.recruiter %} · {{ item.job.recruiter }}{% endif %}</div>
-                </td>
-                <td style="text-align: right;">
-                    <span class="badge badge-{{ item.job.status }}">{{ item.job.status | replace("_", " ") | title }}</span>
-                </td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <span class="row-meta">{{ item.filled }}/{{ item.job.headcount }} filled · {{ item.pipeline_count }} candidates</span>
-                </td>
-                <td style="text-align: right;">
-                    {% if item.job.priority == "urgent" %}<span class="badge badge-urgent">Urgent</span>
-                    {% elif item.job.priority == "high" %}<span class="badge badge-high">High</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% if not job_data %}
-    <p class="row-meta" style="padding: 2rem; text-align: center;">No jobs yet. <a href="/job/new">Create your first job.</a></p>
-    {% endif %}
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+        <span class="table-count"></span>
+    </div>
 </div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load jobs.</p>
+</noscript>
+
+<script>
+window.__syncConfig = {
+    renderRow: function(r) {
+        var priorityBadge = '';
+        if (r.priority === 'urgent') priorityBadge = '<span class="badge badge-urgent">Urgent</span>';
+        else if (r.priority === 'high') priorityBadge = '<span class="badge badge-high">High</span>';
+        return '<tr class="clickable-row" data-href="/job/' + r.id + '">' +
+            '<td><div class="col-primary">' + (r.title || '—') + '</div>' +
+            '<div class="row-meta">' + (r.jobType || '') + ' · ' + (r.buName || '—') + (r.recruiter ? ' · ' + r.recruiter : '') + '</div></td>' +
+            '<td style="text-align:right;"><span class="badge badge-' + r.status + '">' + (r.status || '').replace(/_/g, ' ') + '</span></td>' +
+            '<td style="text-align:right; white-space:nowrap;"><span class="row-meta">' + (r.filled || 0) + '/' + (r.headcount || 1) + ' filled · ' + (r.pipelineCount || 0) + ' candidates</span></td>' +
+            '<td style="text-align:right;">' + priorityBadge + '</td>' +
+            '</tr>';
+    },
+    contextMenu: function(r, baseUrl) {
+        var items = [];
+        items.push({label: '✎ Edit', href: '/job/' + r.id + '/edit'});
+        items.push({label: '+ Add candidate', href: '/job/' + r.id + '#add-candidate'});
+        items.push({label: '↗ View pipelines', href: '/pipelines?af=jobTitle:contains:' + encodeURIComponent(r.title)});
+        if (r.status === 'open' || r.status === 'on_hold') items.push({label: '⊘ Close job', href: '/job/' + r.id + '/close', confirm: 'Close this job?'});
+        if (r.status === 'closed' || r.status === 'cancelled') items.push({label: '↺ Reopen', href: '/job/' + r.id + '/reopen', confirm: 'Reopen this job?'});
+        return items;
+    }
+};
+</script>
+<script src="/static/sync-list.js?v=2"></script>
 {% endblock %}

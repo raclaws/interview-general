@@ -687,11 +687,16 @@ async def settings_save(
 
 
 @router.get("/api/candidates")
-async def api_candidates(q: str = ""):
+async def api_candidates(q: str = "", db: Session = Depends(get_session)):
     if len(q) < 2:
         return []
-    results = await search_candidates(q)
-    return results
+    from app.models import Candidate
+    candidates = db.exec(
+        select(Candidate).where(
+            Candidate.name.ilike(f"%{q}%") | Candidate.email.ilike(f"%{q}%")
+        ).limit(10)
+    ).all()
+    return [{"id": c.id, "name": c.name, "email": c.email or ""} for c in candidates]
 
 
 @router.get("/login", response_class=HTMLResponse)

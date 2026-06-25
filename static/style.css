@@ -595,9 +595,6 @@ td.col-primary, .col-primary {
     width: 100%;
     border-collapse: collapse;
 }
-.layout-list .table-clean {
-    table-layout: fixed;
-}
 .table-clean td {
     padding: 0.6rem 0.75rem;
     border-bottom: 1px solid var(--border);

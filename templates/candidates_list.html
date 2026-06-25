@@ -1,54 +1,59 @@
 {% extends "base_app.html" %}
 {% block title %}Candidates{% endblock %}
+{% block main_class %}layout-list{% endblock %}
 {% block content %}
 <div class="page-header">
     <h1>Candidates</h1>
-    <a href="/candidate/new" class="btn">+ Add Candidate</a>
 </div>
 
-<div data-table data-table-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"date","label":"Date","type":"date"}]' data-table-views='{{ views | tojson }}' data-table-page="/candidates">
+<div data-sync-table="candidates"
+     data-sync-search-fields="name,email"
+     data-sync-default-sort="updatedAt:desc"
+     data-sync-filter-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"currentPosition","label":"Position","type":"text"},{"key":"name","label":"Name","type":"text"},{"key":"email","label":"Email","type":"text"}]'
+     data-sync-display-options='{"sort":[{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"name:asc","label":"Name A-Z"},{"value":"name:desc","label":"Name Z-A"}],"group":[{"value":"stages","label":"Stage"}]}'>
     <div class="table-controls">
         <input type="text" data-table-search placeholder="Search by name or email..." class="table-search">
-        <select data-table-filter="stages" data-filter-mode="contains" class="table-filter">
-            <option value="">All Stages</option>
-            {% for s in stages %}
-            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
-            {% endfor %}
-        </select>
-        <select data-table-sort class="table-filter">
-            <option value="">Sort</option>
-            <option value="date:desc" data-sort-type="date">Newest first</option>
-            <option value="date:asc" data-sort-type="date">Oldest first</option>
-            <option value="name:asc" data-sort-type="string">Name A-Z</option>
-            <option value="name:desc" data-sort-type="string">Name Z-A</option>
-        </select>
+        <a href="/candidate/new" class="btn-icon sync-add-btn" title="Add candidate"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
     </div>
+    <div class="sync-subcontrols"></div>
 
-    <table class="table-clean">
-        <tbody>
-            {% for item in candidate_data %}
-            <tr data-search="{{ item.candidate.name | lower }} {{ item.candidate.email | lower }}" data-stages="{{ item.stages | join(',') }}" data-name="{{ item.candidate.name | lower }}" data-date="{{ item.latest_activity.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/candidate/{{ item.candidate.id }}" data-ctx='[{"label":"⎘ Copy email","copy":"{{ item.candidate.email }}"},{"label":"+ Add interview","href":"/session/new?candidate_id={{ item.candidate.id }}"},{"label":"✎ Edit candidate","href":"/candidate/{{ item.candidate.id }}/edit"}]'>
-                <td>
-                    <div class="col-primary">{{ item.candidate.name }}</div>
-                    <div class="row-meta">{{ item.candidate.email }}</div>
-                </td>
-                <td>
-                    <div class="col-primary">{{ item.candidate.current_position or "—" }}</div>
-                    <div class="row-meta">
-                        {% for s in item.stages %}
-                        <span class="badge badge-{{ s }}">{{ s | replace("_", " ") | title }}</span>
-                        {% endfor %}
-                        {% if not item.stages %}—{% endif %}
-                    </div>
-                </td>
-                <td class="row-meta">{{ item.pipeline_count }} pipeline{{ "s" if item.pipeline_count != 1 else "" }} · {{ item.session_count }} session{{ "s" if item.session_count != 1 else "" }}</td>
-                <td class="row-meta">{{ item.latest_activity.strftime("%Y-%m-%d") }}</td>
-            </tr>
-            {% endfor %}
-            {% if not candidate_data %}
-            <tr class="empty-row"><td colspan="4" style="text-align:center; padding:2rem;">No candidates yet. <a href="/candidate/new" class="btn-ghost">Add a candidate</a></td></tr>
-            {% endif %}
-        </tbody>
-    </table>
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+        <span class="table-count"></span>
+    </div>
 </div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load candidates.</p>
+</noscript>
+
+<script>
+window.__syncConfig = {
+    renderRow: function(r) {
+        var stages = (r.stages || '').split(',').filter(Boolean);
+        var badgesHtml = stages.length
+            ? stages.map(function(s) { return '<span class="badge badge-' + s + '">' + s.replace(/_/g, ' ') + '</span>'; }).join(' ')
+            : '—';
+        var date = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '';
+        return '<tr class="clickable-row" data-href="/candidate/' + r.id + '">' +
+            '<td><div class="col-primary">' + (r.name || '—') + '</div>' +
+            '<div class="row-meta">' + (r.email || '') + '</div></td>' +
+            '<td><div class="col-primary">' + (r.currentPosition || '—') + '</div>' +
+            '<div class="row-meta">' + badgesHtml + '</div></td>' +
+            '<td class="row-meta">' + (r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : '') + ' · ' + (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '') + '</td>' +
+            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            '</tr>';
+    },
+    contextMenu: function(r, baseUrl) {
+        var items = [];
+        items.push({label: '⎘ Copy email', copy: r.email});
+        items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.id});
+        items.push({label: '✎ Edit candidate', href: '/candidate/' + r.id + '/edit'});
+        return items;
+    }
+};
+</script>
+<script src="/static/sync-list.js?v=2"></script>
 {% endblock %}

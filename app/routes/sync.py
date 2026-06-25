@@ -15,7 +15,7 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
-    Job, BusinessUnit,
+    Job, BusinessUnit, Candidate, ReviewBatch, ReviewScore, PipelineScore, TestAssignment,
 )
 
 
@@ -118,8 +118,235 @@ def _hydrate_sessions(db: Session, since: int | None):
     return results
 
 
+def _hydrate_jobs(db: Session, since: int | None):
+    from sqlalchemy import func
+
+    query = select(Job).where(Job.title != "_Unassigned")
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(Job.updated_at > since_dt)
+    query = query.order_by(Job.updated_at.desc())
+
+    jobs = db.exec(query).all()
+
+    # Batch: pipeline counts + filled counts per job
+    job_ids = [j.id for j in jobs]
+    pipeline_counts: dict = {}
+    filled_counts: dict = {}
+    if job_ids:
+        rows = db.exec(
+            select(
+                CandidatePipeline.job_id,
+                func.count(CandidatePipeline.id).label("total"),
+                func.sum(func.iif(CandidatePipeline.stage == "hired", 1, 0)).label("filled"),
+            )
+            .where(CandidatePipeline.job_id.in_(job_ids))
+            .group_by(CandidatePipeline.job_id)
+        ).all()
+        for row in rows:
+            pipeline_counts[row[0]] = row[1]
+            filled_counts[row[0]] = int(row[2] or 0)
+
+    results = []
+    for job in jobs:
+        bu = db.get(BusinessUnit, job.business_unit_id)
+        results.append({
+            "id": str(job.id),
+            "title": job.title,
+            "status": job.status,
+            "priority": job.priority,
+            "jobType": job.job_type,
+            "buName": bu.name if bu else "",
+            "recruiter": job.recruiter or "",
+            "headcount": job.headcount,
+            "filled": filled_counts.get(job.id, 0),
+            "pipelineCount": pipeline_counts.get(job.id, 0),
+            "updatedAt": int(job.updated_at.timestamp() * 1000) if job.updated_at else 0,
+        })
+    return results
+
+
+def _hydrate_candidates(db: Session, since: int | None):
+    from sqlalchemy import func
+
+    query = select(Candidate)
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(Candidate.updated_at > since_dt)
+    query = query.order_by(Candidate.updated_at.desc())
+
+    candidates = db.exec(query).all()
+    if not candidates:
+        return []
+
+    candidate_ids = [c.id for c in candidates]
+
+    # Batch: pipeline counts + stages
+    pipeline_rows = db.exec(
+        select(
+            CandidatePipeline.candidate_id,
+            func.count(CandidatePipeline.id).label("count"),
+            func.group_concat(CandidatePipeline.stage).label("stages_csv"),
+        )
+        .where(CandidatePipeline.candidate_id.in_(candidate_ids))
+        .group_by(CandidatePipeline.candidate_id)
+    ).all()
+    pipeline_map = {r[0]: {"count": r[1], "stages": r[2] or ""} for r in pipeline_rows}
+
+    # Batch: session counts
+    session_rows = db.exec(
+        select(
+            InterviewSession.candidate_id,
+            func.count(InterviewSession.id).label("count"),
+        )
+        .where(InterviewSession.candidate_id.in_(candidate_ids))
+        .group_by(InterviewSession.candidate_id)
+    ).all()
+    session_map = {r[0]: r[1] for r in session_rows}
+
+    results = []
+    for c in candidates:
+        p_info = pipeline_map.get(c.id, {"count": 0, "stages": ""})
+        stages = list(set(s for s in p_info["stages"].split(",") if s))
+        results.append({
+            "id": str(c.id),
+            "name": c.name,
+            "email": c.email or "",
+            "currentPosition": c.current_position or "",
+            "stages": ",".join(stages),
+            "pipelineCount": p_info["count"],
+            "sessionCount": session_map.get(c.id, 0),
+            "updatedAt": int(c.updated_at.timestamp() * 1000) if c.updated_at else 0,
+        })
+    return results
+
+
+def _hydrate_review_batches(db: Session, since: int | None):
+    from sqlalchemy import func
+
+    query = select(ReviewBatch)
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(ReviewBatch.created_at > since_dt)
+    query = query.order_by(ReviewBatch.created_at.desc())
+
+    batches = db.exec(query).all()
+    if not batches:
+        return []
+
+    batch_ids = [b.id for b in batches]
+    scored_rows = db.exec(
+        select(
+            ReviewScore.review_batch_id,
+            func.count(ReviewScore.id).label("scored"),
+        )
+        .where(ReviewScore.review_batch_id.in_(batch_ids), ReviewScore.submitted_at != None)
+        .group_by(ReviewScore.review_batch_id)
+    ).all()
+    scored_map = {r[0]: r[1] for r in scored_rows}
+
+    results = []
+    for b in batches:
+        results.append({
+            "id": str(b.id),
+            "reviewerName": b.reviewer_name,
+            "position": b.position or "",
+            "businessUnit": b.business_unit or "",
+            "token": b.token,
+            "scored": scored_map.get(b.id, 0),
+            "createdAt": int(b.created_at.timestamp() * 1000) if b.created_at else 0,
+        })
+    return results
+
+
+def _hydrate_pipelines(db: Session, since: int | None):
+    from sqlalchemy import func
+    from app.models import PIPELINE_STAGES
+
+    query = select(CandidatePipeline, Candidate).join(
+        Candidate, CandidatePipeline.candidate_id == Candidate.id
+    )
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(CandidatePipeline.updated_at > since_dt)
+    query = query.order_by(CandidatePipeline.updated_at.desc())
+
+    rows = db.exec(query).all()
+    if not rows:
+        return []
+
+    pipeline_ids = [p.id for p, _ in rows]
+
+    # Batch: session counts
+    session_rows = db.exec(
+        select(
+            InterviewSession.pipeline_id,
+            func.count(SessionInterviewer.id).label("total"),
+            func.sum(func.iif(SessionInterviewer.status == "completed", 1, 0)).label("completed"),
+        )
+        .join(SessionInterviewer, SessionInterviewer.session_id == InterviewSession.id)
+        .where(InterviewSession.pipeline_id.in_(pipeline_ids))
+        .group_by(InterviewSession.pipeline_id)
+    ).all()
+    session_map = {r[0]: {"total": r[1], "completed": int(r[2] or 0)} for r in session_rows}
+
+    # Batch: test counts
+    test_rows = db.exec(
+        select(
+            TestAssignment.pipeline_id,
+            func.count(TestAssignment.id).label("total"),
+            func.sum(func.iif(TestAssignment.status == "submitted", 1, 0)).label("submitted"),
+        )
+        .where(TestAssignment.pipeline_id.in_(pipeline_ids))
+        .group_by(TestAssignment.pipeline_id)
+    ).all()
+    test_map = {r[0]: {"total": r[1], "submitted": int(r[2] or 0)} for r in test_rows}
+
+    # Batch: scores
+    scores = db.exec(select(PipelineScore).where(PipelineScore.pipeline_id.in_(pipeline_ids))).all()
+    scores_map = {s.pipeline_id: s for s in scores}
+
+    # Batch: job titles
+    job_ids = set(p.job_id for p, _ in rows if p.job_id)
+    jobs_map = {}
+    if job_ids:
+        jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
+        jobs_map = {j.id: j.title for j in jobs_list}
+
+    results = []
+    for pipeline, candidate in rows:
+        sc = scores_map.get(pipeline.id)
+        hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
+        culture_avg = round(sc.culture_total / 4, 1) if sc and sc.culture_total else 0
+        counts = session_map.get(pipeline.id, {"total": 0, "completed": 0})
+        tc = test_map.get(pipeline.id, {"total": 0, "submitted": 0})
+        job_title = jobs_map.get(pipeline.job_id, "") if pipeline.job_id else ""
+
+        results.append({
+            "id": str(pipeline.id),
+            "candidateName": candidate.name,
+            "candidateId": pipeline.candidate_id,
+            "jobTitle": job_title,
+            "stage": pipeline.stage,
+            "businessUnit": pipeline.business_unit or "",
+            "displayName": pipeline.display_name or "",
+            "sessionTotal": counts["total"],
+            "sessionCompleted": counts["completed"],
+            "testTotal": tc["total"],
+            "testSubmitted": tc["submitted"],
+            "hrAvg": hr_avg,
+            "cultureAvg": culture_avg,
+            "updatedAt": int(pipeline.updated_at.timestamp() * 1000) if pipeline.updated_at else 0,
+        })
+    return results
+
+
 _HYDRATE_DISPATCH = {
     "sessions": _hydrate_sessions,
+    "jobs": _hydrate_jobs,
+    "candidates": _hydrate_candidates,
+    "review_batches": _hydrate_review_batches,
+    "pipelines": _hydrate_pipelines,
 }
 
 
