@@ -455,6 +455,10 @@ async def session_detail(
         interviewer_data.append({"interviewer": iv, "response": response, "scores": scores})
 
     pipeline = db.get(CandidatePipeline, session.pipeline_id) if session.pipeline_id else None
+    job = None
+    if pipeline and pipeline.job_id:
+        from app.models import Job
+        job = db.get(Job, pipeline.job_id)
 
     return _render(request, "session_detail.html", {
         "session": session,
@@ -462,6 +466,7 @@ async def session_detail(
         "sections": sections,
         "interviewer_data": interviewer_data,
         "pipeline": pipeline,
+        "job": job,
         "admin": admin,
     })
 

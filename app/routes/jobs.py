@@ -157,11 +157,18 @@ async def job_detail(
     ).all()
     filled = len([p for p in pipelines if p.stage == "hired"])
 
+    # Join candidate names for display
+    pipeline_data = []
+    for p in pipelines:
+        candidate = db.get(Candidate, p.candidate_id)
+        pipeline_data.append({"pipeline": p, "candidate": candidate})
+
     return _render(request, "job_detail.html", {
         "admin": admin,
         "job": job,
         "bu": bu,
         "pipelines": pipelines,
+        "pipeline_data": pipeline_data,
         "filled": filled,
     })
 

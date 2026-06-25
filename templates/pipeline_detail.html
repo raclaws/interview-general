@@ -29,8 +29,8 @@
         <div class="row-meta">{{ candidate.email }}</div>
     </div>
     <div>
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Position · BU</div>
-        <div>{{ pipeline.position or "—" }} · {{ pipeline.business_unit or "—" }}</div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Job</div>
+        <div>{% if job %}<a href="/job/{{ job.id }}">{{ job.title }}</a>{% else %}—{% endif %}</div>
     </div>
     <div>
         <div class="row-meta" style="margin-bottom: 0.25rem;">Stage</div>

@@ -4,7 +4,8 @@
 <ul style="list-style: none; padding: 0; margin: 0 0 1rem 0;">
     {% for link in links %}
     <li style="display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0;">
-        <a href="{{ link.url }}" target="_blank" rel="noopener" style="font-size: 0.9rem;">{{ link.title }}</a>
+        <a href="{{ link.url }}" target="_blank" rel="noopener" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 500; text-decoration: none;">{{ link.title }}</a>
+        <span class="row-meta" style="font-size: 0.7rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ link.url }}</span>
         <form method="post" action="/job/{{ job.id }}/links/{{ loop.index0 }}/delete"
               hx-post="/job/{{ job.id }}/links/{{ loop.index0 }}/delete"
               hx-target="#job-links" hx-swap="innerHTML"

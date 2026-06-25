@@ -1042,6 +1042,7 @@ async def pipeline_detail(
 
     ctx = _pipeline_detail_context(db, pipeline, candidate)
     ctx["admin"] = admin
+    ctx["job"] = db.get(Job, pipeline.job_id) if pipeline.job_id else None
     return _render(request, "pipeline_detail.html", ctx)
 
 

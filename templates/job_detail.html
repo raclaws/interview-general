@@ -234,17 +234,17 @@
     }
 })();
 </script>
-{% if pipelines %}
+{% if pipeline_data %}
 <table class="table-clean">
     <tbody>
-        {% for p in pipelines %}
-        <tr class="clickable-row" data-href="/pipeline/{{ p.id }}">
+        {% for item in pipeline_data %}
+        <tr class="clickable-row" data-href="/pipeline/{{ item.pipeline.id }}" data-ctx='[{"label":"View candidate","href":"/candidate/{{ item.candidate.id }}"}]'>
             <td>
-                <div class="col-primary">{{ p.display_name or "—" }}</div>
-                <div class="row-meta">Stage: {{ p.stage | replace("_", " ") | title }}</div>
+                <div class="col-primary">{{ item.candidate.name if item.candidate else "—" }}</div>
+                <div class="row-meta">{{ item.pipeline.display_name or "—" }} · {{ item.pipeline.stage | replace("_", " ") | title }}</div>
             </td>
             <td style="text-align: right;">
-                <span class="row-meta">{{ p.updated_at.strftime("%Y-%m-%d") }}</span>
+                <span class="row-meta">{{ item.pipeline.updated_at.strftime("%Y-%m-%d") }}</span>
             </td>
         </tr>
         {% endfor %}

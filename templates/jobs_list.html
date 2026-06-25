@@ -34,7 +34,7 @@
     <table class="table-clean">
         <tbody>
             {% for item in job_data %}
-            <tr data-search="{{ item.job.title | lower }}" data-status="{{ item.job.status }}" data-bu="{{ item.bu.name if item.bu else '' }}" data-priority="{{ item.job.priority }}" data-name="{{ item.job.title | lower }}" data-date="{{ item.job.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/job/{{ item.job.id }}" data-ctx='[{"label":"Edit","href":"/job/{{ item.job.id }}/edit"},{"label":"Close","href":"/job/{{ item.job.id }}/close","confirm":"Close this job?"}]'>
+            <tr data-search="{{ item.job.title | lower }}" data-status="{{ item.job.status }}" data-bu="{{ item.bu.name if item.bu else '' }}" data-priority="{{ item.job.priority }}" data-name="{{ item.job.title | lower }}" data-date="{{ item.job.updated_at.strftime('%Y-%m-%d') }}" class="clickable-row" data-href="/job/{{ item.job.id }}" data-ctx='[{"label":"Edit","href":"/job/{{ item.job.id }}/edit"},{"label":"Add candidate","href":"/job/{{ item.job.id }}#add-candidate"},{"label":"View pipelines","href":"/pipelines?job={{ item.job.id }}"},{% if item.job.status == "open" %}{"label":"Close job","href":"/job/{{ item.job.id }}/close","confirm":"Close this job?"}{% else %}{"label":"Reopen (edit)","href":"/job/{{ item.job.id }}/edit"}{% endif %}]'>
                 <td>
                     <div class="col-primary">{{ item.job.title }}</div>
                     <div class="row-meta">{{ item.job.job_type }} · {{ item.bu.name if item.bu else "—" }}{% if item.job.recruiter %} · {{ item.job.recruiter }}{% endif %}</div>
