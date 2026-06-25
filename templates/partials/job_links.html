@@ -1,0 +1,25 @@
+<h3 style="margin-bottom: 0.5rem;">Links</h3>
+{% set links = job.links_list %}
+{% if links %}
+<ul style="list-style: none; padding: 0; margin: 0 0 1rem 0;">
+    {% for link in links %}
+    <li style="display: flex; align-items: center; gap: 0.5rem; padding: 0.3rem 0;">
+        <a href="{{ link.url }}" target="_blank" rel="noopener" style="font-size: 0.9rem;">{{ link.title }}</a>
+        <form method="post" action="/job/{{ job.id }}/links/{{ loop.index0 }}/delete"
+              hx-post="/job/{{ job.id }}/links/{{ loop.index0 }}/delete"
+              hx-target="#job-links" hx-swap="innerHTML"
+              style="margin: 0;">
+            <button type="submit" class="btn-icon" title="Remove" style="font-size: 0.75rem; opacity: 0.5;">✕</button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+<form method="post" action="/job/{{ job.id }}/links"
+      hx-post="/job/{{ job.id }}/links"
+      hx-target="#job-links" hx-swap="innerHTML"
+      style="display: flex; gap: 0.5rem; align-items: flex-end;">
+    <input type="text" name="link_title" placeholder="Title" required class="form-input" style="flex: 1; margin: 0;">
+    <input type="url" name="link_url" placeholder="https://..." required class="form-input" style="flex: 2; margin: 0;">
+    <button type="submit" class="btn" style="white-space: nowrap;">Add</button>
+</form>

@@ -1,0 +1,33 @@
+<h2 style="margin-bottom: 1rem;">LLM Settings</h2>
+<div class="form-container" style="max-width: 700px;">
+    <form method="post" action="/settings">
+        <label for="llm_base_url">Base URL</label>
+        <input type="text" id="llm_base_url" name="llm_base_url" value="{{ base_url }}" required>
+
+        <label for="llm_api_key">API Key</label>
+        <input type="text" id="llm_api_key" name="llm_api_key" value="{{ api_key_masked }}" autocomplete="off">
+        <p class="hint">Leave unchanged to keep current key. Only updates if you enter a new value.</p>
+
+        <label for="llm_model">Model</label>
+        <input type="text" id="llm_model" name="llm_model" value="{{ model }}" required>
+
+        <label for="llm_temperature">Temperature</label>
+        <input type="number" id="llm_temperature" name="llm_temperature" value="{{ temperature }}" min="0" max="2" step="0.1">
+
+        <label for="llm_max_tokens">Max Tokens</label>
+        <input type="number" id="llm_max_tokens" name="llm_max_tokens" value="{{ max_tokens }}" min="100" max="4096" step="50">
+
+        <label for="llm_system_prompt">System Prompt</label>
+        <textarea id="llm_system_prompt" name="llm_system_prompt" rows="20" style="font-family: monospace; font-size: 0.8rem;" required>{{ system_prompt }}</textarea>
+
+        <button type="submit" class="btn" style="margin-top: 1rem;">Save Settings</button>
+    </form>
+</div>
+
+<hr style="margin: 2rem 0;">
+
+<div style="display: flex; justify-content: space-between; align-items: center;">
+    <h2>Interview Templates</h2>
+    <a href="/templates" class="btn-ghost">Manage Templates</a>
+</div>
+<p class="row-meta">Configure the question templates used for interview sessions.</p>

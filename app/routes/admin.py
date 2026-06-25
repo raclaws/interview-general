@@ -90,6 +90,19 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
     sessions = db.exec(
         select(InterviewSession).order_by(InterviewSession.created_at.desc())
     ).all()
+    # Batch load jobs for display
+    from app.models import Job
+    pipeline_ids = set(s.pipeline_id for s in sessions if s.pipeline_id)
+    pipelines_map = {}
+    jobs_map = {}
+    if pipeline_ids:
+        pips = db.exec(select(CandidatePipeline).where(CandidatePipeline.id.in_(pipeline_ids))).all()
+        pipelines_map = {p.id: p for p in pips}
+        job_ids = set(p.job_id for p in pips if p.job_id)
+        if job_ids:
+            jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
+            jobs_map = {j.id: j.title for j in jobs_list}
+
     session_data = []
     for s in sessions:
         interviewers = db.exec(
@@ -98,8 +111,9 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
         total = len(interviewers)
         completed = len([i for i in interviewers if i.status == "completed"])
         template = db.get(Template, s.template_id) if s.template_id else None
-        pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
-        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline})
+        pipeline = pipelines_map.get(s.pipeline_id)
+        job_title = jobs_map.get(pipeline.job_id, "") if pipeline and pipeline.job_id else ""
+        session_data.append({"session": s, "interviewers": interviewers, "total": total, "completed": completed, "template": template, "pipeline": pipeline, "job_title": job_title})
     views = db.exec(select(TableView).where(TableView.page == "/sessions")).all()
     views_data = [{"id": v.id, "name": v.name, "config": v.config} for v in views]
     return _render(request, "sessions_list.html", {"session_data": session_data, "admin": admin, "views": views_data})
@@ -128,18 +142,36 @@ async def session_new_form(request: Request, candidate_id: int = None, pipeline_
     templates = db.exec(select(Template).order_by(Template.name)).all()
     prefill_candidate = None
     prefill_pipeline = None
+    prefill_job = None
     if candidate_id:
         prefill_candidate = db.get(Candidate, candidate_id)
     if pipeline_id:
         prefill_pipeline = db.get(CandidatePipeline, pipeline_id)
+        if prefill_pipeline and prefill_pipeline.job_id:
+            from app.models import Job
+            prefill_job = db.get(Job, prefill_pipeline.job_id)
+        if not prefill_candidate and prefill_pipeline:
+            prefill_candidate = db.get(Candidate, prefill_pipeline.candidate_id)
+
+    # If no pipeline context, provide a pipeline picker
+    pipelines = []
+    if not pipeline_id:
+        from app.models import PIPELINE_ENDED_STAGES
+        results = db.exec(
+            select(CandidatePipeline, Candidate).join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
+            .where(CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES))
+            .order_by(CandidatePipeline.updated_at.desc())
+        ).all()
+        pipelines = [{"pipeline": p, "candidate": c} for p, c in results]
+
     return _render(request, "session_new.html", {
         "admin": admin,
         "templates": templates,
-        "positions": POSITIONS,
-        "business_units": BUSINESS_UNITS,
         "prefill_candidate": prefill_candidate,
         "prefill_pipeline": prefill_pipeline,
         "prefill_pipeline_id": pipeline_id,
+        "prefill_job": prefill_job,
+        "pipelines": pipelines,
     })
 
 
@@ -153,10 +185,7 @@ async def session_new_submit(
     interview_date: str = Form(""),
     show_salary: str = Form(""),
     template_id: int = Form(...),
-    position: str = Form(""),
-    position_other: str = Form(""),
-    business_unit: str = Form(""),
-    entry_mode: str = Form("nocodb"),
+    entry_mode: str = Form("pipeline"),
     manual_name: str = Form(""),
     manual_email: str = Form(""),
     manual_position: str = Form(""),
@@ -174,7 +203,26 @@ async def session_new_submit(
 ):
     is_htmx = request.headers.get("HX-Request") == "true"
 
-    if entry_mode == "nocodb":
+    if entry_mode == "pipeline":
+        if not pipeline_id:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Please select a pipeline.</div>')
+            return RedirectResponse("/session/new?error=no_pipeline", status_code=303)
+        pipeline_record = db.get(CandidatePipeline, pipeline_id)
+        if not pipeline_record:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Pipeline not found.</div>')
+            return RedirectResponse("/session/new?error=pipeline_not_found", status_code=303)
+        candidate_record = db.get(Candidate, pipeline_record.candidate_id)
+        if not candidate_record:
+            if is_htmx:
+                return HTMLResponse('<div class="form-error">Candidate not found.</div>')
+            return RedirectResponse("/session/new?error=candidate_not_found", status_code=303)
+        snapshot = candidate_record.to_snapshot()
+        candidate_id = candidate_record.id
+        if not job_title.strip():
+            job_title = snapshot.get("current_position", "")
+    elif entry_mode == "nocodb":
         if not candidate_id:
             if is_htmx:
                 return HTMLResponse('<div class="form-error">Please select a candidate.</div>')
@@ -218,9 +266,6 @@ async def session_new_submit(
         if is_htmx:
             return HTMLResponse('<div class="form-error">Interview date is required.</div>')
         return RedirectResponse("/session/new?error=date_required", status_code=303)
-
-    # Handle "Other" position
-    final_position = position_other.strip() if position == "Other" and position_other.strip() else position.strip()
 
     # Upsert candidate record
     candidate_record = None
@@ -273,35 +318,17 @@ async def session_new_submit(
     if pipeline_id:
         pipeline_record = db.get(CandidatePipeline, pipeline_id)
     elif candidate_record:
-        pos = final_position or None
-        bu = business_unit.strip() if business_unit.strip() else None
-        # Reuse existing active pipeline with same position + BU for this candidate
+        # Reuse existing active pipeline for this candidate (first available)
         pipeline_record = db.exec(
             select(CandidatePipeline).where(
                 CandidatePipeline.candidate_id == candidate_record.id,
-                CandidatePipeline.position == pos,
-                CandidatePipeline.business_unit == bu,
                 CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
             )
         ).first()
         if not pipeline_record:
-            mmyy = datetime.utcnow().strftime("%m%y")
-            existing_pipelines = db.exec(
-                select(CandidatePipeline).where(
-                    CandidatePipeline.candidate_id == candidate_record.id,
-                    CandidatePipeline.position == pos,
-                    CandidatePipeline.business_unit == bu,
-                )
-            ).all()
-            same_month = [p for p in existing_pipelines if p.created_at.strftime("%m%y") == mmyy]
-            seq = len(same_month) + 1
-            display_name = f"{pos or 'N/A'} {mmyy} #{seq} — {bu or 'N/A'}"
-
             pipeline_record = CandidatePipeline(
                 candidate_id=candidate_record.id,
-                display_name=display_name,
-                position=pos,
-                business_unit=bu,
+                display_name=f"{candidate_record.name} — interview",
                 stage="interview",
             )
             db.add(pipeline_record)
@@ -340,14 +367,26 @@ async def session_new_submit(
     # Job title is plain — no auto-differentiation (pipeline name handles that)
     auto_title = job_title.strip() if job_title.strip() else "N/A"
 
+    # Derive position/BU from pipeline's job if available
+    final_position_val = None
+    final_bu_val = None
+    if pipeline_record and pipeline_record.job_id:
+        from app.models import Job, BusinessUnit
+        job = db.get(Job, pipeline_record.job_id)
+        if job:
+            auto_title = auto_title if auto_title != "N/A" else job.title
+            final_position_val = job.position
+            bu = db.get(BusinessUnit, job.business_unit_id)
+            final_bu_val = bu.name if bu else None
+
     session = InterviewSession(
         template_id=template_id,
         candidate_id=candidate_record.id if candidate_record else None,
         pipeline_id=pipeline_record.id if pipeline_record else None,
         candidate_snapshot=json.dumps(snapshot),
         job_title=auto_title,
-        position=final_position if final_position else None,
-        business_unit=business_unit.strip() if business_unit.strip() else None,
+        position=final_position_val,
+        business_unit=final_bu_val,
         interview_date=interview_date if interview_date.strip() else None,
         show_salary=show_salary.lower() in ("on", "true", "1", "yes"),
         status="pending",
@@ -563,8 +602,6 @@ async def session_edit_form(
         "session": session,
         "interviewers": interviewers,
         "admin": admin,
-        "positions": POSITIONS,
-        "business_units": BUSINESS_UNITS,
     })
 
 
@@ -575,8 +612,6 @@ async def session_edit_submit(
     job_title: str = Form(...),
     interview_date: str = Form(""),
     show_salary: str = Form(""),
-    position: str = Form(""),
-    business_unit: str = Form(""),
     new_interviewers: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
@@ -588,8 +623,6 @@ async def session_edit_submit(
     session.job_title = job_title
     session.interview_date = interview_date if interview_date.strip() else None
     session.show_salary = show_salary.lower() in ("on", "true", "1", "yes")
-    session.position = position.strip() if position.strip() else None
-    session.business_unit = business_unit.strip() if business_unit.strip() else None
     db.add(session)
 
     if new_interviewers.strip():
@@ -642,7 +675,7 @@ async def settings_page(request: Request, admin: AdminUser = Depends(get_current
     from app.llm import get_llm_params
     temperature, max_tokens = get_llm_params()
     masked_key = ("*" * (len(api_key) - 4) + api_key[-4:]) if len(api_key) > 4 else "*" * len(api_key)
-    return _render(request, "settings.html", {
+    ctx = {
         "admin": admin,
         "base_url": base_url,
         "api_key_masked": masked_key,
@@ -650,7 +683,12 @@ async def settings_page(request: Request, admin: AdminUser = Depends(get_current
         "system_prompt": system_prompt,
         "temperature": temperature,
         "max_tokens": max_tokens,
-    })
+        "active_tab": "llm",
+        "tab_content": "settings_llm.html",
+    }
+    if request.headers.get("HX-Request"):
+        return _render(request, "settings_llm.html", ctx)
+    return _render(request, "settings_layout.html", ctx)
 
 
 @router.post("/settings")

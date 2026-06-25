@@ -22,13 +22,19 @@ def _get_batch(token: str, db: Session):
 
 
 def _get_review_data(batch: ReviewBatch, db: Session):
-    """Find all test assignments matching this batch's position+BU."""
-    pipelines = db.exec(
-        select(CandidatePipeline).where(
-            CandidatePipeline.position == batch.position,
-            CandidatePipeline.business_unit == batch.business_unit,
-        )
-    ).all()
+    """Find all test assignments matching this batch's job."""
+    if batch.job_id:
+        pipelines = db.exec(
+            select(CandidatePipeline).where(CandidatePipeline.job_id == batch.job_id)
+        ).all()
+    else:
+        # Legacy fallback: match by position+BU strings
+        pipelines = db.exec(
+            select(CandidatePipeline).where(
+                CandidatePipeline.position == batch.position,
+                CandidatePipeline.business_unit == batch.business_unit,
+            )
+        ).all()
 
     rows = []
     for p in pipelines:
@@ -152,10 +158,12 @@ async def review_score_submit(
     pipeline = db.get(CandidatePipeline, db.get(TestAssignment, assignment_id).pipeline_id)
     candidate = db.get(Candidate, pipeline.candidate_id) if pipeline else None
 
-    return _render(request, "partials/review_row.html", {
+    resp = _render(request, "partials/review_row.html", {
         "candidate": candidate,
         "assignment": db.get(TestAssignment, assignment_id),
         "score": score,
         "token": token,
         "batch": batch,
     })
+    resp.headers["HX-Trigger"] = "toast:Score saved"
+    return resp

@@ -12,6 +12,77 @@ class AdminUser(SQLModel, table=True):
     hashed_password: str
 
 
+class BusinessUnit(SQLModel, table=True):
+    __tablename__ = "business_units"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(unique=True)
+    head: Optional[str] = None
+    default_recruiter: Optional[str] = None
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ManagedPosition(SQLModel, table=True):
+    __tablename__ = "managed_positions"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(unique=True)
+    order: int = Field(default=0)
+
+
+class ManagedLevel(SQLModel, table=True):
+    __tablename__ = "managed_levels"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    label: str = Field(unique=True)
+    order: int = Field(default=0)
+
+
+class ManagedJobType(SQLModel, table=True):
+    __tablename__ = "managed_job_types"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    label: str = Field(unique=True)
+    order: int = Field(default=0)
+
+
+class Job(SQLModel, table=True):
+    __tablename__ = "jobs"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    title_locked: bool = Field(default=False)
+    position: str
+    level: str
+    job_type: str = Field(default="Full-time")
+    business_unit_id: int = Field(foreign_key="business_units.id")
+    headcount: int = Field(default=1)
+    recruiter: Optional[str] = None
+    backup_recruiter: Optional[str] = None
+    hiring_manager: Optional[str] = None
+    priority: str = Field(default="normal")
+    salary_range_min: Optional[int] = None
+    salary_range_max: Optional[int] = None
+    target_date: Optional[str] = None
+    closed_date: Optional[str] = None
+    description: Optional[str] = None
+    links: str = Field(default="[]")
+    notes: Optional[str] = None
+    source: Optional[str] = None
+    health: Optional[str] = None
+    status: str = Field(default="open")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    @property
+    def links_list(self) -> list[dict]:
+        return json.loads(self.links) if self.links else []
+
+    def generate_title(self, bu_name: str) -> str:
+        return f"{self.level} — {self.position} — {bu_name}"
+
+
 class Candidate(SQLModel, table=True):
     __tablename__ = "candidates"
 
@@ -70,6 +141,7 @@ class CandidatePipeline(SQLModel, table=True):
 
     id: Optional[int] = Field(default=None, primary_key=True)
     candidate_id: int = Field(foreign_key="candidates.id")
+    job_id: Optional[int] = Field(default=None, foreign_key="jobs.id")
     display_name: Optional[str] = None
     business_unit: Optional[str] = None
     position: Optional[str] = None
@@ -259,6 +331,7 @@ class ReviewBatch(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     token: str = Field(unique=True, index=True)
     reviewer_name: str
+    job_id: Optional[int] = Field(default=None, foreign_key="jobs.id")
     position: str
     business_unit: str
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -1,11 +1,19 @@
 {% extends "base_app.html" %}
 {% block title %}New Session{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/sessions">Interview</a> / <span>New Session</span>
+</nav>
+{% endblock %}
 {% block content %}
 <h1>Create Interview Session</h1>
 <div class="form-container" style="max-width: 600px;">
     <div id="form-errors"></div>
     <form method="post" action="/session/new" hx-post="/session/new" hx-target="#form-errors" hx-swap="innerHTML" hx-on::before-request="this.querySelector('button[type=submit]').disabled=true;this.querySelector('button[type=submit]').textContent='Creating...';this.querySelector('button[type=submit]').style.opacity='0.7'" hx-on::after-request="var b=this.querySelector('button[type=submit]');b.disabled=false;b.textContent='Create Session';b.style.opacity='1'">
-        {% if prefill_candidate %}
+
+        {% if prefill_candidate and prefill_pipeline_id %}
+        <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
+        <input type="hidden" name="candidate_id" value="{{ prefill_candidate.id }}">
         <input type="hidden" name="entry_mode" value="manual">
         <input type="hidden" name="manual_name" value="{{ prefill_candidate.name }}">
         <input type="hidden" name="manual_email" value="{{ prefill_candidate.email }}">
@@ -19,169 +27,79 @@
         <input type="hidden" name="manual_expected_salary" value="{{ prefill_candidate.expected_salary or '' }}">
         <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
         <input type="hidden" name="manual_cv_link" value="{{ prefill_candidate.cv_link or '' }}">
-        {% if prefill_pipeline_id %}
-        <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
-        {% endif %}
 
-        <div class="candidate-card" style="margin-bottom: 1rem;">
-            <h3>{{ prefill_candidate.name }}</h3>
-            <p class="hint">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</p>
-        </div>
-        {% else %}        <div class="toggle-group">
-            <label class="toggle-label">
-                <input type="radio" name="entry_mode" value="nocodb" checked onchange="toggleMode(this.value)">
-                Search NocoDB
-            </label>
-            <label class="toggle-label">
-                <input type="radio" name="entry_mode" value="manual" onchange="toggleMode(this.value)">
-                Manual Entry
-            </label>
+        <div style="background: var(--surface-raised); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+            <div class="col-primary">{{ prefill_candidate.name }}</div>
+            <div class="row-meta">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</div>
+            {% if prefill_pipeline %}
+            <div class="row-meta" style="margin-top: 0.25rem;">Pipeline: {{ prefill_pipeline.display_name or "—" }}</div>
+            {% endif %}
         </div>
 
-        <div id="nocodb-section">
-            <label for="candidate_search">Candidate</label>
-            <input type="text" id="candidate_search" placeholder="Search by name..." autocomplete="off">
-            <div id="candidate_results"></div>
-            <input type="hidden" id="candidate_id" name="candidate_id">
-            <p id="candidate_selected" class="selected-hint"></p>
+        {% else %}
+        <div class="form-group">
+            <label class="form-label">Pipeline <span class="required">*</span></label>
+            <select name="pipeline_id" required class="form-input">
+                <option value="">Select pipeline...</option>
+                {% for p in pipelines %}
+                <option value="{{ p.pipeline.id }}" {% if prefill_pipeline_id == p.pipeline.id %}selected{% endif %}>
+                    {{ p.candidate.name }} — {{ p.pipeline.display_name or "—" }}
+                </option>
+                {% endfor %}
+            </select>
+            <p class="hint">Candidate + Job context inherited from pipeline.</p>
         </div>
-
-        <div id="manual-section" style="display:none;">
-            <label for="manual_name">Candidate Name *</label>
-            <input type="text" id="manual_name" name="manual_name">
-
-            <label for="manual_email">Email</label>
-            <input type="email" id="manual_email" name="manual_email" placeholder="Used to link candidate across sessions">
-
-            <label for="manual_position">Current Position</label>
-            <input type="text" id="manual_position" name="manual_position">
-
-            <label for="manual_yoe">Years of Experience</label>
-            <input type="text" id="manual_yoe" name="manual_yoe">
-
-            <label for="manual_languages">Programming Languages</label>
-            <input type="text" id="manual_languages" name="manual_languages" placeholder="e.g. Python, Java, Go">
-
-            <label for="manual_cloud">Cloud Expertise</label>
-            <input type="text" id="manual_cloud" name="manual_cloud" placeholder="e.g. AWS, GCP">
-
-            <label for="manual_tools">Other Tools</label>
-            <input type="text" id="manual_tools" name="manual_tools" placeholder="e.g. Docker, Kubernetes">
-
-            <label for="manual_working_arrangement">Working Arrangement</label>
-            <input type="text" id="manual_working_arrangement" name="manual_working_arrangement" placeholder="e.g. Remote, Hybrid, On-site">
-
-            <label for="manual_current_salary">Current Salary</label>
-            <input type="text" id="manual_current_salary" name="manual_current_salary">
-
-            <label for="manual_expected_salary">Expected Salary</label>
-            <input type="text" id="manual_expected_salary" name="manual_expected_salary">
-
-            <label for="manual_notice_period">Notice Period</label>
-            <input type="text" id="manual_notice_period" name="manual_notice_period">
-
-            <label for="manual_cv_link">CV / Resume Link</label>
-            <input type="url" id="manual_cv_link" name="manual_cv_link" placeholder="https://...">
-        </div>
+        <input type="hidden" name="entry_mode" value="pipeline">
         {% endif %}
 
         <hr>
 
-        <label for="template_id">Interview Template</label>
-        <select id="template_id" name="template_id" required>
-            <option value="" disabled selected>— Select template —</option>
-            {% for t in templates %}
-            <option value="{{ t.id }}">{{ t.name }}</option>
-            {% endfor %}
-        </select>
-
-        <label for="job_title">Job Title</label>
-        <input type="text" id="job_title" name="job_title" value="{% if prefill_candidate and prefill_candidate.current_position %}{{ prefill_candidate.current_position }}{% endif %}" placeholder="Auto-filled from NocoDB if available">
-        <p class="hint">Leave empty to use candidate's current position from NocoDB.</p>
-
-        <label for="position">Position Applied</label>
-        <select id="position" name="position" onchange="togglePositionOther()">
-            <option value="">— Select —</option>
-            {% for p in positions %}
-            <option value="{{ p }}" {% if prefill_pipeline and prefill_pipeline.position == p %}selected{% elif prefill_pipeline and prefill_pipeline.position and prefill_pipeline.position not in positions and p == "Other" %}selected{% endif %}>{{ p }}</option>
-            {% endfor %}
-        </select>
-        <div id="position-other-wrap" style="{% if prefill_pipeline and prefill_pipeline.position and prefill_pipeline.position not in positions %}display:block{% else %}display:none{% endif %}; margin-top: 0.5rem;">
-            <input type="text" id="position_other" name="position_other" placeholder="Specify position..." value="{% if prefill_pipeline and prefill_pipeline.position and prefill_pipeline.position not in positions %}{{ prefill_pipeline.position }}{% endif %}">
+        <div class="form-group">
+            <label class="form-label">Interview Template <span class="required">*</span></label>
+            <select name="template_id" required class="form-input">
+                <option value="" disabled selected>— Select template —</option>
+                {% for t in templates %}
+                {% if t.name != "Default" %}
+                <option value="{{ t.id }}">{{ t.name }}</option>
+                {% endif %}
+                {% endfor %}
+            </select>
         </div>
 
-        <label for="business_unit">Business Unit</label>
-        <select id="business_unit" name="business_unit">
-            <option value="">— Select —</option>
-            {% for bu in business_units %}
-            <option value="{{ bu }}" {% if prefill_pipeline and prefill_pipeline.business_unit == bu %}selected{% endif %}>{{ bu }}</option>
-            {% endfor %}
-        </select>
+        <div class="form-group">
+            <label class="form-label">Job Title</label>
+            <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job">
+            <p class="hint">Inherited from pipeline's job. Override if needed.</p>
+        </div>
 
-        <label for="interviewer_names">Interviewer Names</label>
-        <input type="text" id="interviewer_names" name="interviewer_names" required placeholder="Comma-separated, e.g. Alice, Bob, Charlie">
-        <p class="hint">Each interviewer gets their own unique assessment link.</p>
+        <div class="form-group">
+            <label class="form-label">Interviewer Names <span class="required">*</span></label>
+            <input type="text" name="interviewer_names" required class="form-input" placeholder="Comma-separated, e.g. Alice, Bob, Charlie">
+            <p class="hint">Each interviewer gets their own unique assessment link.</p>
+        </div>
 
-        <label for="interview_date">Interview Date</label>
-        <input type="date" id="interview_date" name="interview_date" required>
+        <div class="form-group">
+            <label class="form-label">Interview Date <span class="required">*</span></label>
+            <input type="date" name="interview_date" required class="form-input" id="interview_date" onchange="var d=new Date(this.value);var t=new Date();t.setHours(0,0,0,0);if(d<t){this.style.borderColor='var(--warning)';this.nextElementSibling.style.display='block';}else{this.style.borderColor='';this.nextElementSibling.style.display='none';}">
+            <p class="hint" style="display:none;color:var(--warning);">Date is in the past. Are you sure?</p>
+        </div>
 
-        <label class="checkbox-label">
-            <input type="checkbox" id="show_salary" name="show_salary" value="on">
-            Show salary to interviewer
-        </label>
-        <p class="hint">Unchecked = salary hidden from interviewer (default). Admin always sees salary.</p>
+        <div class="form-group">
+            <label class="checkbox-label">
+                <input type="checkbox" name="show_salary" value="on">
+                Show salary to interviewer
+            </label>
+            <p class="hint">Unchecked = salary hidden from interviewer (default).</p>
+        </div>
 
-        <div class="form-actions">
-            <button type="submit">Create Session</button>
+        <div class="form-actions" style="margin-top: 1.5rem;">
+            <button type="submit" class="btn">Create Session</button>
+            {% if prefill_candidate %}
+            <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost">Cancel</a>
+            {% else %}
+            <a href="/sessions" class="btn-ghost">Cancel</a>
+            {% endif %}
         </div>
     </form>
 </div>
-
-<script>
-function toggleMode(mode) {
-    document.getElementById("nocodb-section").style.display = mode === "nocodb" ? "block" : "none";
-    document.getElementById("manual-section").style.display = mode === "manual" ? "block" : "none";
-}
-
-function togglePositionOther() {
-    var sel = document.getElementById("position");
-    var wrap = document.getElementById("position-other-wrap");
-    wrap.style.display = sel.value === "Other" ? "block" : "none";
-    if (sel.value !== "Other") document.getElementById("position_other").value = "";
-}
-
-const searchInput = document.getElementById("candidate_search");
-const resultsDiv = document.getElementById("candidate_results");
-const candidateIdInput = document.getElementById("candidate_id");
-const selectedHint = document.getElementById("candidate_selected");
-let debounce;
-
-searchInput.addEventListener("input", function() {
-    clearTimeout(debounce);
-    const q = this.value.trim();
-    if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
-    debounce = setTimeout(async () => {
-        const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
-        const data = await resp.json();
-        resultsDiv.innerHTML = data.map(c =>
-            `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}" data-position="${c.position || ''}">
-                <strong>${c.name}</strong> <span>${c.position || ""}</span>
-            </div>`
-        ).join("");
-        resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
-            el.addEventListener("click", () => {
-                candidateIdInput.value = el.dataset.id;
-                selectedHint.textContent = `Selected: ${el.dataset.name}`;
-                resultsDiv.innerHTML = "";
-                searchInput.value = el.dataset.name;
-                // Auto-fill job title from candidate position
-                var jobTitle = document.getElementById("job_title");
-                if (!jobTitle.value && el.dataset.position) {
-                    jobTitle.value = el.dataset.position;
-                }
-            });
-        });
-    }, 300);
-});
-</script>
 {% endblock %}

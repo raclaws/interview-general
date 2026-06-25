@@ -17,7 +17,9 @@ def _migrate():
         ("sessions", "position", "TEXT"),
         ("sessions", "business_unit", "TEXT"),
         ("candidate_pipelines", "display_name", "TEXT"),
+        ("candidate_pipelines", "job_id", "INTEGER"),
         ("candidates", "cv_link", "TEXT"),
+        ("review_batches", "job_id", "INTEGER"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -42,11 +44,15 @@ def _migrate():
 
 
 def create_tables():
-    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType  # noqa
     SQLModel.metadata.create_all(engine)
     _migrate()
     from app.seed import seed_templates
     seed_templates(engine)
+    from app.seed import seed_managed_data
+    seed_managed_data(engine)
+    from app.seed import migrate_legacy_job_ids
+    migrate_legacy_job_ids(engine)
 
 
 def get_session():

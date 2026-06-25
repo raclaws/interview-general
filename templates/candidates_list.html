@@ -3,6 +3,7 @@
 {% block content %}
 <div class="page-header">
     <h1>Candidates</h1>
+    <a href="/candidate/new" class="btn">+ Add Candidate</a>
 </div>
 
 <div data-table data-table-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"date","label":"Date","type":"date"}]' data-table-views='{{ views | tojson }}' data-table-page="/candidates">
