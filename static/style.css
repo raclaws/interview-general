@@ -153,6 +153,12 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
     overflow: hidden;
     padding-bottom: 0;
 }
+.layout-list [data-sync-table] {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
 .layout-list .page-header,
 .layout-list .table-controls,
 .layout-list .sync-subcontrols,
