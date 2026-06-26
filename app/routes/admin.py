@@ -574,6 +574,11 @@ async def session_new_submit(
         db.add(interviewer)
     db.commit()
 
+    # Activity trail
+    template_name = db.get(Template, session.template_id).name if session.template_id else "—"
+    record_activity(db, "session", session.id, f"Session created ({template_name})", pipeline_id=session.pipeline_id)
+    db.commit()
+
     # Broadcast to sync clients
     interviewers = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)).all()
     template = db.get(Template, session.template_id) if session.template_id else None

@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import TestAssignment
+from app.activity import record_activity
 
 router = APIRouter()
 
@@ -180,6 +181,8 @@ async def test_submit(
     assignment.status = "submitted"
     assignment.submitted_at = datetime.utcnow()
     db.add(assignment)
+    db.commit()
+    record_activity(db, "pipeline", assignment.pipeline_id, f"Test submitted — {assignment.title}", pipeline_id=assignment.pipeline_id)
     db.commit()
 
     return RedirectResponse(f"/t/{token}/done", status_code=303)

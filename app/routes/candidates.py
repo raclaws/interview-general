@@ -510,9 +510,11 @@ async def pipeline_create(
     )
     db.add(pipeline)
     db.commit()
+    db.refresh(pipeline)
+    record_activity(db, "pipeline", pipeline.id, f"Pipeline created — {display_name}", pipeline_id=pipeline.id)
+    db.commit()
 
     if request.headers.get("HX-Request"):
-        db.refresh(pipeline)
         return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
@@ -605,6 +607,7 @@ async def pipeline_delete(
         s.pipeline_id = None
         db.add(s)
 
+    record_activity(db, "pipeline", pipeline_id, f"Pipeline deleted — {pipeline.display_name or '—'}", pipeline_id=pipeline_id)
     db.delete(pipeline)
     db.commit()
 
@@ -1037,6 +1040,7 @@ async def pipeline_detail_delete(
         s.pipeline_id = None
         db.add(s)
 
+    record_activity(db, "pipeline", pipeline_id, f"Pipeline deleted — {pipeline.display_name or '—'}", pipeline_id=pipeline_id)
     db.delete(pipeline)
     db.commit()
 
@@ -1129,6 +1133,8 @@ async def assign_test_submit(
         status="pending",
     )
     db.add(assignment)
+    db.commit()
+    record_activity(db, "pipeline", pipeline_id, f"Test assigned — {title}", pipeline_id=pipeline_id)
     db.commit()
 
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
