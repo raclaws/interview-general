@@ -32,9 +32,9 @@
             </a>
             {% endfor %}
             {% for t in overdue_tests %}
-            <a href="/pipeline/{{ t.pipeline_id }}" class="dash-attention-item">
+            <a href="/pipeline/{{ t.pipeline.id }}" class="dash-attention-item">
                 <span class="dash-attention-icon">⚠</span>
-                <span>Test past deadline — {{ t.title }}</span>
+                <span>Test past deadline — {{ t.candidate.name }} · {{ t.test.title }}</span>
             </a>
             {% endfor %}
             {% for p in stale_pipelines %}

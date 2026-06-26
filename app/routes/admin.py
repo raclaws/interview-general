@@ -75,13 +75,17 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
     ).all()
 
     # Attention: tests past deadline
-    overdue_tests = db.exec(
-        select(TestAssignment).where(
+    overdue_tests_raw = db.exec(
+        select(TestAssignment, CandidatePipeline, Candidate)
+        .join(CandidatePipeline, TestAssignment.pipeline_id == CandidatePipeline.id)
+        .join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
+        .where(
             TestAssignment.status.in_(["pending", "opened"]),
             col(TestAssignment.deadline).isnot(None),
             col(TestAssignment.deadline) < datetime.utcnow(),
         ).limit(5)
     ).all()
+    overdue_tests = [{"test": t, "candidate": c, "pipeline": p} for t, p, c in overdue_tests_raw]
 
     # Attention: stale pipelines (non-terminal, not updated in 14+ days)
     stale_pipelines = db.exec(
