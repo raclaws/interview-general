@@ -265,6 +265,21 @@ document.addEventListener('click', function(e) {
         var d = e.detail;
         if (d && d.type && d.id) window.undoableDelete(d.type, d.id, d.label || d.type);
     });
+
+    // Persist undo across redirects (detail page → list)
+    document.body.addEventListener('htmx:beforeRedirect', function() {
+        if (_lastDelete) {
+            sessionStorage.setItem('_pendingUndo', JSON.stringify(_lastDelete));
+        }
+    });
+    var pending = sessionStorage.getItem('_pendingUndo');
+    if (pending) {
+        sessionStorage.removeItem('_pendingUndo');
+        try {
+            var d = JSON.parse(pending);
+            window.undoableDelete(d.type, d.id, d.label || d.type);
+        } catch(e) {}
+    }
 })();
 </script>
 </body>

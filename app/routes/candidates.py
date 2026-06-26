@@ -904,7 +904,7 @@ async def pipeline_detail(
     db: Session = Depends(get_session),
 ):
     pipeline = db.get(CandidatePipeline, pipeline_id)
-    if not pipeline:
+    if not pipeline or pipeline.deleted_at:
         return render_gone(request, "Pipeline", "/pipelines", "Pipelines")
     candidate = db.get(Candidate, pipeline.candidate_id)
     if not candidate:

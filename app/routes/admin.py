@@ -319,7 +319,8 @@ async def bulk_action(
             p = db.get(CandidatePipeline, pid)
             if p:
                 record_activity(db, "pipeline", pid, "Pipeline deleted (bulk)", pipeline_id=pid)
-                db.delete(p)
+                p.deleted_at = datetime.utcnow()
+                db.add(p)
                 count += 1
         db.commit()
         for pid in int_ids:
@@ -359,17 +360,8 @@ async def bulk_action(
         for sid in int_ids:
             s = db.get(InterviewSession, sid)
             if s:
-                ivs = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == sid)).all()
-                for iv in ivs:
-                    resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
-                    if resp:
-                        from app.models import ResponseScore
-                        scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
-                        for sc in scores:
-                            db.delete(sc)
-                        db.delete(resp)
-                    db.delete(iv)
-                db.delete(s)
+                s.deleted_at = datetime.utcnow()
+                db.add(s)
                 count += 1
         db.commit()
         for sid in int_ids:
@@ -802,7 +794,7 @@ async def session_detail(
     db: Session = Depends(get_session),
 ):
     session = db.get(InterviewSession, session_id)
-    if not session:
+    if not session or session.deleted_at:
         return render_gone(request, "Session", "/sessions", "Interview")
 
     template = db.get(Template, session.template_id) if session.template_id else None

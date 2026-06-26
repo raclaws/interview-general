@@ -163,7 +163,7 @@ async def job_detail(
     db: Session = Depends(get_session),
 ):
     job = db.get(Job, job_id)
-    if not job:
+    if not job or job.deleted_at:
         return render_gone(request, "Job", "/jobs", "Jobs")
 
     bu = db.get(BusinessUnit, job.business_unit_id)
