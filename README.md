@@ -1,8 +1,8 @@
-# Interview Form Summarizer
+# INS ATS
 
-A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
+A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pipelines, and generating AI-powered assessment summaries. Admin creates jobs, adds candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Current version: v0.3**
+**Current version: v0.4**
 
 ## Features
 
@@ -21,24 +21,30 @@ A lightweight self-hosted webapp for managing interview pipelines and generating
 - **Dashboard-editable** — LLM settings configurable from `/settings` without restart
 
 ### UI
-- **Dark mode** — Catppuccin Mocha palette throughout
-- **Sidebar navigation** — Dashboard, Interview, Pipelines, Candidates, Settings
-- **Lucide icons** — inline SVG icons replacing Unicode characters
-- **Table module** — client-side search, filter, sort, group-by on all list pages
-- **Advanced filters** — pill-based compound filtering with saved custom views
-- **Bulk selection** — checkbox (hover-reveal), Ctrl+Click toggle, Shift+Click range select
-- **Keyboard shortcuts** — global shortcut system with `?` help overlay
+- **Monochrome theme** — "Whiter Shade of Pale" grey-scale, color only for semantic meaning
+- **Sidebar navigation** — Dashboard, Jobs, Candidates, Pipelines, Interview, Review, Settings
+- **Sync engine** — real-time list updates via IndexedDB + WebSocket, client-side filter/sort
+- **hx-boost page transitions** — instant navigation without full page reload
+- **Side peek panel** — click comment icon on any list row for entity summary + activity trail
+- **Detail page actions** — 4 semantic clusters (Navigate, Export, Mutate, Destruct)
+- **Form system** — CSS utility classes (.form-card, .form-row, .form-field, .form-footer)
 - **Context menus** — right-click actions on table rows
 - **Clickable rows** — navigate to detail by clicking anywhere
+- **Filter + Display menus** — icon buttons with vertical popovers, active choices as removable pills
 - **Mobile sidebar** — hamburger toggle + close button
 
 ### Admin
 - **Editable sessions** — modify details + results after creation
-- **Cancel/expire sessions** — admin can invalidate pending sessions
+- **Cancel/expire sessions** — admin can invalidate pending sessions (interviewers marked cancelled)
+- **Job CRUD** — create, edit, close/reopen, delete (with pipeline guard)
+- **Comments + activity trail** — timestamped comments + auto-generated events on all entities
+- **Tab-focus freshness** — stale page detection for shared-account use
+- **Return context** — forms remember referrer, Cancel/submit returns to origin
 - **Copy token link** — one-click copy interview URL from dashboard
 - **Copy as Markdown** — export results as formatted markdown
 - **Salary toggle** — hidden by default, admin toggles per session
 - **Consent prompt** — data + AI disclosure required before submission
+- **Dashboard** — attention surface (overdue interviews, expired tests, stale pipelines) + activity feed
 
 ### Integrations
 - **NocoDB** — candidate search/import (optional, manual entry supported)
@@ -262,6 +268,25 @@ LLM settings (base URL, API key, model, system prompt) can be changed from `/set
 - **Python ≥3.12** required. FastAPI ≥0.115, SQLModel 0.0.22.
 
 ## Changelog
+
+### v0.4 (2026-06-26)
+- Monochrome theme "Whiter Shade of Pale" — grey-scale, color only for semantic meaning
+- Sync engine on all list pages (real-time via WebSocket, client-side filter/sort/search)
+- Unified Filter + Display menu system with removable pills
+- hx-boost page transitions (instant navigation, no full reload)
+- Comments + Activity trail with side peek panel on all list pages
+- Activity events propagate via FK-walk (pipeline → candidate, job)
+- Dashboard rewrite: attention surface, upcoming interviews, quick actions, activity feed
+- Form CSS system (.form-card, .form-row, .form-field, .form-footer, .btn--loading)
+- Detail page action standard: 4 semantic clusters (Navigate, Export, Mutate, Destruct)
+- Page refresh standard: toast+refresh for state changes, conditional redirect for deletes
+- Tab-focus freshness: stale page detection for shared-account use
+- Return context: forms remember referrer via ?next= param
+- Job delete route with pipeline count guard
+- Cancel consistency: interviewers + tests marked cancelled properly
+- Deleted table.js (replaced by sync-list.js)
+- Sidebar renamed: Test → Review
+- Branding: INS ATS + favicon
 
 ### v0.3 (2026-06-23)
 - Lucide inline SVG icons for sidebar navigation

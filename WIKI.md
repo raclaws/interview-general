@@ -1,10 +1,10 @@
-# Interview Form Summarizer — Wiki
+# INS ATS — Wiki
 
 ## Overview
 
-A lightweight self-hosted webapp for managing interview pipelines and generating AI-powered assessment summaries. Admin creates candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
+A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pipelines, and generating AI-powered assessment summaries. Admin creates jobs, adds candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Status:** v0.3 (Production Beta)
+**Status:** v0.4 (Production)
 
 ---
 
@@ -113,19 +113,21 @@ Conditional sections: shown/hidden based on another section's value (JS-driven).
 
 ## UI
 
-- **Sidebar navigation** — fixed left panel (admin pages only), Catppuccin Mocha dark bg, accent active state
-- **Lucide icons** — inline SVG stroke icons for sidebar nav + hamburger
-- **Public pages** — standalone clean layout (no sidebar)
-- **Design system** — Catppuccin Mocha dark mode, card-based, compact buttons
-- **Table module** — `table.js` with search, filter, sort, group-by, custom views, bulk selection
-- **Advanced filters** — pill-based compound filtering with save/switch/delete presets
-- **Bulk selection** — hover-reveal checkboxes, Ctrl+Click toggle, Shift+Click range, bulk delete bar
-- **Keyboard shortcuts** — global system (`?` help overlay, `j/k` nav, `n` new, `e` edit, `Del` delete)
+- **Monochrome theme** — "Whiter Shade of Pale" grey-scale, color only for semantic meaning (badges, danger, success)
+- **Sidebar navigation** — fixed left panel, Dashboard → Jobs → Candidates → Pipelines → Interview → Review → Settings
+- **Sync engine** — `sync-list.js` on all list pages (IndexedDB + WebSocket + REST hydrate)
+- **Filter + Display menus** — icon buttons with vertical popovers, active choices as removable pills
+- **Side peek panel** — 360px right sidebar with entity summary + activity trail + inline comments
+- **Detail page actions** — 4 semantic clusters (Navigate, Export, Mutate, Destruct) by visual weight
+- **Form system** — CSS utility classes (.form-card, .form-row--2col/3col, .form-field, .form-footer)
+- **hx-boost** — instant page transitions on sidebar + main content links
 - **Context menus** — right-click actions on table rows
 - **Clickable rows** — navigate to detail by clicking anywhere (suppressed with Ctrl/Shift modifiers)
-- **HTMX** — partial page updates for LLM summary, stage changes, notes (no full reload)
-- **Perceived performance** — loading states on all submit buttons, HTMX indicators
-- **Responsive** — mobile sidebar collapses to hamburger with close button
+- **HTMX** — partial page updates for LLM summary, stage changes, comments (no full reload)
+- **Perceived performance** — .btn--loading pulse animation, toast feedback on every mutation
+- **Tab-focus freshness** — stale page detection on visibilitychange for shared-account use
+- **Return context** — forms accept ?next= param, Cancel/submit returns to origin
+- **Responsive** — mobile sidebar collapses to hamburger, form columns stack, peek panel full-width
 
 ---
 
@@ -239,7 +241,8 @@ interview-general/
 │   └── partials/
 ├── static/
 │   ├── style.css        — Catppuccin Mocha theme
-│   ├── table.js         — Table module (filter, sort, group, bulk)
+│   ├── sync-list.js     — Sync engine (IndexedDB + WebSocket + filter/sort/search)
+│   ├── favicon.svg      — App favicon
 │   └── shortcuts.js     — Global keyboard shortcuts
 ├── .env.example
 ├── requirements.txt

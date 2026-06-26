@@ -1,4 +1,4 @@
-# Interview Form Summarizer (v0.2)
+# INS ATS (v0.4)
 
 A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pipelines, and generating AI-powered assessment summaries. Admin creates jobs, adds candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
