@@ -420,6 +420,13 @@ async def delete_view(view_id: int, admin: AdminUser = Depends(get_current_admin
     return HTMLResponse("")
 
 
+@router.get("/views", response_class=HTMLResponse)
+async def list_views(page: str = "", admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    from fastapi.responses import JSONResponse
+    views = db.exec(select(TableView).where(TableView.page == page).order_by(TableView.name)).all()
+    return JSONResponse([{"id": v.id, "name": v.name, "config": v.config} for v in views])
+
+
 @router.get("/session/new", response_class=HTMLResponse)
 async def session_new_form(request: Request, candidate_id: int = None, pipeline_id: int = None, next: str = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template).order_by(Template.name)).all()
