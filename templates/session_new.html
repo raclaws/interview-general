@@ -107,11 +107,11 @@
         <div class="form-footer">
             <button type="submit" class="btn">Create Session</button>
             {% if next %}
-            <a href="{{ next }}" class="btn-ghost">Cancel</a>
+            <a href="{{ next }}" class="btn-ghost" hx-boost="false">Cancel</a>
             {% elif prefill_candidate %}
-            <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost">Cancel</a>
+            <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost" hx-boost="false">Cancel</a>
             {% else %}
-            <a href="/sessions" class="btn-ghost">Cancel</a>
+            <a href="/sessions" class="btn-ghost" hx-boost="false">Cancel</a>
             {% endif %}
         </div>
     </form>
