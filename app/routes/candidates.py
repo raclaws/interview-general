@@ -1028,7 +1028,11 @@ async def pipeline_detail_delete(
     asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pipeline_id)))
 
     if request.headers.get("HX-Request"):
-        return HTMLResponse("", headers={"HX-Redirect": "/pipelines"})
+        resp = HTMLResponse("")
+        current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
+        if current_path.endswith(f"/pipeline/{pipeline_id}"):
+            resp.headers["HX-Redirect"] = "/pipelines"
+        return resp
 
     return RedirectResponse("/pipelines", status_code=303)
 

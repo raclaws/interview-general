@@ -54,6 +54,7 @@ window.__syncConfig = {
         items.push({label: '↗ View pipelines', href: '/pipelines?af=jobTitle:contains:' + encodeURIComponent(r.title)});
         if (r.status === 'open' || r.status === 'on_hold') items.push({label: '⊘ Close job', href: '/job/' + r.id + '/close', confirm: 'Close this job?'});
         if (r.status === 'closed' || r.status === 'cancelled') items.push({label: '↺ Reopen', href: '/job/' + r.id + '/reopen', confirm: 'Reopen this job?'});
+        items.push({label: '✕ Delete', href: '/job/' + r.id + '/delete', confirm: 'Delete this job permanently?', 'delete': true});
         return items;
     }
 };

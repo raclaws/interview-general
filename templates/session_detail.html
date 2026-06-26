@@ -8,15 +8,30 @@
 {% block content %}
 <div class="page-header">
     <h1>Session #{{ session.id }}</h1>
-    <div class="action-row-inline">
-        <a href="/session/{{ session.id }}/edit" class="icon-btn" title="Edit session">✎</a>
+</div>
+
+<div class="detail-actions">
+    <div class="detail-actions-nav">
+        {% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">↗ Candidate</a>{% endif %}
+        {% if pipeline %}<a href="/pipeline/{{ pipeline.id }}">↗ Pipeline</a>{% endif %}
+    </div>
+    <div class="detail-actions-export">
+        {% set has_responses = interviewer_data | selectattr("response") | list %}
+        {% if has_responses %}
+        <button type="button" onclick="copyAsMarkdown()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Copy MD</button>
+        {% endif %}
+    </div>
+    <div class="detail-actions-mutate">
+        <a href="/session/{{ session.id }}/edit">Edit</a>
+    </div>
+    <div class="detail-actions-destruct">
         {% if session.status == "pending" %}
-        <form method="post" action="/session/{{ session.id }}/cancel" style="display:inline;" onsubmit="return confirm('Are you sure you want to cancel this session? This cannot be undone.');">
-            <button type="submit" class="icon-btn icon-btn-warn" title="Cancel session">⊘</button>
+        <form method="post" action="/session/{{ session.id }}/cancel" style="display:contents;" onsubmit="return confirm('Cancel this session? This cannot be undone.');">
+            <button type="submit" title="Cancel session">⊘</button>
         </form>
         {% endif %}
-        <form method="post" action="/session/{{ session.id }}/delete" style="display:inline;" onsubmit="return confirm('Delete this session permanently? All responses and scores will be lost.');">
-            <button type="submit" class="icon-btn icon-btn-danger" title="Delete session">✕</button>
+        <form method="post" action="/session/{{ session.id }}/delete" style="display:contents;" onsubmit="return confirm('Delete permanently? All responses will be lost.');">
+            <button type="submit" title="Delete session">✕</button>
         </form>
     </div>
 </div>
@@ -92,7 +107,6 @@
                   style="display:inline;">
                 <button type="submit" class="btn-ghost">{% if session.aggregate_summary %}Regenerate{% else %}Generate Summary{% endif %}</button>
             </form>
-            <button type="button" class="btn-ghost" onclick="copyAsMarkdown()">Copy as Markdown</button>
         </div>
     </div>
 
@@ -208,5 +222,4 @@ function copyLink(token, btn) {
 }
 </script>
 
-<a href="/" class="btn-ghost">&larr; Back to Dashboard</a>
 {% endblock %}

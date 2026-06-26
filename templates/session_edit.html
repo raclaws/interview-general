@@ -6,56 +6,78 @@
 </nav>
 {% endblock %}
 {% block content %}
-<h1>Edit Session #{{ session.id }}</h1>
-<div class="form-container" style="max-width: 600px;">
-    <form method="post" action="/session/{{ session.id }}/edit">
-        <h2>Session Details</h2>
+<div class="page-header">
+    <h1>Edit Session #{{ session.id }}</h1>
+</div>
 
-        <label for="job_title">Job Title</label>
-        <input type="text" id="job_title" name="job_title" value="{{ session.job_title }}" required>
+<div class="form-card">
+    <form method="post" action="/session/{{ session.id }}/edit">
+        <div class="form-field">
+            <label class="form-label">Job Title <span class="required">*</span></label>
+            <input type="text" name="job_title" value="{{ session.job_title }}" required class="form-input">
+        </div>
 
         {% if session.position %}
-        <label>Position</label>
-        <input type="text" value="{{ session.position }}" class="form-input" disabled>
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Position</label>
+                <input type="text" value="{{ session.position }}" class="form-input" disabled>
+            </div>
+            {% if session.business_unit %}
+            <div class="form-field">
+                <label class="form-label">Business Unit</label>
+                <input type="text" value="{{ session.business_unit }}" class="form-input" disabled>
+            </div>
+            {% endif %}
+        </div>
+        {% elif session.business_unit %}
+        <div class="form-field">
+            <label class="form-label">Business Unit</label>
+            <input type="text" value="{{ session.business_unit }}" class="form-input" disabled>
+        </div>
         {% endif %}
 
-        {% if session.business_unit %}
-        <label>Business Unit</label>
-        <input type="text" value="{{ session.business_unit }}" class="form-input" disabled>
-        {% endif %}
+        <div class="form-field">
+            <label class="form-label">Interview Date</label>
+            <input type="date" name="interview_date" value="{{ session.interview_date or '' }}" class="form-input">
+        </div>
 
-        <label for="interview_date">Interview Date</label>
-        <input type="date" id="interview_date" name="interview_date" value="{{ session.interview_date or '' }}">
+        <div class="form-field">
+            <label class="checkbox-label">
+                <input type="checkbox" name="show_salary" value="on" {{ "checked" if session.show_salary }}>
+                Show salary to interviewer
+            </label>
+        </div>
 
-        <label class="checkbox-label">
-            <input type="checkbox" id="show_salary" name="show_salary" value="on" {{ "checked" if session.show_salary }}>
-            Show salary to interviewer
-        </label>
+        <hr class="form-divider">
 
-        <hr>
-        <h2>Current Interviewers</h2>
-        <table>
-            <thead>
-                <tr><th>Name</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-                {% for iv in interviewers %}
-                <tr>
-                    <td>{{ iv.interviewer_name }}</td>
-                    <td><span class="badge badge-{{ iv.status }}">{{ iv.status }}</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="form-field">
+            <label class="form-label">Current Interviewers</label>
+            <table class="table-clean" style="margin-top: 0.5rem;">
+                <thead>
+                    <tr><th>Name</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for iv in interviewers %}
+                    <tr>
+                        <td>{{ iv.interviewer_name }}</td>
+                        <td><span class="badge badge-{{ iv.status }}">{{ iv.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <label for="new_interviewers">Add Interviewers</label>
-        <input type="text" id="new_interviewers" name="new_interviewers" placeholder="Comma-separated names to add">
-        <p class="hint">New interviewers get fresh token links. Existing ones are unchanged.</p>
+        <div class="form-field">
+            <label class="form-label">Add Interviewers</label>
+            <input type="text" name="new_interviewers" class="form-input" placeholder="Comma-separated names to add">
+            <p class="form-hint">New interviewers get fresh token links. Existing ones are unchanged.</p>
+        </div>
 
-        <div class="form-actions">
-            <button type="submit">Save Changes</button>
+        <div class="form-footer">
+            <button type="submit" class="btn">Save Changes</button>
+            <a href="/session/{{ session.id }}" class="btn-ghost">Cancel</a>
         </div>
     </form>
 </div>
-<a href="/session/{{ session.id }}" class="btn-ghost">&larr; Back to Session</a>
 {% endblock %}

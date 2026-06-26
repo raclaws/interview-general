@@ -8,10 +8,16 @@
 {% block content %}
 <div class="page-header">
     <h1>{{ candidate.name }}</h1>
-    <div>
+</div>
+
+<div class="detail-actions">
+    <div class="detail-actions-nav"></div>
+    <div class="detail-actions-export"></div>
+    <div class="detail-actions-mutate">
+        <a href="/candidate/{{ candidate.id }}/edit">Edit</a>
         {% if pipelines %}
         <div class="dropdown" style="display: inline-block; position: relative;">
-            <button class="btn" onclick="this.nextElementSibling.classList.toggle('show')">+ Add Interview ▾</button>
+            <button type="button" onclick="this.nextElementSibling.classList.toggle('show')">+ Interview ▾</button>
             <div class="dropdown-menu">
                 {% for p in pipelines %}
                 {% if p.stage not in ["hired", "rejected", "withdrawn"] %}
@@ -21,10 +27,10 @@
             </div>
         </div>
         {% else %}
-        <a href="/session/new?candidate_id={{ candidate.id }}" class="btn">+ Add Interview</a>
+        <a href="/session/new?candidate_id={{ candidate.id }}">+ Interview</a>
         {% endif %}
-        <a href="/candidate/{{ candidate.id }}/edit" class="icon-btn" title="Edit candidate">✎</a>
     </div>
+    <div class="detail-actions-destruct"></div>
 </div>
 
 <div class="candidate-card">

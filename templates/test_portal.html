@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ assignment.title }}{% endblock %}
 {% block content %}
-<div class="form-container" style="max-width: 600px; margin: 2rem auto;">
+<div class="form-card" style="margin: 2rem auto;">
     <h1 style="font-size: 1.25rem; margin-bottom: 0.5rem;">{{ assignment.title }}</h1>
 
     <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
@@ -14,17 +14,17 @@
     </div>
 
     {% if assignment.instructions %}
-    <div style="background: var(--bg-muted); padding: 1rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 0.875rem;">{{ assignment.instructions }}</div>
+    <div class="form-info" style="white-space: pre-wrap;">{{ assignment.instructions }}</div>
     {% endif %}
 
     {% if past_deadline %}
-    <div style="background: var(--warning-bg); color: var(--warning); padding: 0.75rem 1rem; border-radius: var(--radius-md); margin-bottom: 1rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+    <div class="form-error" style="background: var(--warning-bg); border-color: var(--warning); color: var(--warning); display: flex; align-items: center; gap: 0.5rem;">
         <span style="font-size: 1.25rem;">⚠</span> The deadline for this test has passed. You may still submit, but your submission will be flagged as late.
     </div>
     {% endif %}
 
     {% if error %}
-    <div class="alert alert-danger" style="margin-bottom: 1rem;">{{ error }}</div>
+    <div class="form-error">{{ error }}</div>
     {% endif %}
 
     <div style="margin-bottom: 2rem;">
@@ -34,37 +34,39 @@
         </a>
     </div>
 
-    <hr style="border: none; border-top: 1px solid var(--border); margin-bottom: 1.5rem;">
+    <hr class="form-divider">
 
     <h2 style="font-size: 1rem; margin-bottom: 0.75rem;">Submit Results</h2>
-    <p class="row-meta" style="margin-bottom: 1rem;">Upload your result file or provide a link to your submission.</p>
+    <p class="form-hint" style="margin-bottom: 1rem; font-size: 0.82rem;">Upload your result file or provide a link to your submission.</p>
 
-    <div id="submit-error" class="alert alert-danger" style="display: none; margin-bottom: 1rem;"></div>
+    <div id="submit-error" class="form-error" style="display: none;"></div>
 
     <form id="submit-form" method="post" action="/t/{{ token }}/submit" enctype="multipart/form-data">
         <input type="hidden" name="key" value="{{ key }}">
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Upload file <span class="row-meta">(max {{ assignment.max_upload_size or 25 }} MB)</span></label>
             <input type="file" name="file" id="file-input" class="form-input">
-            <div id="file-info" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" class="row-meta"></div>
+            <div id="file-info" class="form-hint" style="display: none;"></div>
         </div>
 
         <div id="upload-progress" style="display: none; margin: 0.75rem 0;">
             <div style="background: var(--bg-muted); border-radius: var(--radius-sm); overflow: hidden; height: 6px;">
                 <div id="progress-bar" style="height: 100%; width: 0%; background: var(--accent); transition: width 0.2s;"></div>
             </div>
-            <div id="progress-text" class="row-meta" style="font-size: 0.75rem; margin-top: 0.25rem;">0%</div>
+            <div id="progress-text" class="form-hint" style="margin-top: 0.25rem;">0%</div>
         </div>
 
         <div class="row-meta" style="text-align: center; margin: 0.75rem 0;">— or —</div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Submission link</label>
             <input type="url" name="submission_url" id="link-input" class="form-input" placeholder="https://drive.google.com/...">
         </div>
 
-        <button type="submit" id="submit-btn" class="btn" style="width: 100%; margin-top: 0.5rem;">Submit</button>
+        <div class="form-footer">
+            <button type="submit" id="submit-btn" class="btn" style="flex: 1;">Submit</button>
+        </div>
     </form>
 
     <script>
@@ -123,6 +125,7 @@
             }
             btn.disabled = true;
             btn.textContent = 'Submitting...';
+            btn.classList.add('btn--loading');
 
             if (hasFile) {
                 var xhr = new XMLHttpRequest();
@@ -141,6 +144,7 @@
                     } else {
                         btn.disabled = false;
                         btn.textContent = 'Submit';
+                        btn.classList.remove('btn--loading');
                         progressDiv.style.display = 'none';
                         showError('Upload failed. Please try again.');
                     }
@@ -148,6 +152,7 @@
                 xhr.onerror = function() {
                     btn.disabled = false;
                     btn.textContent = 'Submit';
+                    btn.classList.remove('btn--loading');
                     progressDiv.style.display = 'none';
                     showError('Network error. Please try again.');
                 };
@@ -161,7 +166,7 @@
     </script>
 
     <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border);">
-        <p class="row-meta" style="font-size: 0.8rem;">Need help? Contact us via WhatsApp hotline.</p>
+        <p class="form-hint" style="font-size: 0.8rem;">Need help? Contact us via WhatsApp hotline.</p>
     </div>
 </div>
 {% endblock %}

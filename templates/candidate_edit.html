@@ -6,49 +6,84 @@
 </nav>
 {% endblock %}
 {% block content %}
-<h1>Edit Candidate</h1>
-<div class="form-container" style="max-width: 600px;">
+<div class="page-header">
+    <h1>Edit Candidate</h1>
+</div>
+
+<div class="form-card">
     <form method="post" action="/candidate/{{ candidate.id }}/edit">
-        <label for="name">Name *</label>
-        <input type="text" id="name" name="name" value="{{ candidate.name }}" required>
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Name <span class="required">*</span></label>
+                <input type="text" name="name" value="{{ candidate.name }}" required class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" name="email" value="{{ candidate.email }}" required class="form-input">
+            </div>
+        </div>
 
-        <label for="email">Email *</label>
-        <input type="email" id="email" name="email" value="{{ candidate.email }}" required>
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Phone</label>
+                <input type="text" name="phone" value="{{ candidate.phone or '' }}" class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Current Position</label>
+                <input type="text" name="current_position" value="{{ candidate.current_position or '' }}" class="form-input">
+            </div>
+        </div>
 
-        <label for="phone">Phone</label>
-        <input type="text" id="phone" name="phone" value="{{ candidate.phone or '' }}">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Years of Experience</label>
+                <input type="text" name="yoe" value="{{ candidate.yoe or '' }}" class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Languages</label>
+                <input type="text" name="languages" value="{{ candidate.languages or '' }}" class="form-input">
+            </div>
+        </div>
 
-        <label for="current_position">Current Position</label>
-        <input type="text" id="current_position" name="current_position" value="{{ candidate.current_position or '' }}">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Cloud</label>
+                <input type="text" name="cloud" value="{{ candidate.cloud or '' }}" class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Tools</label>
+                <input type="text" name="tools" value="{{ candidate.tools or '' }}" class="form-input">
+            </div>
+        </div>
 
-        <label for="yoe">Years of Experience</label>
-        <input type="text" id="yoe" name="yoe" value="{{ candidate.yoe or '' }}">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Working Arrangement</label>
+                <input type="text" name="working_arrangement" value="{{ candidate.working_arrangement or '' }}" class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Notice Period</label>
+                <input type="text" name="notice_period" value="{{ candidate.notice_period or '' }}" class="form-input">
+            </div>
+        </div>
 
-        <label for="languages">Programming Languages</label>
-        <input type="text" id="languages" name="languages" value="{{ candidate.languages or '' }}">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Current Salary</label>
+                <input type="text" name="current_salary" value="{{ candidate.current_salary or '' }}" class="form-input">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Expected Salary</label>
+                <input type="text" name="expected_salary" value="{{ candidate.expected_salary or '' }}" class="form-input">
+            </div>
+        </div>
 
-        <label for="cloud">Cloud Expertise</label>
-        <input type="text" id="cloud" name="cloud" value="{{ candidate.cloud or '' }}">
+        <div class="form-field">
+            <label class="form-label">CV / Resume Link</label>
+            <input type="url" name="cv_link" value="{{ candidate.cv_link or '' }}" class="form-input" placeholder="https://...">
+        </div>
 
-        <label for="tools">Other Tools</label>
-        <input type="text" id="tools" name="tools" value="{{ candidate.tools or '' }}">
-
-        <label for="working_arrangement">Working Arrangement</label>
-        <input type="text" id="working_arrangement" name="working_arrangement" value="{{ candidate.working_arrangement or '' }}">
-
-        <label for="current_salary">Current Salary</label>
-        <input type="text" id="current_salary" name="current_salary" value="{{ candidate.current_salary or '' }}">
-
-        <label for="expected_salary">Expected Salary</label>
-        <input type="text" id="expected_salary" name="expected_salary" value="{{ candidate.expected_salary or '' }}">
-
-        <label for="notice_period">Notice Period</label>
-        <input type="text" id="notice_period" name="notice_period" value="{{ candidate.notice_period or '' }}">
-
-        <label for="cv_link">CV / Resume Link</label>
-        <input type="url" id="cv_link" name="cv_link" value="{{ candidate.cv_link or '' }}" placeholder="https://...">
-
-        <div class="form-actions">
+        <div class="form-footer">
             <button type="submit" class="btn">Save Changes</button>
             <a href="/candidate/{{ candidate.id }}" class="btn-ghost">Cancel</a>
         </div>

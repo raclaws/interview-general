@@ -10,10 +10,10 @@
     <h1>{% if editing %}Edit Job{% else %}Create Job{% endif %}</h1>
 </div>
 
-<div class="form-container" style="max-width: 700px;">
-    <form method="post" action="{% if editing %}/job/{{ job.id }}/edit{% else %}/job/new{% endif %}">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
+<div class="form-card form-card--wide">
+    <form method="post" action="{% if editing %}/job/{{ job.id }}/edit{% else %}/job/new{% endif %}" id="job-form">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
                 <label class="form-label">Position <span class="required">*</span></label>
                 <select name="position" required class="form-input">
                     <option value="">Select position...</option>
@@ -23,7 +23,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Level <span class="required">*</span></label>
                 <select name="level" required class="form-input">
                     <option value="">Select level...</option>
@@ -34,8 +34,8 @@
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
                 <label class="form-label">Job Type <span class="required">*</span></label>
                 <select name="job_type" required class="form-input">
                     {% for jt in job_types %}
@@ -44,7 +44,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Business Unit <span class="required">*</span></label>
                 <select name="business_unit_id" required class="form-input">
                     <option value="">Select BU...</option>
@@ -55,13 +55,13 @@
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
+        <div class="form-row form-row--3col">
+            <div class="form-field">
                 <label class="form-label">Headcount</label>
                 <input type="number" name="headcount" min="1" value="{{ job.headcount if editing else 1 }}" class="form-input">
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Priority</label>
                 <select name="priority" class="form-input">
                     <option value="normal" {% if editing and job.priority == "normal" %}selected{% endif %}>Normal</option>
@@ -71,68 +71,68 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Target Date</label>
                 <input type="date" name="target_date" value="{{ job.target_date or '' if editing else '' }}" class="form-input">
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
                 <label class="form-label">Recruiter</label>
                 <input type="text" name="recruiter" value="{{ job.recruiter or '' if editing else '' }}" class="form-input" placeholder="Auto-filled from BU" readonly>
-                <p class="hint">Managed via Business Unit settings.</p>
+                <p class="form-hint">Managed via Business Unit settings.</p>
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Backup Recruiter</label>
                 <input type="text" name="backup_recruiter" value="{{ job.backup_recruiter or '' if editing else '' }}" class="form-input">
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Hiring Manager</label>
             <input type="text" name="hiring_manager" value="{{ job.hiring_manager or '' if editing else '' }}" class="form-input" placeholder="Auto-filled from BU head">
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
+        <div class="form-row form-row--2col">
+            <div class="form-field">
                 <label class="form-label">Salary Range Min</label>
                 <input type="number" name="salary_range_min" min="0" value="{{ job.salary_range_min or '' if editing else '' }}" class="form-input" placeholder="Optional">
             </div>
 
-            <div class="form-group">
+            <div class="form-field">
                 <label class="form-label">Salary Range Max</label>
                 <input type="number" name="salary_range_max" min="0" value="{{ job.salary_range_max or '' if editing else '' }}" class="form-input" placeholder="Optional">
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Source</label>
             <input type="text" name="source" value="{{ job.source or '' if editing else '' }}" class="form-input" placeholder="e.g. Internal, Client request, Expansion">
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Description</label>
             <textarea name="description" rows="4" class="form-input" placeholder="Job brief, requirements...">{{ job.description or '' if editing else '' }}</textarea>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Notes</label>
             <textarea name="notes" rows="2" class="form-input" placeholder="Internal notes...">{{ job.notes or '' if editing else '' }}</textarea>
         </div>
 
         {% if editing %}
-        <div class="form-group">
-            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+        <div class="form-field">
+            <label class="checkbox-label">
                 <input type="checkbox" name="title_locked" {% if job.title_locked %}checked{% endif %}>
                 Lock title (prevent auto-regeneration)
             </label>
-            <p class="hint">If unlocked, title will update when position/level/BU changes.</p>
+            <p class="form-hint">If unlocked, title will update when position/level/BU changes.</p>
         </div>
         {% endif %}
 
-        <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem;">
+        <div class="form-footer">
             <button type="submit" class="btn">{% if editing %}Save Changes{% else %}Create Job{% endif %}</button>
             <a href="{% if editing %}/job/{{ job.id }}{% else %}/jobs{% endif %}" class="btn-ghost">Cancel</a>
         </div>

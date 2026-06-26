@@ -6,16 +6,21 @@
 </nav>
 {% endblock %}
 {% block content %}
-<h1>Create Interview Session</h1>
-<div class="form-container" style="max-width: 600px;">
+<div class="page-header">
+    <h1>Create Interview Session</h1>
+</div>
+
+<div class="form-card">
     {% if not prefill_candidate %}
-    <div style="background: var(--surface-raised); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.8rem; color: var(--text-secondary);">
+    <div class="form-info">
         <strong>New candidate?</strong> Add them first via <a href="/candidate/new">Candidates → Add Candidate</a>, then create a pipeline from their profile before scheduling an interview.
         <br>Flow: <span style="color: var(--text-muted);">Job → Candidate → Pipeline → Interview Session</span>
     </div>
     {% endif %}
+
     <div id="form-errors"></div>
-    <form method="post" action="/session/new" hx-post="/session/new" hx-target="#form-errors" hx-swap="innerHTML" hx-on::before-request="this.querySelector('button[type=submit]').disabled=true;this.querySelector('button[type=submit]').textContent='Creating...';this.querySelector('button[type=submit]').style.opacity='0.7'" hx-on::after-request="var b=this.querySelector('button[type=submit]');b.disabled=false;b.textContent='Create Session';b.style.opacity='1'">
+
+    <form method="post" action="/session/new" hx-post="/session/new" hx-target="#form-errors" hx-swap="innerHTML" id="session-form">
 
         {% if prefill_candidate and prefill_pipeline_id %}
         <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
@@ -34,7 +39,7 @@
         <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
         <input type="hidden" name="manual_cv_link" value="{{ prefill_candidate.cv_link or '' }}">
 
-        <div style="background: var(--surface-raised); border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.5rem;">
+        <div class="form-info">
             <div class="col-primary">{{ prefill_candidate.name }}</div>
             <div class="row-meta">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</div>
             {% if prefill_pipeline %}
@@ -43,7 +48,7 @@
         </div>
 
         {% else %}
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Pipeline <span class="required">*</span></label>
             <select name="pipeline_id" required class="form-input">
                 <option value="">Select pipeline...</option>
@@ -53,14 +58,14 @@
                 </option>
                 {% endfor %}
             </select>
-            <p class="hint">Candidate + Job context inherited from pipeline.</p>
+            <p class="form-hint">Candidate + Job context inherited from pipeline.</p>
         </div>
         <input type="hidden" name="entry_mode" value="pipeline">
         {% endif %}
 
-        <hr>
+        <hr class="form-divider">
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Interview Template <span class="required">*</span></label>
             <select name="template_id" required class="form-input">
                 <option value="" disabled selected>— Select template —</option>
@@ -72,33 +77,33 @@
             </select>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Job Title</label>
             <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job">
-            <p class="hint">Inherited from pipeline's job. Override if needed.</p>
+            <p class="form-hint">Inherited from pipeline's job. Override if needed.</p>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Interviewer Names <span class="required">*</span></label>
             <input type="text" name="interviewer_names" required class="form-input" placeholder="Comma-separated, e.g. Alice, Bob, Charlie">
-            <p class="hint">Each interviewer gets their own unique assessment link.</p>
+            <p class="form-hint">Each interviewer gets their own unique assessment link.</p>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="form-label">Interview Date <span class="required">*</span></label>
             <input type="date" name="interview_date" required class="form-input" id="interview_date" onchange="var d=new Date(this.value);var t=new Date();t.setHours(0,0,0,0);if(d<t){this.style.borderColor='var(--warning)';this.nextElementSibling.style.display='block';}else{this.style.borderColor='';this.nextElementSibling.style.display='none';}">
-            <p class="hint" style="display:none;color:var(--warning);">Date is in the past. Are you sure?</p>
+            <p class="form-hint" style="display:none;color:var(--warning);">Date is in the past. Are you sure?</p>
         </div>
 
-        <div class="form-group">
+        <div class="form-field">
             <label class="checkbox-label">
                 <input type="checkbox" name="show_salary" value="on">
                 Show salary to interviewer
             </label>
-            <p class="hint">Unchecked = salary hidden from interviewer (default).</p>
+            <p class="form-hint">Unchecked = salary hidden from interviewer (default).</p>
         </div>
 
-        <div class="form-actions" style="margin-top: 1.5rem;">
+        <div class="form-footer">
             <button type="submit" class="btn">Create Session</button>
             {% if prefill_candidate %}
             <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost">Cancel</a>
@@ -108,4 +113,23 @@
         </div>
     </form>
 </div>
+
+<script>
+(function() {
+    var form = document.getElementById('session-form');
+    if (!form) return;
+    form.addEventListener('htmx:beforeRequest', function() {
+        var btn = form.querySelector('button[type=submit]');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+        btn.classList.add('btn--loading');
+    });
+    form.addEventListener('htmx:afterRequest', function() {
+        var btn = form.querySelector('button[type=submit]');
+        btn.disabled = false;
+        btn.textContent = 'Create Session';
+        btn.classList.remove('btn--loading');
+    });
+})();
+</script>
 {% endblock %}

@@ -283,7 +283,10 @@ async def job_close(
     asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
 
     if request.headers.get("HX-Request"):
-        return HTMLResponse("")
+        resp = HTMLResponse("")
+        resp.headers["HX-Trigger"] = json.dumps({"toast": {"message": "Job closed", "severity": ""}})
+        resp.headers["HX-Refresh"] = "true"
+        return resp
 
     return RedirectResponse(f"/job/{job.id}", status_code=303)
 
@@ -309,9 +312,52 @@ async def job_reopen(
     asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
 
     if request.headers.get("HX-Request"):
-        return HTMLResponse("")
+        resp = HTMLResponse("")
+        resp.headers["HX-Trigger"] = json.dumps({"toast": {"message": "Job reopened", "severity": ""}})
+        resp.headers["HX-Refresh"] = "true"
+        return resp
 
     return RedirectResponse(f"/job/{job.id}", status_code=303)
+
+
+@router.post("/job/{job_id}/delete")
+async def job_delete(
+    request: Request,
+    job_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from sqlalchemy import func
+
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Not found", status_code=404)
+
+    pipeline_count = db.exec(
+        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id)
+    ).one()
+
+    if pipeline_count > 0:
+        msg = f"Cannot delete: {pipeline_count} pipeline{'s' if pipeline_count > 1 else ''} linked to this job. Close it instead."
+        if request.headers.get("HX-Request"):
+            resp = HTMLResponse("")
+            resp.headers["HX-Trigger"] = json.dumps({"toast": {"message": msg, "severity": "warning"}})
+            return resp
+        return RedirectResponse(f"/job/{job.id}", status_code=303)
+
+    asyncio.create_task(sync_hub.broadcast("jobs", "delete", str(job.id), {"id": str(job.id)}))
+
+    db.delete(job)
+    db.commit()
+
+    if request.headers.get("HX-Request"):
+        resp = HTMLResponse("")
+        current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
+        if current_path.endswith(f"/job/{job_id}"):
+            resp.headers["HX-Redirect"] = "/jobs"
+        return resp
+
+    return RedirectResponse("/jobs", status_code=303)
 
 
 @router.post("/job/{job_id}/links")

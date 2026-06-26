@@ -8,24 +8,40 @@
 {% block content %}
 <div class="page-header">
     <h1>{{ job.title }}</h1>
-    <div style="display: flex; gap: 0.5rem;">
-        <a href="/job/{{ job.id }}/edit" class="btn-ghost">Edit</a>
+</div>
+
+<div class="detail-actions">
+    <div class="detail-actions-nav"></div>
+    <div class="detail-actions-export"></div>
+    <div class="detail-actions-mutate">
+        <a href="/job/{{ job.id }}/edit">Edit</a>
         {% if job.status == "open" %}
-        <form method="post" action="/job/{{ job.id }}/close" onsubmit="return confirm('Close this job?')">
-            <button type="submit" class="btn-ghost" style="color: var(--warning);">Close Job</button>
+        <form method="post" action="/job/{{ job.id }}/close" onsubmit="return confirm('Close this job?')" style="display:contents;">
+            <button type="submit">Close Job</button>
+        </form>
+        {% else %}
+        <form method="post" action="/job/{{ job.id }}/reopen" onsubmit="return confirm('Reopen this job?')" style="display:contents;">
+            <button type="submit">Reopen Job</button>
         </form>
         {% endif %}
+    </div>
+    <div class="detail-actions-destruct">
+        <form method="post" action="/job/{{ job.id }}/delete"
+              hx-post="/job/{{ job.id }}/delete"
+              hx-confirm="Delete this job permanently?"
+              style="display:contents;">
+            <button type="submit" title="Delete job">✕</button>
+        </form>
     </div>
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
     <div>
+        {% if job.priority in ("urgent", "high") %}
         <div style="margin-bottom: 1rem;">
-            <span class="badge badge-{{ job.status }}">{{ job.status | replace("_", " ") | title }}</span>
-            {% if job.priority in ("urgent", "high") %}
             <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
-            {% endif %}
         </div>
+        {% endif %}
         <table class="meta-table">
             <tr><td class="row-meta">Position</td><td>{{ job.position }}</td></tr>
             <tr><td class="row-meta">Level</td><td>{{ job.level }}</td></tr>

@@ -514,10 +514,10 @@ async def cancel_session(
         db.commit()
         asyncio.create_task(sync_hub.broadcast("sessions", "update", str(session_id), {"status": "cancelled"}))
     if request.headers.get("HX-Request") == "true":
-        return HTMLResponse(
-            f'<span class="badge badge-cancelled">cancelled</span>',
-            headers={"HX-Reswap": "innerHTML", "HX-Retarget": f"#status-{session_id}", "HX-Trigger": "toast:Session cancelled"},
-        )
+        resp = HTMLResponse("")
+        resp.headers["HX-Trigger"] = json.dumps({"toast": {"message": "Session cancelled", "severity": "warning"}})
+        resp.headers["HX-Refresh"] = "true"
+        return resp
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
@@ -554,7 +554,11 @@ async def delete_session(
     db.commit()
     asyncio.create_task(sync_hub.broadcast("sessions", "delete", str(session_id)))
     if request.headers.get("HX-Request") == "true":
-        return HTMLResponse("")
+        resp = HTMLResponse("")
+        current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
+        if current_path.endswith(f"/session/{session_id}"):
+            resp.headers["HX-Redirect"] = "/sessions"
+        return resp
     return RedirectResponse(next or "/sessions", status_code=303)
 
 
