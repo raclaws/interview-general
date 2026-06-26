@@ -561,6 +561,11 @@ async def pipeline_update_notes(
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
 
+@router.get("/candidate/{candidate_id}/pipeline/{pipeline_id}/delete")
+async def pipeline_delete_redirect(request: Request, candidate_id: int, pipeline_id: int):
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
 @router.post("/candidate/{candidate_id}/pipeline/{pipeline_id}/delete")
 async def pipeline_delete(
     request: Request,
