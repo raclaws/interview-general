@@ -17,7 +17,7 @@
 
     <div style="display: flex; gap: 1rem; justify-content: center;">
         <a href="/sessions" class="btn-score">← Back</a>
-        <form method="post" action="/session/{{ existing_session.id }}/delete?next=/session/new{% if candidate_id %}?candidate_id={{ candidate_id }}%26pipeline_id={{ pipeline.id }}{% endif %}" style="display:inline;" onsubmit="return confirm('Delete the existing HR session? All responses will be lost.');">
+        <form method="post" action="/session/{{ existing_session.id }}/delete?next=/session/new{% if candidate_id %}?candidate_id={{ candidate_id }}%26pipeline_id={{ pipeline.id }}{% endif %}" style="display:inline;" hx-post="/session/{{ existing_session.id }}/delete?next=/session/new{% if candidate_id %}?candidate_id={{ candidate_id }}%26pipeline_id={{ pipeline.id }}{% endif %}" hx-swap="none" hx-confirm="Delete the existing HR session? All responses will be lost.">
             <button type="submit" class="btn" style="background: var(--danger);">Delete & Retry</button>
         </form>
     </div>

@@ -27,11 +27,11 @@
     </div>
     <div class="detail-actions-destruct">
         {% if session.status == "pending" %}
-        <form method="post" action="/session/{{ session.id }}/cancel" style="display:contents;" onsubmit="return confirm('Cancel this session? This cannot be undone.');">
+        <form method="post" action="/session/{{ session.id }}/cancel" style="display:contents;" hx-post="/session/{{ session.id }}/cancel" hx-swap="none" hx-confirm="Cancel this session? This cannot be undone.">
             <button type="submit" title="Cancel session">⊘</button>
         </form>
         {% endif %}
-        <form method="post" action="/session/{{ session.id }}/delete" style="display:contents;" onsubmit="return confirm('Delete permanently? All responses will be lost.');">
+        <form method="post" action="/session/{{ session.id }}/delete" style="display:contents;" hx-post="/session/{{ session.id }}/delete" hx-swap="none" hx-confirm="Delete permanently? All responses will be lost.">
             <button type="submit" title="Delete session">✕</button>
         </form>
     </div>

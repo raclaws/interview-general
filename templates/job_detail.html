@@ -17,21 +17,18 @@
     <div class="detail-actions-mutate">
         <a href="/job/{{ job.id }}/edit">Edit</a>
         {% if job.status == "open" %}
-        <form method="post" action="/job/{{ job.id }}/close" onsubmit="return confirm('Close this job?')" style="display:contents;">
+        <form method="post" action="/job/{{ job.id }}/close" style="display:contents;" hx-post="/job/{{ job.id }}/close" hx-swap="none" hx-confirm="Close this job?">
             <button type="submit">Close Job</button>
         </form>
         <button type="button" onclick="document.getElementById('add-candidate').toggleAttribute('open')">+ Add Candidate</button>
         {% else %}
-        <form method="post" action="/job/{{ job.id }}/reopen" onsubmit="return confirm('Reopen this job?')" style="display:contents;">
+        <form method="post" action="/job/{{ job.id }}/reopen" style="display:contents;" hx-post="/job/{{ job.id }}/reopen" hx-swap="none" hx-confirm="Reopen this job?">
             <button type="submit">Reopen Job</button>
         </form>
         {% endif %}
     </div>
     <div class="detail-actions-destruct">
-        <form method="post" action="/job/{{ job.id }}/delete"
-              hx-post="/job/{{ job.id }}/delete"
-              hx-confirm="Delete this job permanently?"
-              style="display:contents;">
+        <form method="post" action="/job/{{ job.id }}/delete" style="display:contents;" hx-post="/job/{{ job.id }}/delete" hx-swap="none" hx-confirm="Delete this job permanently?">
             <button type="submit" title="Delete job">✕</button>
         </form>
     </div>
