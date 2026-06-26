@@ -347,3 +347,15 @@ class ReviewScore(SQLModel, table=True):
     qualitative: Optional[str] = None
     verdict: Optional[str] = None
     submitted_at: Optional[datetime] = None
+
+
+class Comment(SQLModel, table=True):
+    __tablename__ = "comments"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    entity_type: str = Field(index=True)
+    entity_id: int = Field(index=True)
+    kind: str = Field(default="comment")
+    body: str
+    author: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)

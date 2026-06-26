@@ -10,11 +10,16 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     AdminUser, Job, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType,
-    CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES,
+    CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES, Comment,
 )
 from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
+
+
+def _activity(db, entity_type: str, entity_id: int, body: str):
+    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
+    db.flush()
 
 
 def _serialize_job_for_broadcast(job: Job, bu: BusinessUnit | None, db: Session) -> dict:
@@ -180,6 +185,9 @@ async def job_detail(
         "pipelines": pipelines,
         "pipeline_data": pipeline_data,
         "filled": filled,
+        "trail": db.exec(
+            select(Comment).where(Comment.entity_type == "job", Comment.entity_id == job_id).order_by(Comment.created_at)
+        ).all(),
     })
 
 
@@ -276,6 +284,7 @@ async def job_close(
     job.status = "closed"
     job.closed_date = datetime.utcnow().strftime("%Y-%m-%d")
     job.updated_at = datetime.utcnow()
+    _activity(db, "job", job.id, "Job closed")
     db.add(job)
     db.commit()
 
@@ -305,6 +314,7 @@ async def job_reopen(
     job.status = "open"
     job.closed_date = None
     job.updated_at = datetime.utcnow()
+    _activity(db, "job", job.id, "Job reopened")
     db.add(job)
     db.commit()
 

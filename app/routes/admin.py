@@ -9,12 +9,18 @@ from sqlmodel import Session, select, func, col
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView, Comment
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
+
+
+def _activity(db, entity_type: str, entity_id: int, body: str):
+    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
+    db.flush()
+
 
 POSITIONS = [
     "Data Analyst", "Data Engineer", "Data Scientist",
@@ -39,24 +45,61 @@ def _render(request: Request, name: str, context: dict = None):
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
-    total_sessions = db.exec(select(func.count(InterviewSession.id))).one()
+    from app.models import Job, TestAssignment
+
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    week_ago = datetime.utcnow() - timedelta(days=7)
+    stale_cutoff = datetime.utcnow() - timedelta(days=14)
+
+    # Stats
+    open_jobs = db.exec(select(func.count(Job.id)).where(Job.status == "open")).one()
+    active_pipelines = db.exec(
+        select(func.count(CandidatePipeline.id)).where(
+            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES)
+        )
+    ).one()
     pending_sessions = db.exec(
         select(func.count(InterviewSession.id)).where(InterviewSession.status == "pending")
     ).one()
-    week_ago = datetime.utcnow() - timedelta(days=7)
     completed_this_week = db.exec(
         select(func.count(InterviewSession.id)).where(
             InterviewSession.status == "completed",
             col(InterviewSession.created_at) >= week_ago,
         )
     ).one()
-    active_candidates = db.exec(
-        select(func.count(func.distinct(CandidatePipeline.candidate_id))).where(
-            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES)
-        )
-    ).one()
 
-    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    # Attention: overdue interviews
+    overdue_sessions = db.exec(
+        select(InterviewSession).where(
+            InterviewSession.status == "pending",
+            col(InterviewSession.interview_date) < today_str,
+            col(InterviewSession.interview_date).isnot(None),
+        ).order_by(InterviewSession.interview_date).limit(5)
+    ).all()
+
+    # Attention: tests past deadline
+    overdue_tests = db.exec(
+        select(TestAssignment).where(
+            TestAssignment.status.in_(["pending", "opened"]),
+            col(TestAssignment.deadline).isnot(None),
+            col(TestAssignment.deadline) < datetime.utcnow(),
+        ).limit(5)
+    ).all()
+
+    # Attention: stale pipelines (non-terminal, not updated in 14+ days)
+    stale_pipelines = db.exec(
+        select(CandidatePipeline).where(
+            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES),
+            col(CandidatePipeline.updated_at) < stale_cutoff,
+        ).order_by(CandidatePipeline.updated_at).limit(5)
+    ).all()
+    stale_candidates = {}
+    if stale_pipelines:
+        cids = [p.candidate_id for p in stale_pipelines]
+        candidates = db.exec(select(Candidate).where(col(Candidate.id).in_(cids))).all()
+        stale_candidates = {c.id: c.name for c in candidates}
+
+    # Upcoming interviews
     upcoming_sessions = db.exec(
         select(InterviewSession).where(
             InterviewSession.status == "pending",
@@ -70,14 +113,141 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         ).all()
         upcoming.append({"session": s, "interviewers": interviewers})
 
+    # Recent activity (last 5 pipeline updates)
+    recent_pipelines = db.exec(
+        select(CandidatePipeline).order_by(col(CandidatePipeline.updated_at).desc()).limit(5)
+    ).all()
+    recent_activity = []
+    if recent_pipelines:
+        cids = [p.candidate_id for p in recent_pipelines]
+        candidates = db.exec(select(Candidate).where(col(Candidate.id).in_(cids))).all()
+        cmap = {c.id: c.name for c in candidates}
+        for p in recent_pipelines:
+            recent_activity.append({
+                "name": cmap.get(p.candidate_id, "—"),
+                "stage": p.stage,
+                "display_name": p.display_name or "—",
+                "updated_at": p.updated_at,
+                "pipeline_id": p.id,
+            })
+
     return _render(request, "dashboard.html", {
         "admin": admin,
-        "total_sessions": total_sessions,
+        "open_jobs": open_jobs,
+        "active_pipelines": active_pipelines,
         "pending_sessions": pending_sessions,
         "completed_this_week": completed_this_week,
-        "active_candidates": active_candidates,
+        "overdue_sessions": overdue_sessions,
+        "overdue_tests": overdue_tests,
+        "stale_pipelines": stale_pipelines,
+        "stale_candidates": stale_candidates,
         "upcoming": upcoming,
+        "recent_activity": recent_activity,
     })
+
+
+@router.get("/peek/{entity_type}/{entity_id}", response_class=HTMLResponse)
+async def peek_panel(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import Job, Comment, Candidate, TestAssignment
+
+    trail = db.exec(
+        select(Comment).where(
+            Comment.entity_type == entity_type,
+            Comment.entity_id == entity_id,
+        ).order_by(Comment.created_at)
+    ).all()
+
+    title = ""
+    summary = {}
+
+    if entity_type == "pipeline":
+        p = db.get(CandidatePipeline, entity_id)
+        if not p:
+            return HTMLResponse("Not found", status_code=404)
+        c = db.get(Candidate, p.candidate_id)
+        j = db.get(Job, p.job_id) if p.job_id else None
+        title = c.name if c else "Pipeline"
+        summary = {
+            "Job": j.title if j else "—",
+            "Stage": p.stage.replace("_", " ").title(),
+            "Updated": p.updated_at.strftime("%b %d, %Y"),
+        }
+    elif entity_type == "job":
+        j = db.get(Job, entity_id)
+        if not j:
+            return HTMLResponse("Not found", status_code=404)
+        title = j.title
+        summary = {
+            "Status": j.status.title(),
+            "Position": j.position,
+            "Level": j.level,
+            "Headcount": str(j.headcount),
+        }
+    elif entity_type == "session":
+        s = db.get(InterviewSession, entity_id)
+        if not s:
+            return HTMLResponse("Not found", status_code=404)
+        title = f"Session #{s.id}"
+        summary = {
+            "Candidate": s.snapshot.get("name", "—"),
+            "Template": s.job_title or "—",
+            "Status": s.status.title(),
+            "Date": s.interview_date or "—",
+        }
+    elif entity_type == "candidate":
+        c = db.get(Candidate, entity_id)
+        if not c:
+            return HTMLResponse("Not found", status_code=404)
+        title = c.name
+        summary = {
+            "Email": c.email,
+            "Position": c.current_position or "—",
+            "Experience": c.yoe or "—",
+        }
+    else:
+        return HTMLResponse("Invalid entity type", status_code=400)
+
+    return _render(request, "partials/peek_panel.html", {
+        "title": title,
+        "summary": summary,
+        "trail": trail,
+        "entity_type": entity_type,
+        "entity_id": entity_id,
+    })
+
+
+@router.post("/peek/{entity_type}/{entity_id}/comment", response_class=HTMLResponse)
+async def peek_add_comment(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    body: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import Comment
+
+    if not body.strip():
+        return HTMLResponse("")
+
+    comment = Comment(
+        entity_type=entity_type,
+        entity_id=entity_id,
+        kind="comment",
+        body=body.strip(),
+        author=admin.username,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+
+    return _render(request, "partials/trail_item.html", {"item": comment})
 
 
 @router.get("/sessions", response_class=HTMLResponse)
@@ -436,6 +606,9 @@ async def session_detail(
         "pipeline": pipeline,
         "job": job,
         "admin": admin,
+        "trail": db.exec(
+            select(Comment).where(Comment.entity_type == "session", Comment.entity_id == session_id).order_by(Comment.created_at)
+        ).all(),
     })
 
 
@@ -510,6 +683,7 @@ async def cancel_session(
         return HTMLResponse("Not found", status_code=404)
     if session.status == "pending":
         session.status = "cancelled"
+        _activity(db, "session", session_id, "Session cancelled")
         db.add(session)
         db.commit()
         asyncio.create_task(sync_hub.broadcast("sessions", "update", str(session_id), {"status": "cancelled"}))

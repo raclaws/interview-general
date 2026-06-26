@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Interview Form{% endblock %}</title>
+    <title>{% block title %}INS ATS{% endblock %}</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/static/style.css?v=9">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/static/shortcuts.js?v=2"></script>
@@ -12,7 +13,7 @@
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
             <button class="sidebar-close" onclick="document.getElementById('sidebar').classList.remove('sidebar-open')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-            <div class="sidebar-brand">Interview<br>Summarizer</div>
+            <div class="sidebar-brand">INS<br>ATS</div>
             <nav class="sidebar-nav" hx-boost="true" hx-target="#main" hx-select="#main" hx-swap="outerHTML" hx-push-url="true">
                 <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Dashboard
@@ -48,6 +49,7 @@
             {% block content %}{% endblock %}
         </div>
     </div>
+<aside id="peek-panel"></aside>
 <script>
 // Toast notification system
 (function() {
@@ -173,6 +175,22 @@ document.body.addEventListener('htmx:pushedIntoHistory', function() {
             (href !== '/' && path.startsWith(href));
         a.classList.toggle('active', isActive);
     });
+});
+
+// Peek panel
+window.openPeek = function(type, id) {
+    var panel = document.getElementById('peek-panel');
+    panel.classList.add('peek-open');
+    htmx.ajax('GET', '/peek/' + type + '/' + id, {target: '#peek-panel', swap: 'innerHTML'});
+};
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('peek-panel').classList.remove('peek-open');
+});
+document.addEventListener('click', function(e) {
+    var panel = document.getElementById('peek-panel');
+    if (panel.classList.contains('peek-open') && !panel.contains(e.target) && !e.target.closest('.peek-trigger')) {
+        panel.classList.remove('peek-open');
+    }
 });
 </script>
 </body>

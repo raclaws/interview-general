@@ -13,11 +13,16 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
-    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit,
+    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment,
 )
 from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
+
+
+def _activity(db: Session, entity_type: str, entity_id: int, body: str):
+    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
+    db.flush()
 
 
 def _candidate_broadcast(candidate: Candidate, db: Session) -> dict:
@@ -382,6 +387,9 @@ async def candidate_detail(
         "stages": PIPELINE_STAGES,
         "jobs": db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all(),
         "templates": templates,
+        "trail": db.exec(
+            select(Comment).where(Comment.entity_type == "candidate", Comment.entity_id == candidate_id).order_by(Comment.created_at)
+        ).all(),
     })
 
 
@@ -524,8 +532,10 @@ async def pipeline_update_stage(
         return HTMLResponse("Not found", status_code=404)
 
     if stage in PIPELINE_STAGES:
+        old_stage = pipeline.stage
         pipeline.stage = stage
         pipeline.updated_at = datetime.utcnow()
+        _activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}")
         db.add(pipeline)
         db.commit()
 
@@ -925,6 +935,9 @@ async def pipeline_detail(
     ctx = _pipeline_detail_context(db, pipeline, candidate)
     ctx["admin"] = admin
     ctx["job"] = db.get(Job, pipeline.job_id) if pipeline.job_id else None
+    ctx["trail"] = db.exec(
+        select(Comment).where(Comment.entity_type == "pipeline", Comment.entity_id == pipeline_id).order_by(Comment.created_at)
+    ).all()
     return _render(request, "pipeline_detail.html", ctx)
 
 
@@ -941,8 +954,10 @@ async def pipeline_detail_update_stage(
         return HTMLResponse("Not found", status_code=404)
 
     if stage in PIPELINE_STAGES:
+        old_stage = pipeline.stage
         pipeline.stage = stage
         pipeline.updated_at = datetime.utcnow()
+        _activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}")
         db.add(pipeline)
         db.commit()
 

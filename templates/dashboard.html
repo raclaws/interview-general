@@ -2,56 +2,113 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <div class="dash-grid">
-    <div class="dash-widget dash-widget--full">
-        <div class="dash-stats">
-            <div class="dash-stat">
-                <span class="dash-stat-value">{{ total_sessions }}</span>
-                <span class="dash-stat-label">Total Sessions</span>
-            </div>
-            <div class="dash-stat">
-                <span class="dash-stat-value">{{ pending_sessions }}</span>
-                <span class="dash-stat-label">Pending</span>
-            </div>
-            <div class="dash-stat">
-                <span class="dash-stat-value">{{ completed_this_week }}</span>
-                <span class="dash-stat-label">Completed This Week</span>
-            </div>
-            <div class="dash-stat">
-                <span class="dash-stat-value">{{ active_candidates }}</span>
-                <span class="dash-stat-label">Active Candidates</span>
-            </div>
+    <div class="dash-stats">
+        <div class="dash-stat">
+            <span class="dash-stat-value">{{ open_jobs }}</span>
+            <span class="dash-stat-label">Open Jobs</span>
+        </div>
+        <div class="dash-stat">
+            <span class="dash-stat-value">{{ active_pipelines }}</span>
+            <span class="dash-stat-label">Active Pipelines</span>
+        </div>
+        <div class="dash-stat">
+            <span class="dash-stat-value">{{ pending_sessions }}</span>
+            <span class="dash-stat-label">Pending</span>
+        </div>
+        <div class="dash-stat">
+            <span class="dash-stat-value">{{ completed_this_week }}</span>
+            <span class="dash-stat-label">Completed This Week</span>
         </div>
     </div>
 
-    <div class="dash-widget dash-widget--full">
-        <div class="dash-widget-header">
-            <h2>Upcoming Interviews</h2>
-            <a href="/sessions" class="btn-ghost">View all →</a>
+    {% if overdue_sessions or overdue_tests or stale_pipelines %}
+    <div class="dash-widget">
+        <h2 class="dash-widget-title">Needs Attention</h2>
+        <div class="dash-attention">
+            {% for s in overdue_sessions %}
+            <a href="/session/{{ s.id }}" class="dash-attention-item">
+                <span class="dash-attention-icon">⚠</span>
+                <span>Overdue interview — {{ s.snapshot.get("name", "—") }} · {{ s.interview_date }}</span>
+            </a>
+            {% endfor %}
+            {% for t in overdue_tests %}
+            <a href="/pipeline/{{ t.pipeline_id }}" class="dash-attention-item">
+                <span class="dash-attention-icon">⚠</span>
+                <span>Test past deadline — {{ t.title }}</span>
+            </a>
+            {% endfor %}
+            {% for p in stale_pipelines %}
+            <a href="/pipeline/{{ p.id }}" class="dash-attention-item dash-attention-item--muted">
+                <span class="dash-attention-icon">◌</span>
+                <span>Stale 14d+ — {{ stale_candidates.get(p.candidate_id, "—") }} · {{ p.stage }}</span>
+            </a>
+            {% endfor %}
         </div>
-        {% if upcoming %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Candidate</th>
-                    <th>Position</th>
-                    <th>Interviewer(s)</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in upcoming %}
-                <tr onclick="window.location='/session/{{ item.session.id }}'" style="cursor: pointer;">
-                    <td>{{ item.session.snapshot.get("name", "—") }}</td>
-                    <td>{{ item.session.position or item.session.job_title or "—" }}</td>
-                    <td>{{ item.interviewers | map(attribute='interviewer_name') | join(', ') }}</td>
-                    <td>{{ item.session.interview_date or "—" }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="hint" style="padding: 1.5rem 0;">No upcoming interviews scheduled.</p>
-        {% endif %}
+    </div>
+    {% else %}
+    <div class="dash-widget">
+        <h2 class="dash-widget-title">Needs Attention</h2>
+        <p class="row-meta" style="padding: 0.5rem 0;">Nothing overdue — all clear.</p>
+    </div>
+    {% endif %}
+
+    <div class="dash-row">
+        <div class="dash-widget dash-widget--grow">
+            <div class="dash-widget-header">
+                <h2 class="dash-widget-title">Upcoming Interviews</h2>
+                <a href="/sessions" class="dash-widget-link">View all →</a>
+            </div>
+            {% if upcoming %}
+            <table class="table-clean">
+                <tbody>
+                    {% for item in upcoming %}
+                    <tr class="clickable-row" data-href="/session/{{ item.session.id }}">
+                        <td>
+                            <div class="col-primary">{{ item.session.snapshot.get("name", "—") }}</div>
+                            <div class="row-meta">{{ item.session.position or item.session.job_title or "—" }}</div>
+                        </td>
+                        <td class="row-meta">{{ item.interviewers | map(attribute='interviewer_name') | join(', ') }}</td>
+                        <td class="row-meta" style="text-align:right;">{{ item.session.interview_date or "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="row-meta" style="padding: 1.5rem 0;">No upcoming interviews scheduled.</p>
+            {% endif %}
+        </div>
+
+        <div class="dash-widget dash-widget--side">
+            <div class="dash-widget">
+                <h2 class="dash-widget-title">Quick Actions</h2>
+                <nav class="dash-actions">
+                    <a href="/session/new">+ New Session</a>
+                    <a href="/job/new">+ New Job</a>
+                    <a href="/candidate/new">+ Add Candidate</a>
+                    <a href="/review-batch/new">+ Review Batch</a>
+                </nav>
+            </div>
+
+            {% if recent_activity %}
+            <div class="dash-widget">
+                <h2 class="dash-widget-title">Recent Activity</h2>
+                <div class="dash-activity">
+                    {% for item in recent_activity %}
+                    <a href="/pipeline/{{ item.pipeline_id }}" class="dash-activity-item">
+                        <span class="dash-activity-name">{{ item.name }}</span>
+                        <span class="badge badge-{{ item.stage }}">{{ item.stage | replace("_", " ") | title }}</span>
+                        <span class="dash-activity-time">{{ item.updated_at.strftime("%b %d") }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="dash-widget">
+                <h2 class="dash-widget-title">Recent Activity</h2>
+                <p class="row-meta" style="padding: 0.5rem 0;">No recent activity.</p>
+            </div>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

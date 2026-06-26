@@ -44,6 +44,7 @@ window.__syncConfig = {
             '<div class="row-meta">' + (r.jobType || '') + ' · ' + (r.buName || '—') + (r.recruiter ? ' · ' + r.recruiter : '') + '</div></td>' +
             '<td style="text-align:right;"><span class="badge badge-' + r.status + '">' + (r.status || '').replace(/_/g, ' ') + '</span></td>' +
             '<td style="text-align:right; white-space:nowrap;"><span class="row-meta">' + (r.filled || 0) + '/' + (r.headcount || 1) + ' filled · ' + (r.pipelineCount || 0) + ' candidates</span></td>' +
+            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'job\', ' + r.id + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
             '<td style="text-align:right;">' + priorityBadge + '</td>' +
             '</tr>';
     },

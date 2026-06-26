@@ -98,4 +98,16 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
+<div class="trail">
+    <h2 class="trail-title">Activity</h2>
+    <div class="trail-list" id="trail-candidate-{{ candidate.id }}">
+        {% for item in trail %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#trail-candidate-{{ candidate.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+</div>
+
 {% endblock %}

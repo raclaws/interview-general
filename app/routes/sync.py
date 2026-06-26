@@ -16,7 +16,22 @@ from app.auth import get_current_admin
 from app.models import (
     InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
     Job, BusinessUnit, Candidate, ReviewBatch, ReviewScore, PipelineScore, TestAssignment,
+    Comment,
 )
+
+
+def _comment_counts(db: Session, entity_type: str, entity_ids: list[int]) -> dict[int, int]:
+    """Batch query comment counts for a set of entity IDs."""
+    if not entity_ids:
+        return {}
+    from sqlalchemy import func
+    rows = db.exec(
+        select(Comment.entity_id, func.count(Comment.id)).where(
+            Comment.entity_type == entity_type,
+            Comment.entity_id.in_(entity_ids),
+        ).group_by(Comment.entity_id)
+    ).all()
+    return {eid: cnt for eid, cnt in rows}
 
 
 class SyncHub:
@@ -107,6 +122,7 @@ def _hydrate_sessions(db: Session, since: int | None):
     query = query.order_by(InterviewSession.created_at.desc())
 
     sessions = db.exec(query).all()
+    counts = _comment_counts(db, "session", [s.id for s in sessions])
     results = []
     for s in sessions:
         interviewers = db.exec(
@@ -114,7 +130,9 @@ def _hydrate_sessions(db: Session, since: int | None):
         ).all()
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
-        results.append(_serialize_session(s, interviewers, template, pipeline))
+        row = _serialize_session(s, interviewers, template, pipeline)
+        row["commentCount"] = counts.get(s.id, 0)
+        results.append(row)
     return results
 
 
@@ -147,6 +165,7 @@ def _hydrate_jobs(db: Session, since: int | None):
             pipeline_counts[row[0]] = row[1]
             filled_counts[row[0]] = int(row[2] or 0)
 
+    counts = _comment_counts(db, "job", job_ids)
     results = []
     for job in jobs:
         bu = db.get(BusinessUnit, job.business_unit_id)
@@ -161,6 +180,7 @@ def _hydrate_jobs(db: Session, since: int | None):
             "headcount": job.headcount,
             "filled": filled_counts.get(job.id, 0),
             "pipelineCount": pipeline_counts.get(job.id, 0),
+            "commentCount": counts.get(job.id, 0),
             "updatedAt": int(job.updated_at.timestamp() * 1000) if job.updated_at else 0,
         })
     return results
@@ -204,6 +224,7 @@ def _hydrate_candidates(db: Session, since: int | None):
     ).all()
     session_map = {r[0]: r[1] for r in session_rows}
 
+    counts = _comment_counts(db, "candidate", candidate_ids)
     results = []
     for c in candidates:
         p_info = pipeline_map.get(c.id, {"count": 0, "stages": ""})
@@ -216,6 +237,7 @@ def _hydrate_candidates(db: Session, since: int | None):
             "stages": ",".join(stages),
             "pipelineCount": p_info["count"],
             "sessionCount": session_map.get(c.id, 0),
+            "commentCount": counts.get(c.id, 0),
             "updatedAt": int(c.updated_at.timestamp() * 1000) if c.updated_at else 0,
         })
     return results
@@ -313,12 +335,13 @@ def _hydrate_pipelines(db: Session, since: int | None):
         jobs_list = db.exec(select(Job).where(Job.id.in_(job_ids))).all()
         jobs_map = {j.id: j.title for j in jobs_list}
 
+    comment_counts = _comment_counts(db, "pipeline", pipeline_ids)
     results = []
     for pipeline, candidate in rows:
         sc = scores_map.get(pipeline.id)
         hr_avg = round(sc.hr_total / 3, 1) if sc and sc.hr_total else 0
         culture_avg = round(sc.culture_total / 4, 1) if sc and sc.culture_total else 0
-        counts = session_map.get(pipeline.id, {"total": 0, "completed": 0})
+        s_counts = session_map.get(pipeline.id, {"total": 0, "completed": 0})
         tc = test_map.get(pipeline.id, {"total": 0, "submitted": 0})
         job_title = jobs_map.get(pipeline.job_id, "") if pipeline.job_id else ""
 
@@ -330,12 +353,13 @@ def _hydrate_pipelines(db: Session, since: int | None):
             "stage": pipeline.stage,
             "businessUnit": pipeline.business_unit or "",
             "displayName": pipeline.display_name or "",
-            "sessionTotal": counts["total"],
-            "sessionCompleted": counts["completed"],
+            "sessionTotal": s_counts["total"],
+            "sessionCompleted": s_counts["completed"],
             "testTotal": tc["total"],
             "testSubmitted": tc["submitted"],
             "hrAvg": hr_avg,
             "cultureAvg": culture_avg,
+            "commentCount": comment_counts.get(pipeline.id, 0),
             "updatedAt": int(pipeline.updated_at.timestamp() * 1000) if pipeline.updated_at else 0,
         })
     return results

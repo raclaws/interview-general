@@ -180,4 +180,16 @@
 </div>
 {% endif %}
 {% endif %}
+
+<div class="trail">
+    <h2 class="trail-title">Activity</h2>
+    <div class="trail-list" id="trail-pipeline-{{ pipeline.id }}">
+        {% for item in trail %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#trail-pipeline-{{ pipeline.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+</div>
 {% endblock %}

@@ -222,4 +222,16 @@ function copyLink(token, btn) {
 }
 </script>
 
+<div class="trail">
+    <h2 class="trail-title">Activity</h2>
+    <div class="trail-list" id="trail-session-{{ session.id }}">
+        {% for item in trail %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    <form hx-post="/peek/session/{{ session.id }}/comment" hx-target="#trail-session-{{ session.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+</div>
+
 {% endblock %}

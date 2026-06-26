@@ -43,6 +43,7 @@ window.__syncConfig = {
             '<td><div class="col-primary">' + (r.currentPosition || '—') + '</div>' +
             '<div class="row-meta">' + badgesHtml + '</div></td>' +
             '<td class="row-meta">' + (r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : '') + ' · ' + (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '') + '</td>' +
+            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'candidate\', ' + r.id + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
             '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
             '</tr>';
     },

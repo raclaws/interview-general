@@ -1,0 +1,17 @@
+<div class="peek-header">
+    <h3>{{ title }}</h3>
+    <button class="peek-close" onclick="document.getElementById('peek-panel').classList.remove('peek-open')">✕</button>
+</div>
+<div class="peek-summary">
+    {% for key, val in summary.items() %}
+    <div class="peek-meta-row"><span class="peek-meta-label">{{ key }}</span><span>{{ val }}</span></div>
+    {% endfor %}
+</div>
+<div class="peek-trail" id="peek-trail">
+    {% for item in trail %}
+    {% include "partials/trail_item.html" %}
+    {% endfor %}
+</div>
+<form hx-post="/peek/{{ entity_type }}/{{ entity_id }}/comment" hx-target="#peek-trail" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+</form>
