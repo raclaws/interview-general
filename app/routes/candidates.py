@@ -192,56 +192,13 @@ async def candidate_new_submit(
     db: Session = Depends(get_session),
 ):
     if mode == "nocodb" and candidate_id:
-        from app.nocodb import fetch_candidate
-        snapshot = await fetch_candidate(candidate_id)
-        if not snapshot or snapshot.get("_error") or not snapshot.get("email"):
-            error_msg = snapshot.get("_error", "Candidate not found in NocoDB.") if snapshot else "Candidate not found in NocoDB."
+        existing = db.get(Candidate, candidate_id)
+        if not existing:
             return _render(request, "candidate_new.html", {
                 "admin": admin,
-                "error": error_msg,
+                "error": "Candidate not found.",
             })
-        email_val = snapshot.get("email", "").strip()
-        existing = db.exec(select(Candidate).where(Candidate.email == email_val)).first()
-        if existing:
-            existing.name = snapshot.get("name", existing.name)
-            existing.phone = snapshot.get("phone") or existing.phone
-            existing.current_position = snapshot.get("current_position") or existing.current_position
-            existing.yoe = snapshot.get("yoe") or existing.yoe
-            existing.languages = snapshot.get("languages") or existing.languages
-            existing.cloud = snapshot.get("cloud") or existing.cloud
-            existing.tools = snapshot.get("tools") or existing.tools
-            existing.working_arrangement = snapshot.get("working_arrangement") or existing.working_arrangement
-            existing.current_salary = snapshot.get("current_salary") or existing.current_salary
-            existing.expected_salary = snapshot.get("expected_salary") or existing.expected_salary
-            existing.notice_period = snapshot.get("notice_period") or existing.notice_period
-            existing.cv_link = snapshot.get("cv_link") or existing.cv_link
-            existing.nocodb_id = candidate_id
-            existing.updated_at = datetime.utcnow()
-            db.add(existing)
-            db.commit()
-            asyncio.create_task(sync_hub.broadcast("candidates", "update", str(existing.id), _candidate_broadcast(existing, db)))
-            return RedirectResponse(next or f"/candidate/{existing.id}", status_code=303)
-        candidate = Candidate(
-            name=snapshot.get("name", ""),
-            email=email_val,
-            phone=snapshot.get("phone") or None,
-            nocodb_id=candidate_id,
-            current_position=snapshot.get("current_position") or None,
-            yoe=snapshot.get("yoe") or None,
-            languages=snapshot.get("languages") or None,
-            cloud=snapshot.get("cloud") or None,
-            tools=snapshot.get("tools") or None,
-            working_arrangement=snapshot.get("working_arrangement") or None,
-            current_salary=snapshot.get("current_salary") or None,
-            expected_salary=snapshot.get("expected_salary") or None,
-            notice_period=snapshot.get("notice_period") or None,
-            cv_link=snapshot.get("cv_link") or None,
-        )
-        db.add(candidate)
-        db.commit()
-        db.refresh(candidate)
-        asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
-        return RedirectResponse(next or f"/candidate/{candidate.id}", status_code=303)
+        return RedirectResponse(next or f"/candidate/{existing.id}", status_code=303)
 
     if not name.strip() or not email.strip():
         return _render(request, "candidate_new.html", {
