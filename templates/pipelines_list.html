@@ -43,7 +43,7 @@ window.__syncConfig = {
         }).join('');
 
         var testInfo = r.testTotal
-            ? '<span style="color:var(--badge-teal);font-size:0.8rem;">T ' + r.testSubmitted + '/' + r.testTotal + '</span>'
+            ? '<span style="color:var(--text-secondary);font-size:0.8rem;">T ' + r.testSubmitted + '/' + r.testTotal + '</span>'
             : '<span class="row-meta">—</span>';
 
         var scoreInfo = (r.hrAvg || r.cultureAvg)
