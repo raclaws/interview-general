@@ -253,7 +253,12 @@ document.addEventListener('click', function(e) {
         var item = _undoStack.pop();
         if (_undoToast) { clearTimeout(_toastTimer); _undoToast.remove(); _undoToast = null; }
         fetch('/restore/' + item.type + '/' + item.id, { method: 'POST', credentials: 'include' })
-            .then(function(r) { if (r.ok) { toast('Restored: ' + item.label); location.reload(); } else { toast('Restore failed', 'warning'); _undoStack.push(item); } });
+            .then(function(r) {
+                if (r.ok) {
+                    toast('Restored: ' + item.label);
+                    setTimeout(function() { location.reload(); }, 300);
+                } else { toast('Restore failed', 'warning'); _undoStack.push(item); }
+            });
     };
 
     // Ctrl+Z — persistent, reads from stack (no timer dependency)

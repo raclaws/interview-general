@@ -449,7 +449,7 @@ async def restore_entity(
 
     broadcast_table = {"job": "jobs", "pipeline": "pipelines", "session": "sessions", "test": "tests"}.get(entity_type)
     if broadcast_table:
-        asyncio.create_task(sync_hub.broadcast(broadcast_table, "insert", str(entity_id), {"id": str(entity_id)}))
+        asyncio.create_task(sync_hub.broadcast(broadcast_table, "refresh", str(entity_id), {}))
 
     return JSONResponse({"restored": True})
 
