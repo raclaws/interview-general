@@ -492,25 +492,54 @@ tr:hover td { background: var(--bg-muted); }
 
 /* Badges — 4 semantic colors: success, danger, warning, active */
 .badge {
-    display: inline-block;
-    padding: 0.2rem 0.6rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.5rem;
     font-size: 0.7rem;
-    font-weight: 600;
+    font-weight: 500;
     border-radius: 20px;
     letter-spacing: 0.02em;
     text-transform: capitalize;
+    color: var(--text-muted);
+    background: var(--bg-muted);
 }
-/* Success (green): positive terminal states */
-.badge-completed, .badge-hired, .badge-closed { background: var(--success-bg); color: var(--success); }
-/* Danger (red): negative terminal states */
-.badge-cancelled, .badge-rejected { background: var(--danger-bg); color: var(--danger); }
-/* Warning (peach): needs attention */
-.badge-pending, .badge-urgent, .badge-late { background: var(--warning-bg); color: var(--warning); }
-/* Active (lavender): in-progress, non-terminal */
-.badge-screening, .badge-test, .badge-interview, .badge-offer,
-.badge-on_hold, .badge-opened, .badge-submitted, .badge-open,
-.badge-high, .badge-normal { background: var(--badge-lavender-bg); color: var(--badge-lavender); }
-/* Neutral: inactive/withdrawn — no color emphasis */
+.badge::before {
+    font-size: 0.65rem;
+    line-height: 1;
+}
+/* Pending — hollow circle, grey */
+.badge-pending, .badge-urgent, .badge-late {
+    background: var(--bg-muted); color: var(--text-muted);
+}
+.badge-pending::before { content: '◌'; color: var(--text-muted); }
+.badge-urgent::before { content: '◌'; color: var(--warning); }
+.badge-late::before { content: '◌'; color: var(--warning); }
+/* Active — filled dot, accent */
+.badge-screening::before, .badge-test::before, .badge-open::before,
+.badge-opened::before, .badge-submitted::before, .badge-normal::before,
+.badge-high::before { content: '●'; color: var(--text-primary); }
+.badge-screening, .badge-test, .badge-open,
+.badge-opened, .badge-submitted, .badge-normal,
+.badge-high { background: var(--bg-muted); color: var(--text-muted); }
+/* In-progress — half-filled, accent */
+.badge-interview::before, .badge-offer::before,
+.badge-on_hold::before { content: '◐'; color: var(--text-primary); }
+.badge-interview, .badge-offer, .badge-on_hold {
+    background: var(--bg-muted); color: var(--text-muted);
+}
+/* Success — checkmark, green */
+.badge-completed::before, .badge-hired::before, .badge-closed::before { content: '✓'; color: var(--success); }
+.badge-completed, .badge-hired, .badge-closed {
+    background: var(--success-bg); color: var(--text-muted);
+}
+/* Danger — cross, red */
+.badge-cancelled::before, .badge-rejected::before { content: '✕'; color: var(--danger); }
+.badge-cancelled, .badge-rejected {
+    background: var(--danger-bg); color: var(--text-muted);
+}
+/* Neutral — no icon emphasis */
+.badge-withdrawn::before, .badge-low::before { content: '○'; color: var(--text-muted); }
 .badge-withdrawn, .badge-low { background: var(--bg-muted); color: var(--text-muted); }
 
 .inline-select {
