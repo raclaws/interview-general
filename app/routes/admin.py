@@ -1050,6 +1050,14 @@ async def api_candidates(q: str = "", db: Session = Depends(get_session)):
     return [{"id": c.id, "name": c.name, "email": c.email or ""} for c in candidates]
 
 
+@router.get("/api/nocodb-search")
+async def api_nocodb_search(q: str = ""):
+    if len(q) < 2:
+        return []
+    from app.nocodb import search_candidates
+    return await search_candidates(q)
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return _render(request, "login.html", {"error": None})

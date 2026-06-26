@@ -17,11 +17,15 @@
 <div class="form-card">
     <div class="toggle-group">
         <label class="toggle-label">
-            <input type="radio" name="entry_toggle" value="nocodb" checked onchange="document.getElementById('nocodb-section').style.display='block';document.getElementById('manual-section').style.display='none';">
+            <input type="radio" name="entry_toggle" value="local" checked onchange="document.getElementById('nocodb-section').style.display='block';document.getElementById('manual-section').style.display='none';document.getElementById('nocodb-import-section').style.display='none';">
             Search Existing
         </label>
         <label class="toggle-label">
-            <input type="radio" name="entry_toggle" value="manual" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='block';">
+            <input type="radio" name="entry_toggle" value="nocodb" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='none';document.getElementById('nocodb-import-section').style.display='block';">
+            Import from NocoDB
+        </label>
+        <label class="toggle-label">
+            <input type="radio" name="entry_toggle" value="manual" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='block';document.getElementById('nocodb-import-section').style.display='none';">
             Manual Entry
         </label>
     </div>
@@ -29,15 +33,33 @@
     <div id="nocodb-section">
         <form method="post" action="/candidate/new">
             <input type="hidden" name="mode" value="nocodb">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="form-field">
-                <label class="form-label">Search candidate</label>
+                <label class="form-label">Search local candidates</label>
                 <input type="text" id="candidate_search" placeholder="Type name..." autocomplete="off" class="form-input">
                 <div id="candidate_results"></div>
                 <input type="hidden" id="candidate_id" name="candidate_id">
                 <p id="candidate_selected" class="form-hint"></p>
             </div>
             <div class="form-footer">
-                <button type="submit" class="btn">Add Candidate</button>
+                <button type="submit" class="btn">Go to Candidate</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="nocodb-import-section" style="display: none;">
+        <form method="post" action="/candidate/new">
+            <input type="hidden" name="mode" value="nocodb_import">
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+            <div class="form-field">
+                <label class="form-label">Search NocoDB</label>
+                <input type="text" id="nocodb_search" placeholder="Type name..." autocomplete="off" class="form-input">
+                <div id="nocodb_results"></div>
+                <input type="hidden" id="nocodb_id" name="candidate_id">
+                <p id="nocodb_selected" class="form-hint"></p>
+            </div>
+            <div class="form-footer">
+                <button type="submit" class="btn">Import Candidate</button>
             </div>
         </form>
     </div>
@@ -140,42 +162,47 @@
 
 <script>
 (function() {
-    const searchInput = document.getElementById("candidate_search");
-    const resultsDiv = document.getElementById("candidate_results");
-    const idInput = document.getElementById("candidate_id");
-    const hint = document.getElementById("candidate_selected");
-    let debounce;
-    if (!searchInput) return;
-    searchInput.addEventListener("input", function() {
-        clearTimeout(debounce);
-        const q = this.value.trim();
-        if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
-        debounce = setTimeout(async () => {
-            try {
-                const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
-                const data = await resp.json();
-                if (data.length && data[0]._error) {
-                    resultsDiv.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
-                    return;
-                }
-                resultsDiv.innerHTML = data.map(c =>
-                    `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}">
-                        <strong>${c.name}</strong> <span class="row-meta">${c.email || ""}</span>
-                    </div>`
-                ).join("");
-                resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
-                    el.addEventListener("click", () => {
-                        idInput.value = el.dataset.id;
-                        hint.textContent = `Selected: ${el.dataset.name}`;
-                        resultsDiv.innerHTML = "";
-                        searchInput.value = el.dataset.name;
+    function wireSearch(inputId, resultsId, idInputId, hintId, endpoint) {
+        const searchInput = document.getElementById(inputId);
+        const resultsDiv = document.getElementById(resultsId);
+        const idInput = document.getElementById(idInputId);
+        const hint = document.getElementById(hintId);
+        let debounce;
+        if (!searchInput) return;
+        searchInput.addEventListener("input", function() {
+            clearTimeout(debounce);
+            const q = this.value.trim();
+            if (q.length < 2) { resultsDiv.innerHTML = ""; return; }
+            debounce = setTimeout(async () => {
+                try {
+                    const resp = await fetch(`${endpoint}?q=${encodeURIComponent(q)}`);
+                    const data = await resp.json();
+                    if (data.length && data[0]._error) {
+                        resultsDiv.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
+                        return;
+                    }
+                    resultsDiv.innerHTML = data.map(c =>
+                        `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}">
+                            <strong>${c.name}</strong> <span class="row-meta">${c.email || c.position || ""}</span>
+                        </div>`
+                    ).join("");
+                    resultsDiv.querySelectorAll(".candidate-item").forEach(el => {
+                        el.addEventListener("click", () => {
+                            idInput.value = el.dataset.id;
+                            hint.textContent = `Selected: ${el.dataset.name}`;
+                            resultsDiv.innerHTML = "";
+                            searchInput.value = el.dataset.name;
+                        });
                     });
-                });
-            } catch(e) {
-                resultsDiv.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
-            }
-        }, 300);
-    });
+                } catch(e) {
+                    resultsDiv.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
+                }
+            }, 300);
+        });
+    }
+
+    wireSearch("candidate_search", "candidate_results", "candidate_id", "candidate_selected", "/api/candidates");
+    wireSearch("nocodb_search", "nocodb_results", "nocodb_id", "nocodb_selected", "/api/nocodb-search");
 })();
 </script>
 {% endblock %}

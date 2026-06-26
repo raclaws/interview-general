@@ -200,6 +200,20 @@ async def candidate_new_submit(
             })
         return RedirectResponse(next or f"/candidate/{existing.id}", status_code=303)
 
+    if mode == "nocodb_import" and candidate_id:
+        from app.nocodb import fetch_candidate
+        snapshot = await fetch_candidate(candidate_id)
+        if not snapshot or snapshot.get("_error") or not snapshot.get("email"):
+            error_msg = snapshot.get("_error", "Candidate not found in NocoDB.") if snapshot else "Candidate not found in NocoDB."
+            return _render(request, "candidate_new.html", {
+                "admin": admin,
+                "error": error_msg,
+            })
+        from app.nocodb import upsert_candidate_from_nocodb
+        candidate = upsert_candidate_from_nocodb(snapshot, candidate_id)
+        asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
+        return RedirectResponse(next or f"/candidate/{candidate.id}", status_code=303)
+
     if not name.strip() or not email.strip():
         return _render(request, "candidate_new.html", {
             "admin": admin,
