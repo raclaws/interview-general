@@ -49,9 +49,11 @@ window.__syncConfig = {
     },
     contextMenu: function(r, baseUrl) {
         var items = [];
+        // Utility
         items.push({label: '⎘ Copy email', copy: r.email});
-        items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.id});
+        // Mutate
         items.push({label: '✎ Edit candidate', href: '/candidate/' + r.id + '/edit'});
+        items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.id});
         return items;
     }
 };

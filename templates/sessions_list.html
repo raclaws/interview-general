@@ -53,11 +53,15 @@ window.__syncConfig = {
     },
     contextMenu: function(r, baseUrl) {
         var items = [];
+        // Navigate
+        if (r.candidateId) items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        // Utility
         (r.interviewers || []).forEach(function(iv) {
             items.push({label: '⎘ Copy link · ' + iv.name, copy: baseUrl + '/i/' + iv.token});
         });
-        if (r.candidateId) items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        // Mutate
         items.push({label: '✎ Edit session', href: '/session/' + r.id + '/edit'});
+        // Destruct
         if (r.status === 'pending') items.push({label: '⊘ Cancel', href: '/session/' + r.id + '/cancel', confirm: 'Cancel this session?'});
         items.push({label: '✕ Delete', href: '/session/' + r.id + '/delete', confirm: 'Delete permanently?', 'delete': true});
         return items;

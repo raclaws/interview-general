@@ -68,8 +68,12 @@ window.__syncConfig = {
     },
     contextMenu: function(r, baseUrl) {
         var items = [];
+        // Navigate
         items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        if (r.jobTitle) items.push({label: '↗ View job', href: '/pipeline/' + r.id});
+        // Mutate
         items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.candidateId + '&pipeline_id=' + r.id});
+        // Destruct
         items.push({label: '✕ Delete', href: '/pipeline/' + r.id + '/delete', confirm: 'Delete this pipeline entry?', 'delete': true});
         return items;
     },

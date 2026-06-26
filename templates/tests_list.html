@@ -49,9 +49,13 @@ window.__syncConfig = {
     },
     contextMenu: function(r, baseUrl) {
         var items = [];
+        // Navigate
         items.push({label: '↗ View pipeline', href: '/pipeline/' + r.pipelineId});
         items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        // Utility
         items.push({label: '⎘ Copy test link', copy: baseUrl + '/t/' + r.token});
+        // Destruct
+        if (r.status === 'pending' || r.status === 'opened') items.push({label: '⊘ Cancel', href: '/pipeline/' + r.pipelineId + '/test/' + r.id + '/cancel', confirm: 'Cancel this test?'});
         return items;
     },
     bulkActions: [
