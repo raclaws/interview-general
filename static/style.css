@@ -543,13 +543,21 @@ tr:hover td { background: var(--bg-muted); }
 .badge-withdrawn, .badge-low { background: var(--bg-muted); color: var(--text-muted); }
 
 .inline-select {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.8rem;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text-primary);
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0.15rem 1.2rem 0.15rem 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    border-radius: 20px;
+    border: none;
+    background: var(--bg-muted) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.4rem center;
+    color: var(--text-muted);
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: background-color 0.15s;
 }
+.inline-select:hover { background-color: var(--border); }
+.inline-select:focus { outline: none; background-color: var(--border); }
 
 .dropdown-menu {
     display: none;
