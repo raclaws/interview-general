@@ -228,36 +228,39 @@ document.addEventListener('click', function(e) {
 
 // Undo delete
 (function() {
-    var _lastDelete = null;
+    var _undoStack = []; // persistent stack, max 10
     var _undoToast = null;
+    var _toastTimer = null;
+    var MAX_UNDO = 10;
 
     window.undoableDelete = function(type, id, label) {
-        _lastDelete = { type: type, id: id };
-        if (_undoToast) _undoToast.remove();
+        _undoStack.push({ type: type, id: id, label: label });
+        if (_undoStack.length > MAX_UNDO) _undoStack.shift();
+
+        // Show toast (5s visual feedback)
+        if (_undoToast) { clearTimeout(_toastTimer); _undoToast.remove(); }
         _undoToast = document.createElement('div');
         _undoToast.className = 'toast toast-undo show';
-        _undoToast.innerHTML = 'Deleted ' + label + ' <button class="undo-btn" onclick="window.undoDelete()">Undo</button>';
+        _undoToast.innerHTML = 'Deleted ' + label + ' <button class="undo-btn" onclick="window.undoLast()">Undo</button>';
         document.querySelector('.toast-container').appendChild(_undoToast);
-        _lastDelete.timer = setTimeout(function() {
-            if (_undoToast) { _undoToast.classList.remove('show'); _undoToast.classList.add('hide'); setTimeout(function() { _undoToast.remove(); _undoToast = null; }, 250); }
-            _lastDelete = null;
+        _toastTimer = setTimeout(function() {
+            if (_undoToast) { _undoToast.classList.remove('show'); _undoToast.classList.add('hide'); setTimeout(function() { if (_undoToast) _undoToast.remove(); _undoToast = null; }, 250); }
         }, 5000);
     };
 
-    window.undoDelete = function() {
-        if (!_lastDelete) return;
-        clearTimeout(_lastDelete.timer);
-        fetch('/restore/' + _lastDelete.type + '/' + _lastDelete.id, { method: 'POST', credentials: 'include' })
-            .then(function(r) { if (r.ok) { toast('Restored'); location.reload(); } });
-        if (_undoToast) _undoToast.remove();
-        _undoToast = null;
-        _lastDelete = null;
+    window.undoLast = function() {
+        if (!_undoStack.length) return;
+        var item = _undoStack.pop();
+        if (_undoToast) { clearTimeout(_toastTimer); _undoToast.remove(); _undoToast = null; }
+        fetch('/restore/' + item.type + '/' + item.id, { method: 'POST', credentials: 'include' })
+            .then(function(r) { if (r.ok) { toast('Restored: ' + item.label); location.reload(); } else { toast('Restore failed', 'warning'); _undoStack.push(item); } });
     };
 
+    // Ctrl+Z — persistent, reads from stack (no timer dependency)
     document.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && _lastDelete) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && _undoStack.length) {
             e.preventDefault();
-            window.undoDelete();
+            window.undoLast();
         }
     });
 
@@ -268,8 +271,8 @@ document.addEventListener('click', function(e) {
 
     // Persist undo across redirects (detail page → list)
     document.body.addEventListener('htmx:beforeRedirect', function() {
-        if (_lastDelete) {
-            sessionStorage.setItem('_pendingUndo', JSON.stringify(_lastDelete));
+        if (_undoStack.length) {
+            sessionStorage.setItem('_pendingUndo', JSON.stringify(_undoStack[_undoStack.length - 1]));
         }
     });
     var pending = sessionStorage.getItem('_pendingUndo');
