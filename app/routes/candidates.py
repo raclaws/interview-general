@@ -264,7 +264,7 @@ async def candidate_detail(
 
     pipelines = db.exec(
         select(CandidatePipeline)
-        .where(CandidatePipeline.candidate_id == candidate.id)
+        .where(CandidatePipeline.candidate_id == candidate.id, not_deleted(CandidatePipeline))
         .order_by(CandidatePipeline.updated_at.desc())
     ).all()
 

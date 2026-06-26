@@ -10,7 +10,7 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     AdminUser, Job, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType,
-    CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES, Comment,
+    CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES, Comment, not_deleted,
 )
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
@@ -168,7 +168,7 @@ async def job_detail(
 
     bu = db.get(BusinessUnit, job.business_unit_id)
     pipelines = db.exec(
-        select(CandidatePipeline).where(CandidatePipeline.job_id == job.id)
+        select(CandidatePipeline).where(CandidatePipeline.job_id == job.id, not_deleted(CandidatePipeline))
     ).all()
     filled = len([p for p in pipelines if p.stage == "hired"])
 
