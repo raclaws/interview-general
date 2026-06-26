@@ -22,6 +22,8 @@
     </div>
     <div class="detail-actions-mutate">
         <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score">Scorecard</a>
+        <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}">+ Interview</a>
+        <a href="/pipeline/{{ pipeline.id }}/assign-test">+ Test</a>
     </div>
     <div class="detail-actions-destruct">
         <form method="post" action="/pipeline/{{ pipeline.id }}/delete"
@@ -69,11 +71,6 @@
         <button type="submit" class="btn-ghost" style="margin-top: 0.25rem;">Save</button>
     </form>
 </details>
-
-<div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-    <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" class="btn-ghost" style="font-size: 0.8rem;">+ Add Interview</a>
-    <a href="/pipeline/{{ pipeline.id }}/assign-test" class="btn-ghost" style="font-size: 0.8rem;">+ Assign Test</a>
-</div>
 
 {% if session_data %}
 <h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Sessions</h2>
