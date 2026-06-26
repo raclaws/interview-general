@@ -44,7 +44,7 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">{% if existing_batches is defined and existing_batches %}Create Anyway{% else %}Create Batch{% endif %}</button>
-            <a href="{{ next or '/review-batches' }}" class="btn-ghost">Cancel</a>
+            <a href="{{ next or '/review-batches' }}" class="btn-ghost" hx-boost="false">Cancel</a>
         </div>
     </form>
 </div>
