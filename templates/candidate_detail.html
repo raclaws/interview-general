@@ -30,9 +30,46 @@
         {% else %}
         <a href="/session/new?candidate_id={{ candidate.id }}">+ Interview</a>
         {% endif %}
+        <button type="button" onclick="document.getElementById('add-to-job').toggleAttribute('open')">+ Add to Job</button>
     </div>
     <div class="detail-actions-destruct"></div>
 </div>
+
+<details id="add-to-job" class="inline-expand">
+    <summary hidden></summary>
+    <div class="inline-expand-body">
+        <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
+              hx-post="/candidate/{{ candidate.id }}/pipeline"
+              hx-target="#pipeline-section"
+              hx-swap="innerHTML"
+              hx-on::after-request="this.reset();document.getElementById('add-to-job').removeAttribute('open')">
+            <div class="form-row form-row--3col">
+                <div class="form-field">
+                    <label class="form-label">Job <span class="required">*</span></label>
+                    <select name="job_id" required class="form-input">
+                        <option value="">— Select —</option>
+                        {% for j in jobs %}
+                        <option value="{{ j.id }}">{{ j.title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Stage</label>
+                    <select name="stage" class="form-input">
+                        {% for s in stages %}
+                        <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label class="form-label">Notes</label>
+                    <input type="text" name="notes" class="form-input" placeholder="Optional...">
+                </div>
+            </div>
+            <button type="submit" class="btn">Add</button>
+        </form>
+    </div>
+</details>
 
 <div class="candidate-card">
     <p><strong>Email:</strong> {{ candidate.email }}</p>
@@ -58,36 +95,6 @@
     {% include "partials/pipeline_list.html" %}
     {% endwith %}
 </div>
-
-<details class="add-pipeline-form" style="margin-top: 1rem;">
-    <summary class="btn-ghost">+ New Opening</summary>
-    <p class="hint" style="margin-top: 0.5rem;">Select a job to create a pipeline for this candidate.</p>
-    <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
-          hx-post="/candidate/{{ candidate.id }}/pipeline"
-          hx-target="#pipeline-section"
-          hx-swap="innerHTML"
-          hx-on::after-request="this.reset();this.closest('details').removeAttribute('open')"
-          style="margin-top: 0.5rem;">
-        <div class="form-group">
-            <label for="pl-job">Job *</label>
-            <select id="pl-job" name="job_id" required>
-                <option value="">— Select Job —</option>
-                {% for j in jobs %}
-                <option value="{{ j.id }}">{{ j.title }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <label for="pl-stage">Stage</label>
-        <select id="pl-stage" name="stage">
-            {% for s in stages %}
-            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
-            {% endfor %}
-        </select>
-        <label for="pl-notes">Notes</label>
-        <textarea id="pl-notes" name="notes" rows="2" placeholder="Optional notes..."></textarea>
-        <button type="submit" class="btn" style="margin-top: 0.5rem;">Add</button>
-    </form>
-</details>
 
 <script>
 document.addEventListener('click', function(e) {

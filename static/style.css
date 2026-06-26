@@ -544,6 +544,17 @@ tr:hover td { background: var(--bg-muted); }
 /* Plain badge — no status icon (for scores, counts) */
 .badge--plain::before { content: none; }
 
+/* Inline expand (action bar → form below) */
+.inline-expand { margin-bottom: 1.5rem; }
+.inline-expand:not([open]) .inline-expand-body { display: none; }
+.inline-expand[open] .inline-expand-body {
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-top: 0.75rem;
+    background: var(--bg-muted);
+}
+
 .inline-select {
     appearance: none;
     -webkit-appearance: none;
