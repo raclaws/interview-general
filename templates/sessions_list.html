@@ -61,7 +61,11 @@ window.__syncConfig = {
         if (r.status === 'pending') items.push({label: '⊘ Cancel', href: '/session/' + r.id + '/cancel', confirm: 'Cancel this session?'});
         items.push({label: '✕ Delete', href: '/session/' + r.id + '/delete', confirm: 'Delete permanently?', 'delete': true});
         return items;
-    }
+    },
+    bulkActions: [
+        {label: 'Cancel', action: 'cancel', confirm: 'Cancel selected sessions?'},
+        {label: 'Delete', action: 'delete', confirm: 'Delete selected sessions permanently?', danger: true}
+    ]
 };
 </script>
 <script src="/static/sync-list.js?v=2"></script>

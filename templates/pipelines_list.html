@@ -71,7 +71,13 @@ window.__syncConfig = {
         items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.candidateId + '&pipeline_id=' + r.id});
         items.push({label: '✕ Delete', href: '/pipeline/' + r.id + '/delete', confirm: 'Delete this pipeline entry?', 'delete': true});
         return items;
-    }
+    },
+    bulkActions: [
+        {label: 'Move to Interview', action: 'interview'},
+        {label: 'Move to Offer', action: 'offer'},
+        {label: 'Reject', action: 'rejected', confirm: 'Reject selected pipelines?'},
+        {label: 'Delete', action: 'delete', confirm: 'Delete selected pipelines permanently?', danger: true}
+    ]
 };
 </script>
 <script src="/static/sync-list.js?v=2"></script>

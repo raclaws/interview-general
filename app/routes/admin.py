@@ -291,6 +291,117 @@ async def tests_list(request: Request, admin: AdminUser = Depends(get_current_ad
     return _render(request, "tests_list.html", {"admin": admin})
 
 
+@router.post("/bulk/{table}/{action}")
+async def bulk_action(
+    request: Request,
+    table: str,
+    action: str,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from fastapi.responses import JSONResponse
+    from app.models import Job, CandidatePipeline, PIPELINE_STAGES, PIPELINE_ENDED_STAGES, TestAssignment
+
+    body = await request.json()
+    ids = body.get("ids", [])
+    if not ids:
+        return JSONResponse({"detail": "No items selected"}, status_code=400)
+
+    int_ids = [int(i) for i in ids]
+    count = 0
+
+    if table == "pipelines" and action == "delete":
+        for pid in int_ids:
+            p = db.get(CandidatePipeline, pid)
+            if p:
+                record_activity(db, "pipeline", pid, "Pipeline deleted (bulk)", pipeline_id=pid)
+                db.delete(p)
+                count += 1
+        db.commit()
+        for pid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pid)))
+
+    elif table == "pipelines" and action in PIPELINE_STAGES:
+        for pid in int_ids:
+            p = db.get(CandidatePipeline, pid)
+            if p and action in PIPELINE_STAGES:
+                old = p.stage
+                p.stage = action
+                p.updated_at = datetime.utcnow()
+                record_activity(db, "pipeline", pid, f"Stage changed from {old.replace('_', ' ')} to {action.replace('_', ' ')} (bulk)", pipeline_id=pid)
+                db.add(p)
+                count += 1
+        db.commit()
+        for pid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("pipelines", "update", str(pid), {"id": str(pid), "stage": action}))
+
+    elif table == "sessions" and action == "cancel":
+        for sid in int_ids:
+            s = db.get(InterviewSession, sid)
+            if s and s.status == "pending":
+                s.status = "cancelled"
+                ivs = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == sid, SessionInterviewer.status == "pending")).all()
+                for iv in ivs:
+                    iv.status = "cancelled"
+                    db.add(iv)
+                record_activity(db, "session", sid, "Session cancelled (bulk)", pipeline_id=s.pipeline_id)
+                db.add(s)
+                count += 1
+        db.commit()
+        for sid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("sessions", "update", str(sid), {"id": str(sid), "status": "cancelled"}))
+
+    elif table == "sessions" and action == "delete":
+        for sid in int_ids:
+            s = db.get(InterviewSession, sid)
+            if s:
+                ivs = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == sid)).all()
+                for iv in ivs:
+                    resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
+                    if resp:
+                        from app.models import ResponseScore
+                        scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
+                        for sc in scores:
+                            db.delete(sc)
+                        db.delete(resp)
+                    db.delete(iv)
+                db.delete(s)
+                count += 1
+        db.commit()
+        for sid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("sessions", "delete", str(sid)))
+
+    elif table == "tests" and action == "cancel":
+        for tid in int_ids:
+            t = db.get(TestAssignment, tid)
+            if t and t.status in ("pending", "opened"):
+                t.status = "cancelled"
+                db.add(t)
+                count += 1
+        db.commit()
+        for tid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("tests", "update", str(tid), {"id": str(tid), "status": "cancelled"}))
+
+    elif table == "jobs" and action == "close":
+        for jid in int_ids:
+            j = db.get(Job, jid)
+            if j and j.status == "open":
+                j.status = "closed"
+                j.closed_date = datetime.utcnow().strftime("%Y-%m-%d")
+                j.updated_at = datetime.utcnow()
+                record_activity(db, "job", jid, "Job closed (bulk)")
+                db.add(j)
+                count += 1
+        db.commit()
+        for jid in int_ids:
+            asyncio.create_task(sync_hub.broadcast("jobs", "update", str(jid), {"id": str(jid), "status": "closed"}))
+
+    else:
+        return JSONResponse({"detail": f"Unknown action: {table}/{action}"}, status_code=400)
+
+    return JSONResponse({"count": count})
+
+
 @router.post("/views")
 async def create_view(request: Request, page: str = Form(...), name: str = Form(...), config: str = Form(""), admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     view = TableView(page=page, name=name, config=config)

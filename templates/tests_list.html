@@ -52,7 +52,10 @@ window.__syncConfig = {
         items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
         items.push({label: '⎘ Copy test link', copy: baseUrl + '/t/' + r.token});
         return items;
-    }
+    },
+    bulkActions: [
+        {label: 'Cancel', action: 'cancel', confirm: 'Cancel selected tests?'}
+    ]
 };
 </script>
 <script src="/static/sync-list.js?v=2"></script>

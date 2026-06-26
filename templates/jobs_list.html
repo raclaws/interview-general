@@ -57,7 +57,10 @@ window.__syncConfig = {
         if (r.status === 'closed' || r.status === 'cancelled') items.push({label: '↺ Reopen', href: '/job/' + r.id + '/reopen', confirm: 'Reopen this job?'});
         items.push({label: '✕ Delete', href: '/job/' + r.id + '/delete', confirm: 'Delete this job permanently?', 'delete': true});
         return items;
-    }
+    },
+    bulkActions: [
+        {label: 'Close', action: 'close', confirm: 'Close selected jobs?'}
+    ]
 };
 </script>
 <script src="/static/sync-list.js?v=2"></script>
