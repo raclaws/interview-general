@@ -541,6 +541,8 @@ tr:hover td { background: var(--bg-muted); }
 /* Neutral — no icon emphasis */
 .badge-withdrawn::before, .badge-low::before { content: '○'; color: var(--text-muted); }
 .badge-withdrawn, .badge-low { background: var(--bg-muted); color: var(--text-muted); }
+/* Plain badge — no status icon (for scores, counts) */
+.badge--plain::before { content: none; }
 
 .inline-select {
     appearance: none;

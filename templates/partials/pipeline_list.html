@@ -33,8 +33,8 @@
     {% set sc = pipeline_scores[p.id] %}
     {% if sc.hr_avg or sc.culture_avg %}
     <div style="margin-top: 0.5rem; display: flex; gap: 1rem; font-size: 0.8rem;">
-        <span class="badge badge-interview">HR: {{ sc.hr_avg }}/12</span>
-        <span class="badge badge-screening">Culture: {{ sc.culture_avg }}/16</span>
+        <span class="badge badge--plain">HR: {{ sc.hr_avg }}/12</span>
+        <span class="badge badge--plain">Culture: {{ sc.culture_avg }}/16</span>
         <span class="hint">Total: {{ "%.1f"|format(sc.hr_avg + sc.culture_avg) }}/28</span>
     </div>
     {% endif %}
