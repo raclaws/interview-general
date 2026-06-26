@@ -204,6 +204,16 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .view-save-btn { color: var(--text-muted); padding: 0.25rem; }
 .view-save-btn:hover { color: var(--text-primary); }
 
+/* Muted add button (context-dependent creation) */
+.sync-add-btn--muted {
+    opacity: 0.3;
+    cursor: default;
+    pointer-events: none;
+    position: relative;
+}
+.sync-add-btn--muted { pointer-events: auto; cursor: help; }
+.sync-add-btn--muted:hover { opacity: 0.6; }
+
 .sidebar-footer {
     padding: 1rem 1.25rem;
     border-top: 1px solid var(--border);
