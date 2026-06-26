@@ -6,6 +6,7 @@
 </nav>
 {% endblock %}
 {% block content %}
+<meta name="entity" data-type="candidate" data-id="{{ candidate.id }}" data-ts="{{ (candidate.updated_at.timestamp() * 1000) | int }}">
 <div class="page-header">
     <h1>{{ candidate.name }}</h1>
 </div>

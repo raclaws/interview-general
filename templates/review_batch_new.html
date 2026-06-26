@@ -22,6 +22,7 @@
 
 <div class="form-card form-card--narrow">
     <form method="post" action="/review-batch/new" id="batch-form">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         <div class="form-field">
             <label class="form-label">Reviewer Name <span class="required">*</span></label>
             <input type="text" name="reviewer_name" required class="form-input" placeholder="e.g. John Smith" value="{{ prefill_reviewer or '' }}">
@@ -43,7 +44,7 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">{% if existing_batches is defined and existing_batches %}Create Anyway{% else %}Create Batch{% endif %}</button>
-            <a href="/review-batches" class="btn-ghost">Cancel</a>
+            <a href="{{ next or '/review-batches' }}" class="btn-ghost">Cancel</a>
         </div>
     </form>
 </div>

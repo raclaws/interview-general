@@ -192,6 +192,29 @@ document.addEventListener('click', function(e) {
         panel.classList.remove('peek-open');
     }
 });
+
+// Tab-focus freshness — detect stale detail pages
+(function() {
+    var meta = document.querySelector('meta[name="entity"]');
+    if (!meta) return;
+    var type = meta.dataset.type;
+    var id = meta.dataset.id;
+    var rendered = parseInt(meta.dataset.ts || '0', 10);
+    if (!type || !id || !rendered) return;
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) return;
+        fetch('/peek/' + type + '/' + id + '/version')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ts > rendered) {
+                    toast('This page has been updated');
+                    meta.dataset.ts = data.ts;
+                }
+            })
+            .catch(function() {});
+    });
+})();
 </script>
 </body>
 </html>

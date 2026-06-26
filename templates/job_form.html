@@ -12,6 +12,7 @@
 
 <div class="form-card form-card--wide">
     <form method="post" action="{% if editing %}/job/{{ job.id }}/edit{% else %}/job/new{% endif %}" id="job-form">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         <div class="form-row form-row--2col">
             <div class="form-field">
                 <label class="form-label">Position <span class="required">*</span></label>
@@ -134,7 +135,7 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">{% if editing %}Save Changes{% else %}Create Job{% endif %}</button>
-            <a href="{% if editing %}/job/{{ job.id }}{% else %}/jobs{% endif %}" class="btn-ghost">Cancel</a>
+            <a href="{{ next or ('/job/' ~ job.id if editing else '/jobs') }}" class="btn-ghost">Cancel</a>
         </div>
     </form>
 </div>

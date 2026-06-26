@@ -16,13 +16,9 @@ from app.models import (
     TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment,
 )
 from app.routes.sync import hub as sync_hub
+from app.activity import record_activity
 
 router = APIRouter()
-
-
-def _activity(db: Session, entity_type: str, entity_id: int, body: str):
-    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
-    db.flush()
 
 
 def _candidate_broadcast(candidate: Candidate, db: Session) -> dict:
@@ -166,9 +162,10 @@ async def candidates_list(
 @router.get("/candidate/new", response_class=HTMLResponse)
 async def candidate_new_form(
     request: Request,
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
 ):
-    return _render(request, "candidate_new.html", {"admin": admin})
+    return _render(request, "candidate_new.html", {"admin": admin, "next": next})
 
 
 @router.post("/candidate/new")
@@ -189,6 +186,7 @@ async def candidate_new_submit(
     expected_salary: str = Form(""),
     notice_period: str = Form(""),
     cv_link: str = Form(""),
+    next: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -221,7 +219,7 @@ async def candidate_new_submit(
             db.add(existing)
             db.commit()
             asyncio.create_task(sync_hub.broadcast("candidates", "update", str(existing.id), _candidate_broadcast(existing, db)))
-            return RedirectResponse(f"/candidate/{existing.id}", status_code=303)
+            return RedirectResponse(next or f"/candidate/{existing.id}", status_code=303)
         candidate = Candidate(
             name=snapshot.get("name", ""),
             email=email_val,
@@ -242,7 +240,7 @@ async def candidate_new_submit(
         db.commit()
         db.refresh(candidate)
         asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
-        return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
+        return RedirectResponse(next or f"/candidate/{candidate.id}", status_code=303)
 
     if not name.strip() or not email.strip():
         return _render(request, "candidate_new.html", {
@@ -278,7 +276,7 @@ async def candidate_new_submit(
 
     asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
 
-    return RedirectResponse(f"/candidate/{candidate.id}", status_code=303)
+    return RedirectResponse(next or f"/candidate/{candidate.id}", status_code=303)
 
 
 @router.get("/candidate/{candidate_id}", response_class=HTMLResponse)
@@ -397,13 +395,14 @@ async def candidate_detail(
 async def candidate_edit_form(
     request: Request,
     candidate_id: int,
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
     candidate = db.get(Candidate, candidate_id)
     if not candidate:
         return HTMLResponse("Not found", status_code=404)
-    return _render(request, "candidate_edit.html", {"candidate": candidate, "admin": admin})
+    return _render(request, "candidate_edit.html", {"candidate": candidate, "admin": admin, "next": next or f"/candidate/{candidate_id}"})
 
 
 @router.post("/candidate/{candidate_id}/edit")
@@ -423,6 +422,7 @@ async def candidate_edit_submit(
     expected_salary: str = Form(""),
     notice_period: str = Form(""),
     cv_link: str = Form(""),
+    next: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -446,7 +446,7 @@ async def candidate_edit_submit(
     candidate.updated_at = datetime.utcnow()
     db.add(candidate)
     db.commit()
-    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+    return RedirectResponse(next or f"/candidate/{candidate_id}", status_code=303)
 
 
 @router.post("/candidate/{candidate_id}/pipeline")
@@ -535,7 +535,7 @@ async def pipeline_update_stage(
         old_stage = pipeline.stage
         pipeline.stage = stage
         pipeline.updated_at = datetime.utcnow()
-        _activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}")
+        record_activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}", pipeline_id=pipeline_id)
         db.add(pipeline)
         db.commit()
 
@@ -957,7 +957,7 @@ async def pipeline_detail_update_stage(
         old_stage = pipeline.stage
         pipeline.stage = stage
         pipeline.updated_at = datetime.utcnow()
-        _activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}")
+        record_activity(db, "pipeline", pipeline_id, f"Stage changed from {old_stage.replace('_', ' ')} to {stage.replace('_', ' ')}", pipeline_id=pipeline_id)
         db.add(pipeline)
         db.commit()
 
@@ -1185,6 +1185,7 @@ async def delete_test_assignment(
 async def review_batch_new_form(
     request: Request,
     job_id: str = "",
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -1193,6 +1194,7 @@ async def review_batch_new_form(
         "admin": admin,
         "jobs": jobs,
         "prefill_job_id": int(job_id) if job_id else None,
+        "next": next,
     })
 
 

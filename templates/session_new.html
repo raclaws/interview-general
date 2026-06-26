@@ -21,6 +21,7 @@
     <div id="form-errors"></div>
 
     <form method="post" action="/session/new" hx-post="/session/new" hx-target="#form-errors" hx-swap="innerHTML" id="session-form">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
         {% if prefill_candidate and prefill_pipeline_id %}
         <input type="hidden" name="pipeline_id" value="{{ prefill_pipeline_id }}">
@@ -105,7 +106,9 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">Create Session</button>
-            {% if prefill_candidate %}
+            {% if next %}
+            <a href="{{ next }}" class="btn-ghost">Cancel</a>
+            {% elif prefill_candidate %}
             <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost">Cancel</a>
             {% else %}
             <a href="/sessions" class="btn-ghost">Cancel</a>

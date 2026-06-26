@@ -13,13 +13,9 @@ from app.models import (
     CandidatePipeline, PIPELINE_ENDED_STAGES, Candidate, PIPELINE_STAGES, Comment,
 )
 from app.routes.sync import hub as sync_hub
+from app.activity import record_activity
 
 router = APIRouter()
-
-
-def _activity(db, entity_type: str, entity_id: int, body: str):
-    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
-    db.flush()
 
 
 def _serialize_job_for_broadcast(job: Job, bu: BusinessUnit | None, db: Session) -> dict:
@@ -90,11 +86,13 @@ async def jobs_list(
 @router.get("/job/new", response_class=HTMLResponse)
 async def job_new_form(
     request: Request,
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
     ctx = _job_context(db)
     ctx["admin"] = admin
+    ctx["next"] = next
     return _render(request, "job_form.html", ctx)
 
 
@@ -116,6 +114,7 @@ async def job_new_submit(
     description: str = Form(""),
     notes: str = Form(""),
     source: str = Form(""),
+    next: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -152,7 +151,7 @@ async def job_new_submit(
 
     asyncio.create_task(sync_hub.broadcast("jobs", "insert", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
 
-    return RedirectResponse(f"/job/{job.id}", status_code=303)
+    return RedirectResponse(next or f"/job/{job.id}", status_code=303)
 
 
 @router.get("/job/{job_id}", response_class=HTMLResponse)
@@ -195,6 +194,7 @@ async def job_detail(
 async def job_edit_form(
     request: Request,
     job_id: int,
+    next: str = None,
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -206,6 +206,7 @@ async def job_edit_form(
     ctx["admin"] = admin
     ctx["job"] = job
     ctx["editing"] = True
+    ctx["next"] = next or f"/job/{job_id}"
     return _render(request, "job_form.html", ctx)
 
 
@@ -229,6 +230,7 @@ async def job_edit_submit(
     notes: str = Form(""),
     source: str = Form(""),
     title_locked: str = Form(""),
+    next: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -267,7 +269,7 @@ async def job_edit_submit(
     bu = db.get(BusinessUnit, job.business_unit_id)
     asyncio.create_task(sync_hub.broadcast("jobs", "update", str(job.id), _serialize_job_for_broadcast(job, bu, db)))
 
-    return RedirectResponse(f"/job/{job.id}", status_code=303)
+    return RedirectResponse(next or f"/job/{job.id}", status_code=303)
 
 
 @router.post("/job/{job_id}/close")
@@ -284,7 +286,7 @@ async def job_close(
     job.status = "closed"
     job.closed_date = datetime.utcnow().strftime("%Y-%m-%d")
     job.updated_at = datetime.utcnow()
-    _activity(db, "job", job.id, "Job closed")
+    record_activity(db, "job", job.id, "Job closed")
     db.add(job)
     db.commit()
 
@@ -314,7 +316,7 @@ async def job_reopen(
     job.status = "open"
     job.closed_date = None
     job.updated_at = datetime.utcnow()
-    _activity(db, "job", job.id, "Job reopened")
+    record_activity(db, "job", job.id, "Job reopened")
     db.add(job)
     db.commit()
 

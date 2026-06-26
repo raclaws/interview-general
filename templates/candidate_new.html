@@ -45,7 +45,7 @@
     <div id="manual-section" style="display: none;">
         <form method="post" action="/candidate/new">
             <input type="hidden" name="mode" value="manual">
-
+            {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="form-row form-row--2col">
                 <div class="form-field">
                     <label class="form-label">Name <span class="required">*</span></label>
@@ -132,7 +132,7 @@
 
             <div class="form-footer">
                 <button type="submit" class="btn">Create Candidate</button>
-                <a href="/candidates" class="btn-ghost">Cancel</a>
+                <a href="{{ next or '/candidates' }}" class="btn-ghost">Cancel</a>
             </div>
         </form>
     </div>

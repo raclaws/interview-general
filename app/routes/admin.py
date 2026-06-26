@@ -13,13 +13,9 @@ from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
+from app.activity import record_activity
 
 router = APIRouter()
-
-
-def _activity(db, entity_type: str, entity_id: int, body: str):
-    db.add(Comment(entity_type=entity_type, entity_id=entity_id, kind="activity", body=body, author="system"))
-    db.flush()
 
 
 POSITIONS = [
@@ -250,6 +246,38 @@ async def peek_add_comment(
     return _render(request, "partials/trail_item.html", {"item": comment})
 
 
+@router.get("/peek/{entity_type}/{entity_id}/version")
+async def peek_version(
+    entity_type: str,
+    entity_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import Job
+    from fastapi.responses import JSONResponse
+
+    updated_at = None
+    if entity_type == "pipeline":
+        e = db.get(CandidatePipeline, entity_id)
+        if e:
+            updated_at = e.updated_at
+    elif entity_type == "job":
+        e = db.get(Job, entity_id)
+        if e:
+            updated_at = e.updated_at
+    elif entity_type == "session":
+        e = db.get(InterviewSession, entity_id)
+        if e:
+            updated_at = e.created_at
+    elif entity_type == "candidate":
+        e = db.get(Candidate, entity_id)
+        if e:
+            updated_at = e.updated_at
+
+    ts = int(updated_at.timestamp() * 1000) if updated_at else 0
+    return JSONResponse({"ts": ts})
+
+
 @router.get("/sessions", response_class=HTMLResponse)
 async def sessions_list(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template)).all()
@@ -276,7 +304,7 @@ async def delete_view(view_id: int, admin: AdminUser = Depends(get_current_admin
 
 
 @router.get("/session/new", response_class=HTMLResponse)
-async def session_new_form(request: Request, candidate_id: int = None, pipeline_id: int = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+async def session_new_form(request: Request, candidate_id: int = None, pipeline_id: int = None, next: str = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template).order_by(Template.name)).all()
     prefill_candidate = None
     prefill_pipeline = None
@@ -310,6 +338,7 @@ async def session_new_form(request: Request, candidate_id: int = None, pipeline_
         "prefill_pipeline_id": pipeline_id,
         "prefill_job": prefill_job,
         "pipelines": pipelines,
+        "next": next,
     })
 
 
@@ -336,6 +365,7 @@ async def session_new_submit(
     manual_expected_salary: str = Form(""),
     manual_notice_period: str = Form(""),
     manual_cv_link: str = Form(""),
+    next: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -552,8 +582,9 @@ async def session_new_submit(
     asyncio.create_task(sync_hub.broadcast("sessions", "insert", str(session.id), _serialize_session(session, interviewers, template, pipeline)))
 
     if is_htmx:
-        return HTMLResponse("", headers={"HX-Redirect": f"/session/{session.id}"})
-    return RedirectResponse("/sessions", status_code=303)
+        redirect_to = next or f"/session/{session.id}"
+        return HTMLResponse("", headers={"HX-Redirect": redirect_to})
+    return RedirectResponse(next or f"/session/{session.id}", status_code=303)
 
 
 @router.get("/session/{session_id}", response_class=HTMLResponse)
@@ -683,7 +714,7 @@ async def cancel_session(
         return HTMLResponse("Not found", status_code=404)
     if session.status == "pending":
         session.status = "cancelled"
-        _activity(db, "session", session_id, "Session cancelled")
+        record_activity(db, "session", session_id, "Session cancelled", pipeline_id=session.pipeline_id)
         db.add(session)
         db.commit()
         asyncio.create_task(sync_hub.broadcast("sessions", "update", str(session_id), {"status": "cancelled"}))
