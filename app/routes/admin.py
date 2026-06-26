@@ -714,6 +714,15 @@ async def cancel_session(
         return HTMLResponse("Not found", status_code=404)
     if session.status == "pending":
         session.status = "cancelled"
+        interviewers = db.exec(
+            select(SessionInterviewer).where(
+                SessionInterviewer.session_id == session_id,
+                SessionInterviewer.status == "pending",
+            )
+        ).all()
+        for iv in interviewers:
+            iv.status = "cancelled"
+            db.add(iv)
         record_activity(db, "session", session_id, "Session cancelled", pipeline_id=session.pipeline_id)
         db.add(session)
         db.commit()

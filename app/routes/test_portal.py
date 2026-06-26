@@ -39,6 +39,8 @@ def _get_effective_deadline(assignment: TestAssignment):
 
 
 def _is_expired(assignment: TestAssignment) -> bool:
+    if assignment.status == "cancelled":
+        return True
     now = datetime.utcnow()
     if assignment.expiry and now > assignment.expiry:
         return True
