@@ -13,11 +13,10 @@
             '<tr><td><kbd>/</kbd></td><td>Focus search</td></tr>' +
             '<tr><td><kbd>j</kbd> / <kbd>↓</kbd></td><td>Move down</td></tr>' +
             '<tr><td><kbd>k</kbd> / <kbd>↑</kbd></td><td>Move up</td></tr>' +
-            '<tr><td><kbd>Enter</kbd></td><td>Open focused item</td></tr>' +
-            '<tr><td><kbd>c</kbd></td><td>Create new item</td></tr>' +
-            '<tr><td><kbd>e</kbd></td><td>Edit focused item</td></tr>' +
-            '<tr><td><kbd>Delete</kbd></td><td>Delete focused item</td></tr>' +
-            '<tr><td><kbd>Esc</kbd></td><td>Close / go back</td></tr>' +
+            '<tr><td><kbd>Enter</kbd></td><td>Open focused row</td></tr>' +
+            '<tr><td><kbd>n</kbd></td><td>New item</td></tr>' +
+            '<tr><td><kbd>c</kbd></td><td>Open comments (peek)</td></tr>' +
+            '<tr><td><kbd>Esc</kbd></td><td>Close panel / overlay</td></tr>' +
             '</table>' +
             '<p class="hint">Press <kbd>?</kbd> or <kbd>Esc</kbd> to close</p>' +
             '</div>';
@@ -33,89 +32,95 @@
         overlay.style.display = overlay.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function getFocusedRow() {
-        return document.querySelector('.row-focused');
+    function getRows() {
+        var tbody = document.querySelector('[data-sync-table] tbody');
+        if (!tbody) return [];
+        return Array.from(tbody.querySelectorAll('tr.clickable-row'));
+    }
+
+    function getFocusedIndex() {
+        var rows = getRows();
+        for (var i = 0; i < rows.length; i++) {
+            if (rows[i].classList.contains('row-focused')) return i;
+        }
+        return -1;
+    }
+
+    function setFocus(index) {
+        var rows = getRows();
+        if (!rows.length) return;
+        rows.forEach(function(r) { r.classList.remove('row-focused'); });
+        var i = Math.max(0, Math.min(index, rows.length - 1));
+        rows[i].classList.add('row-focused');
+        rows[i].scrollIntoView({ block: 'nearest' });
     }
 
     document.addEventListener('keydown', function(e) {
         if (['INPUT', 'SELECT', 'TEXTAREA'].indexOf(e.target.tagName) !== -1) return;
 
-        // ? — toggle help
         if (e.key === '?') {
             e.preventDefault();
             toggleOverlay();
             return;
         }
 
-        // Escape — close overlay first
         if (e.key === 'Escape') {
             if (overlay && overlay.style.display === 'flex') {
                 overlay.style.display = 'none';
                 e.preventDefault();
                 return;
             }
+            var panel = document.getElementById('peek-panel');
+            if (panel && panel.classList.contains('peek-open')) {
+                panel.classList.remove('peek-open');
+                e.preventDefault();
+                return;
+            }
         }
 
-        // c — create new item (not with Ctrl/Meta — that's copy)
+        if (e.key === '/') {
+            var search = document.querySelector('[data-table-search]');
+            if (search) { e.preventDefault(); search.focus(); }
+            return;
+        }
+
+        if (e.key === 'j' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            var idx = getFocusedIndex();
+            setFocus(idx + 1);
+            return;
+        }
+
+        if (e.key === 'k' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            var idx = getFocusedIndex();
+            setFocus(idx <= 0 ? 0 : idx - 1);
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            var rows = getRows();
+            var idx = getFocusedIndex();
+            if (idx >= 0 && rows[idx] && rows[idx].dataset.href) {
+                e.preventDefault();
+                window.location.href = rows[idx].dataset.href;
+            }
+            return;
+        }
+
+        if (e.key === 'n' && !e.ctrlKey && !e.metaKey) {
+            var addBtn = document.querySelector('.sync-add-btn');
+            if (addBtn) { e.preventDefault(); window.location.href = addBtn.href; }
+            return;
+        }
+
         if (e.key === 'c' && !e.ctrlKey && !e.metaKey) {
-            var container = document.querySelector('[data-shortcut-new]');
-            if (container) {
-                e.preventDefault();
-                window.location.href = container.dataset.shortcutNew;
+            var rows = getRows();
+            var idx = getFocusedIndex();
+            if (idx >= 0 && rows[idx]) {
+                var trigger = rows[idx].querySelector('.peek-trigger');
+                if (trigger) { e.preventDefault(); trigger.click(); }
             }
-            return;
-        }
-
-        // x — toggle selection on focused row
-        if (e.key === 'x') {
-            var row = getFocusedRow();
-            if (row) {
-                var tableContainer = row.closest('[data-table]');
-                if (tableContainer && tableContainer._toggleRowSelection) {
-                    e.preventDefault();
-                    tableContainer._toggleRowSelection(row);
-                }
-            }
-            return;
-        }
-
-        // e — edit focused row
-        if (e.key === 'e') {
-            var row = getFocusedRow();
-            if (row && row.dataset.href) {
-                e.preventDefault();
-                window.location.href = row.dataset.href + '/edit';
-            }
-            return;
-        }
-
-        // Delete/Backspace — delete focused row
-        if (e.key === 'Delete' || e.key === 'Backspace') {
-            var row = getFocusedRow();
-            if (!row) return;
-            var ctx = row.dataset.ctx;
-            if (!ctx) return;
-            try {
-                var items = JSON.parse(ctx);
-                var deleteItem = items.find(function(it) { return it.delete; });
-                if (deleteItem && confirm(deleteItem.confirm || 'Delete this item?')) {
-                    e.preventDefault();
-                    var form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = deleteItem.href;
-                    form.style.display = 'none';
-                    form.setAttribute('hx-post', deleteItem.href);
-                    form.setAttribute('hx-swap', 'none');
-                    form.setAttribute('data-ctx-delete', '');
-                    document.body.appendChild(form);
-                    if (window.htmx) {
-                        htmx.process(form);
-                        htmx.trigger(form, 'submit');
-                    } else {
-                        form.submit();
-                    }
-                }
-            } catch(err) {}
             return;
         }
     });
