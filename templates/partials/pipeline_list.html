@@ -1,5 +1,5 @@
 {% for p in pipelines %}
-<div class="pipeline-entry" style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
+<div class="pipeline-entry pipeline-card" style="border: 1px solid var(--border); border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
         <div>
             <a href="/pipeline/{{ p.id }}" style="font-weight: 600; color: var(--text-primary); text-decoration: none;">{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</a>
@@ -64,14 +64,16 @@
     </div>
     {% endif %}
     {% if p.notes %}
-    <p class="hint" style="margin-top: 0.25rem;">{{ p.notes }}</p>
+    <p class="hint pipeline-notes" style="margin-top: 0.25rem;">{{ p.notes }}</p>
+    {% else %}
+    <p class="hint pipeline-notes" style="margin-top: 0.25rem;"></p>
     {% endif %}
     <details style="margin-top: 0.25rem;">
         <summary class="hint" style="cursor: pointer; font-size: 0.8rem;">Edit notes</summary>
         <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/notes"
               hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/notes"
-              hx-target="#pipeline-section"
-              hx-swap="innerHTML"
+              hx-swap="none"
+              hx-on::after-request="this.closest('details').removeAttribute('open'); this.closest('.pipeline-card').querySelector('.pipeline-notes').textContent = this.querySelector('textarea').value || ''; window.toast && toast('Notes saved')"
               style="margin-top: 0.25rem;">
             <textarea name="notes" rows="2" style="width: 100%;">{{ p.notes or "" }}</textarea>
             <button type="submit" class="btn-ghost" style="margin-top: 0.25rem;">Save</button>
