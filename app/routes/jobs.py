@@ -14,6 +14,7 @@ from app.models import (
 )
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
+from app.helpers import render_gone
 
 router = APIRouter()
 
@@ -163,7 +164,7 @@ async def job_detail(
 ):
     job = db.get(Job, job_id)
     if not job:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Job", "/jobs", "Jobs")
 
     bu = db.get(BusinessUnit, job.business_unit_id)
     pipelines = db.exec(

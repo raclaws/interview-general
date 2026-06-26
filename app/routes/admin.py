@@ -14,6 +14,7 @@ from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
+from app.helpers import render_gone
 
 router = APIRouter()
 
@@ -601,7 +602,7 @@ async def session_detail(
 ):
     session = db.get(InterviewSession, session_id)
     if not session:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Session", "/sessions", "Interview")
 
     template = db.get(Template, session.template_id) if session.template_id else None
     sections = []

@@ -17,6 +17,7 @@ from app.models import (
 )
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
+from app.helpers import render_gone
 
 router = APIRouter()
 
@@ -288,7 +289,7 @@ async def candidate_detail(
 ):
     candidate = db.get(Candidate, candidate_id)
     if not candidate:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Candidate", "/candidates", "Candidates")
 
     pipelines = db.exec(
         select(CandidatePipeline)
@@ -461,11 +462,13 @@ async def pipeline_create(
 ):
     candidate = db.get(Candidate, candidate_id)
     if not candidate:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Candidate", "/candidates", "Candidates")
 
     job = db.get(Job, job_id)
     if not job:
-        return HTMLResponse("Job not found", status_code=404)
+        if request.headers.get("HX-Request"):
+            return HTMLResponse('<div class="form-error">This job no longer exists. It may have been deleted by another user.</div>')
+        return render_gone(request, "Job", "/jobs", "Jobs")
 
     bu = db.get(BusinessUnit, job.business_unit_id)
     pos = job.position
@@ -930,10 +933,10 @@ async def pipeline_detail(
 ):
     pipeline = db.get(CandidatePipeline, pipeline_id)
     if not pipeline:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Pipeline", "/pipelines", "Pipelines")
     candidate = db.get(Candidate, pipeline.candidate_id)
     if not candidate:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Pipeline", "/pipelines", "Pipelines")
 
     ctx = _pipeline_detail_context(db, pipeline, candidate)
     ctx["admin"] = admin
@@ -1097,7 +1100,7 @@ async def assign_test_submit(
 
     pipeline = db.get(CandidatePipeline, pipeline_id)
     if not pipeline:
-        return HTMLResponse("Not found", status_code=404)
+        return render_gone(request, "Pipeline", "/pipelines", "Pipelines")
 
     # Dup check: same URL already assigned to this pipeline
     existing_test = db.exec(

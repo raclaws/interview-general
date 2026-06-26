@@ -1,0 +1,9 @@
+{% extends "base_app.html" %}
+{% block title %}{{ entity_label }} Not Found{% endblock %}
+{% block content %}
+<div class="done-container">
+    <h1 style="color: var(--text-muted);">Gone</h1>
+    <p>This {{ entity_label | lower }} was deleted or doesn't exist.</p>
+    <a href="{{ back_url }}" class="btn" style="margin-top: 1.5rem; display: inline-block;">Back to {{ back_label }}</a>
+</div>
+{% endblock %}
