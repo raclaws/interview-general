@@ -155,3 +155,6 @@ Default port: 8000, Python >=3.12, FastAPI >=0.115.0, SQLModel 0.0.22.
 - **Duplicate checks must cover all entry points** — a record can be created from multiple routes (Job detail, Candidate detail, Session form). Each path needs its own dup check.
 - **Test clickable rows need `data-href`** — `clickable-row` class without `data-href` navigates to "undefined". Either add the href or remove the class.
 - **Seed managed lists from actual data** — if prod has free-text entries ("Product Designer") not in the seeded list, admin can't create new Jobs with that position. Migration should add them to ManagedPosition automatically.
+- **`onsubmit` doesn't block `hx-post` or boosted forms** — use `hx-confirm` exclusively for destructive actions inside HTMX-managed containers.
+- **hx-boost makes ALL child forms HTMX-managed** — links inside forms inherit `hx-target`. Cancel links must have `hx-boost="false"` to prevent partial swaps.
+- **Soft delete needs not_deleted() on ALL queries** — every SELECT that renders data to users must filter `deleted_at IS NULL`. Missing one filter = ghost records.
