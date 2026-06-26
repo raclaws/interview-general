@@ -13,7 +13,7 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
-    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment,
+    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment, not_deleted,
 )
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
@@ -52,7 +52,7 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
     candidate = db.get(Candidate, candidate_id)
     pipelines = db.exec(
         select(CandidatePipeline)
-        .where(CandidatePipeline.candidate_id == candidate_id)
+        .where(CandidatePipeline.candidate_id == candidate_id, not_deleted(CandidatePipeline))
         .order_by(CandidatePipeline.updated_at.desc())
     ).all()
 
@@ -582,7 +582,8 @@ async def pipeline_delete(
         db.add(s)
 
     record_activity(db, "pipeline", pipeline_id, f"Pipeline deleted — {pipeline.display_name or '—'}", pipeline_id=pipeline_id)
-    db.delete(pipeline)
+    pipeline.deleted_at = datetime.utcnow()
+    db.add(pipeline)
     db.commit()
 
     asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pipeline_id)))
@@ -1015,7 +1016,8 @@ async def pipeline_detail_delete(
         db.add(s)
 
     record_activity(db, "pipeline", pipeline_id, f"Pipeline deleted — {pipeline.display_name or '—'}", pipeline_id=pipeline_id)
-    db.delete(pipeline)
+    pipeline.deleted_at = datetime.utcnow()
+    db.add(pipeline)
     db.commit()
 
     asyncio.create_task(sync_hub.broadcast("pipelines", "delete", str(pipeline_id)))
@@ -1025,6 +1027,7 @@ async def pipeline_detail_delete(
         current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
         if current_path.endswith(f"/pipeline/{pipeline_id}"):
             resp.headers["HX-Redirect"] = "/pipelines"
+        resp.headers["HX-Trigger"] = json_mod.dumps({"undoable-delete": {"type": "pipeline", "id": str(pipeline_id), "label": pipeline.display_name or "pipeline"}})
         return resp
 
     return RedirectResponse("/pipelines", status_code=303)
@@ -1155,11 +1158,15 @@ async def delete_test_assignment(
     if not assignment or assignment.pipeline_id != pipeline_id:
         return HTMLResponse("Not found", status_code=404)
 
-    db.delete(assignment)
+    assignment.deleted_at = datetime.utcnow()
+    db.add(assignment)
     db.commit()
+    asyncio.create_task(sync_hub.broadcast("tests", "delete", str(test_id)))
 
     if request.headers.get("HX-Request"):
-        return HTMLResponse("", headers={"HX-Trigger": "toast:Test deleted"})
+        resp = HTMLResponse("")
+        resp.headers["HX-Trigger"] = json_mod.dumps({"undoable-delete": {"type": "test", "id": str(test_id), "label": assignment.title}, "toast": {"message": "Test deleted", "severity": ""}})
+        return resp
 
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
 

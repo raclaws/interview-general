@@ -358,16 +358,18 @@ async def job_delete(
             return resp
         return RedirectResponse(f"/job/{job.id}", status_code=303)
 
-    asyncio.create_task(sync_hub.broadcast("jobs", "delete", str(job.id), {"id": str(job.id)}))
-
-    db.delete(job)
+    job.deleted_at = datetime.utcnow()
+    db.add(job)
     db.commit()
+
+    asyncio.create_task(sync_hub.broadcast("jobs", "delete", str(job.id), {"id": str(job.id)}))
 
     if request.headers.get("HX-Request"):
         resp = HTMLResponse("")
         current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
         if current_path.endswith(f"/job/{job_id}"):
             resp.headers["HX-Redirect"] = "/jobs"
+        resp.headers["HX-Trigger"] = json.dumps({"undoable-delete": {"type": "job", "id": str(job_id), "label": job.title}})
         return resp
 
     return RedirectResponse("/jobs", status_code=303)

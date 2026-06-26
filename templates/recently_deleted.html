@@ -1,0 +1,101 @@
+{% extends "base_app.html" %}
+{% block title %}Recently Deleted{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/settings">Settings</a> / <span>Recently Deleted</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Recently Deleted</h1>
+</div>
+<p class="form-hint" style="margin-bottom: 1.5rem;">Items are permanently removed after 30 days. Restore to bring them back, or delete permanently.</p>
+
+{% if not jobs and not pipelines and not sessions and not tests %}
+<p class="row-meta" style="padding: 2rem; text-align: center;">Nothing in the trash.</p>
+{% endif %}
+
+{% if jobs %}
+<h2 class="trail-title">Jobs</h2>
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for j in jobs %}
+        <tr>
+            <td><div class="col-primary">{{ j.title }}</div><div class="row-meta">Deleted {{ j.deleted_at.strftime("%b %d, %H:%M") }}</div></td>
+            <td style="text-align:right; white-space:nowrap;">
+                <form method="post" action="/restore/job/{{ j.id }}" style="display:inline;" hx-post="/restore/job/{{ j.id }}" hx-swap="none" hx-on::after-request="this.closest('tr').remove(); toast('Restored')">
+                    <button type="submit" class="btn-ghost">Restore</button>
+                </form>
+                <form method="post" action="/purge/job/{{ j.id }}" style="display:inline;" hx-post="/purge/job/{{ j.id }}" hx-swap="none" hx-confirm="Delete permanently? This cannot be undone." hx-on::after-request="this.closest('tr').remove(); toast('Permanently deleted')">
+                    <button type="submit" class="btn-ghost" style="color:var(--danger);">Delete forever</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if pipelines %}
+<h2 class="trail-title">Pipelines</h2>
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for p in pipelines %}
+        <tr>
+            <td><div class="col-primary">{{ p.display_name or p.position or "Pipeline" }}</div><div class="row-meta">Deleted {{ p.deleted_at.strftime("%b %d, %H:%M") }}</div></td>
+            <td style="text-align:right; white-space:nowrap;">
+                <form method="post" action="/restore/pipeline/{{ p.id }}" style="display:inline;" hx-post="/restore/pipeline/{{ p.id }}" hx-swap="none" hx-on::after-request="this.closest('tr').remove(); toast('Restored')">
+                    <button type="submit" class="btn-ghost">Restore</button>
+                </form>
+                <form method="post" action="/purge/pipeline/{{ p.id }}" style="display:inline;" hx-post="/purge/pipeline/{{ p.id }}" hx-swap="none" hx-confirm="Delete permanently? This cannot be undone." hx-on::after-request="this.closest('tr').remove(); toast('Permanently deleted')">
+                    <button type="submit" class="btn-ghost" style="color:var(--danger);">Delete forever</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if sessions %}
+<h2 class="trail-title">Sessions</h2>
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for s in sessions %}
+        <tr>
+            <td><div class="col-primary">Session #{{ s.id }} — {{ s.job_title }}</div><div class="row-meta">Deleted {{ s.deleted_at.strftime("%b %d, %H:%M") }}</div></td>
+            <td style="text-align:right; white-space:nowrap;">
+                <form method="post" action="/restore/session/{{ s.id }}" style="display:inline;" hx-post="/restore/session/{{ s.id }}" hx-swap="none" hx-on::after-request="this.closest('tr').remove(); toast('Restored')">
+                    <button type="submit" class="btn-ghost">Restore</button>
+                </form>
+                <form method="post" action="/purge/session/{{ s.id }}" style="display:inline;" hx-post="/purge/session/{{ s.id }}" hx-swap="none" hx-confirm="Delete permanently? This cannot be undone." hx-on::after-request="this.closest('tr').remove(); toast('Permanently deleted')">
+                    <button type="submit" class="btn-ghost" style="color:var(--danger);">Delete forever</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+{% if tests %}
+<h2 class="trail-title">Tests</h2>
+<table class="table-clean" style="margin-bottom: 1.5rem;">
+    <tbody>
+        {% for t in tests %}
+        <tr>
+            <td><div class="col-primary">{{ t.title }}</div><div class="row-meta">Deleted {{ t.deleted_at.strftime("%b %d, %H:%M") }}</div></td>
+            <td style="text-align:right; white-space:nowrap;">
+                <form method="post" action="/restore/test/{{ t.id }}" style="display:inline;" hx-post="/restore/test/{{ t.id }}" hx-swap="none" hx-on::after-request="this.closest('tr').remove(); toast('Restored')">
+                    <button type="submit" class="btn-ghost">Restore</button>
+                </form>
+                <form method="post" action="/purge/test/{{ t.id }}" style="display:inline;" hx-post="/purge/test/{{ t.id }}" hx-swap="none" hx-confirm="Delete permanently? This cannot be undone." hx-on::after-request="this.closest('tr').remove(); toast('Permanently deleted')">
+                    <button type="submit" class="btn-ghost" style="color:var(--danger);">Delete forever</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

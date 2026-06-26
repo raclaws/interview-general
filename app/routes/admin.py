@@ -431,6 +431,80 @@ async def list_views(page: str = "", admin: AdminUser = Depends(get_current_admi
     return JSONResponse([{"id": v.id, "name": v.name, "config": v.config} for v in views])
 
 
+@router.post("/restore/{entity_type}/{entity_id}")
+async def restore_entity(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import Job, TestAssignment
+    from fastapi.responses import JSONResponse
+
+    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment}
+    model = model_map.get(entity_type)
+    if not model:
+        return JSONResponse({"detail": "Invalid entity type"}, status_code=400)
+
+    entity = db.get(model, entity_id)
+    if not entity or not entity.deleted_at:
+        return JSONResponse({"detail": "Not found or not deleted"}, status_code=404)
+
+    entity.deleted_at = None
+    db.add(entity)
+    db.commit()
+
+    broadcast_table = {"job": "jobs", "pipeline": "pipelines", "session": "sessions", "test": "tests"}.get(entity_type)
+    if broadcast_table:
+        asyncio.create_task(sync_hub.broadcast(broadcast_table, "insert", str(entity_id), {"id": str(entity_id)}))
+
+    return JSONResponse({"restored": True})
+
+
+@router.post("/purge/{entity_type}/{entity_id}")
+async def purge_entity(
+    request: Request,
+    entity_type: str,
+    entity_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import Job, TestAssignment
+    from fastapi.responses import JSONResponse
+
+    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment}
+    model = model_map.get(entity_type)
+    if not model:
+        return JSONResponse({"detail": "Invalid entity type"}, status_code=400)
+
+    entity = db.get(model, entity_id)
+    if not entity or not entity.deleted_at:
+        return JSONResponse({"detail": "Not found or not soft-deleted"}, status_code=404)
+
+    db.delete(entity)
+    db.commit()
+    return JSONResponse({"purged": True})
+
+
+@router.get("/recently-deleted", response_class=HTMLResponse)
+async def recently_deleted(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    from app.models import Job, TestAssignment
+
+    jobs = db.exec(select(Job).where(Job.deleted_at.isnot(None)).order_by(Job.deleted_at.desc())).all()
+    pipelines = db.exec(select(CandidatePipeline).where(CandidatePipeline.deleted_at.isnot(None)).order_by(CandidatePipeline.deleted_at.desc())).all()
+    sessions = db.exec(select(InterviewSession).where(InterviewSession.deleted_at.isnot(None)).order_by(InterviewSession.deleted_at.desc())).all()
+    tests = db.exec(select(TestAssignment).where(TestAssignment.deleted_at.isnot(None)).order_by(TestAssignment.deleted_at.desc())).all()
+
+    return _render(request, "recently_deleted.html", {
+        "admin": admin,
+        "jobs": jobs,
+        "pipelines": pipelines,
+        "sessions": sessions,
+        "tests": tests,
+    })
+
+
 @router.get("/session/new", response_class=HTMLResponse)
 async def session_new_form(request: Request, candidate_id: int = None, pipeline_id: int = None, next: str = None, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     templates = db.exec(select(Template).order_by(Template.name)).all()
@@ -880,24 +954,8 @@ async def delete_session(
     if not session:
         return HTMLResponse("Not found", status_code=404)
 
-    # Delete related responses and scores
-    interviewers = db.exec(
-        select(SessionInterviewer).where(SessionInterviewer.session_id == session.id)
-    ).all()
-    for iv in interviewers:
-        response = db.exec(
-            select(Response).where(Response.session_interviewer_id == iv.id)
-        ).first()
-        if response:
-            scores = db.exec(
-                select(ResponseScore).where(ResponseScore.response_id == response.id)
-            ).all()
-            for s in scores:
-                db.delete(s)
-            db.delete(response)
-        db.delete(iv)
-
-    db.delete(session)
+    session.deleted_at = datetime.utcnow()
+    db.add(session)
     db.commit()
     asyncio.create_task(sync_hub.broadcast("sessions", "delete", str(session_id)))
     if request.headers.get("HX-Request") == "true":
@@ -905,6 +963,7 @@ async def delete_session(
         current_path = request.headers.get("HX-Current-URL", "").split("?")[0].rstrip("/")
         if current_path.endswith(f"/session/{session_id}"):
             resp.headers["HX-Redirect"] = "/sessions"
+        resp.headers["HX-Trigger"] = json.dumps({"undoable-delete": {"type": "session", "id": str(session_id), "label": f"Session #{session_id}"}})
         return resp
     return RedirectResponse(next or "/sessions", status_code=303)
 

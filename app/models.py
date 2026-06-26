@@ -1,7 +1,12 @@
 import json
 from datetime import datetime
 from typing import Optional
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, col
+
+
+def not_deleted(model):
+    """Filter for WHERE deleted_at IS NULL."""
+    return col(model.deleted_at).is_(None)
 
 
 class AdminUser(SQLModel, table=True):
@@ -74,6 +79,7 @@ class Job(SQLModel, table=True):
     status: str = Field(default="open")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None
 
     @property
     def links_list(self) -> list[dict]:
@@ -149,6 +155,7 @@ class CandidatePipeline(SQLModel, table=True):
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None
 
 
 class Template(SQLModel, table=True):
@@ -200,6 +207,7 @@ class InterviewSession(SQLModel, table=True):
     status: str = Field(default="pending")
     aggregate_summary: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None
 
     @property
     def snapshot(self) -> dict:
@@ -323,6 +331,7 @@ class TestAssignment(SQLModel, table=True):
     submitted_at: Optional[datetime] = None
     submission_url: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None
 
 
 class ReviewBatch(SQLModel, table=True):

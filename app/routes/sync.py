@@ -16,7 +16,7 @@ from app.auth import get_current_admin
 from app.models import (
     InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
     Job, BusinessUnit, Candidate, ReviewBatch, ReviewScore, PipelineScore, TestAssignment,
-    Comment,
+    Comment, not_deleted,
 )
 
 
@@ -115,7 +115,7 @@ def _serialize_session(s: InterviewSession, interviewers, template, pipeline) ->
 
 
 def _hydrate_sessions(db: Session, since: int | None):
-    query = select(InterviewSession)
+    query = select(InterviewSession).where(not_deleted(InterviewSession))
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
         query = query.where(InterviewSession.created_at > since_dt)
@@ -139,7 +139,7 @@ def _hydrate_sessions(db: Session, since: int | None):
 def _hydrate_jobs(db: Session, since: int | None):
     from sqlalchemy import func
 
-    query = select(Job).where(Job.title != "_Unassigned")
+    query = select(Job).where(Job.title != "_Unassigned", not_deleted(Job))
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
         query = query.where(Job.updated_at > since_dt)
@@ -287,7 +287,7 @@ def _hydrate_pipelines(db: Session, since: int | None):
 
     query = select(CandidatePipeline, Candidate).join(
         Candidate, CandidatePipeline.candidate_id == Candidate.id
-    )
+    ).where(not_deleted(CandidatePipeline))
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
         query = query.where(CandidatePipeline.updated_at > since_dt)
@@ -372,7 +372,7 @@ def _hydrate_tests(db: Session, since: int | None):
         CandidatePipeline, TestAssignment.pipeline_id == CandidatePipeline.id
     ).join(
         Candidate, CandidatePipeline.candidate_id == Candidate.id
-    )
+    ).where(not_deleted(TestAssignment))
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
         query = query.where(TestAssignment.created_at > since_dt)

@@ -225,6 +225,47 @@ document.addEventListener('click', function(e) {
             .catch(function() {});
     });
 })();
+
+// Undo delete
+(function() {
+    var _lastDelete = null;
+    var _undoToast = null;
+
+    window.undoableDelete = function(type, id, label) {
+        _lastDelete = { type: type, id: id };
+        if (_undoToast) _undoToast.remove();
+        _undoToast = document.createElement('div');
+        _undoToast.className = 'toast toast-undo show';
+        _undoToast.innerHTML = 'Deleted ' + label + ' <button class="undo-btn" onclick="window.undoDelete()">Undo</button>';
+        document.querySelector('.toast-container').appendChild(_undoToast);
+        _lastDelete.timer = setTimeout(function() {
+            if (_undoToast) { _undoToast.classList.remove('show'); _undoToast.classList.add('hide'); setTimeout(function() { _undoToast.remove(); _undoToast = null; }, 250); }
+            _lastDelete = null;
+        }, 5000);
+    };
+
+    window.undoDelete = function() {
+        if (!_lastDelete) return;
+        clearTimeout(_lastDelete.timer);
+        fetch('/restore/' + _lastDelete.type + '/' + _lastDelete.id, { method: 'POST', credentials: 'include' })
+            .then(function(r) { if (r.ok) { toast('Restored'); location.reload(); } });
+        if (_undoToast) _undoToast.remove();
+        _undoToast = null;
+        _lastDelete = null;
+    };
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'z' && _lastDelete) {
+            e.preventDefault();
+            window.undoDelete();
+        }
+    });
+
+    document.body.addEventListener('undoable-delete', function(e) {
+        var d = e.detail;
+        if (d && d.type && d.id) window.undoableDelete(d.type, d.id, d.label || d.type);
+    });
+})();
 </script>
 </body>
 </html>

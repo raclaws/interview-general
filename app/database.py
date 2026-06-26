@@ -1,5 +1,6 @@
 import os
-from sqlmodel import SQLModel, create_engine, Session
+from datetime import datetime
+from sqlmodel import SQLModel, create_engine, Session, select
 from sqlalchemy import text, inspect
 from dotenv import load_dotenv
 
@@ -20,6 +21,10 @@ def _migrate():
         ("candidate_pipelines", "job_id", "INTEGER"),
         ("candidates", "cv_link", "TEXT"),
         ("review_batches", "job_id", "INTEGER"),
+        ("sessions", "deleted_at", "TIMESTAMP"),
+        ("candidate_pipelines", "deleted_at", "TIMESTAMP"),
+        ("jobs", "deleted_at", "TIMESTAMP"),
+        ("test_assignments", "deleted_at", "TIMESTAMP"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -47,12 +52,29 @@ def create_tables():
     from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment  # noqa
     SQLModel.metadata.create_all(engine)
     _migrate()
+    _purge_soft_deleted()
     from app.seed import seed_templates
     seed_templates(engine)
     from app.seed import seed_managed_data
     seed_managed_data(engine)
     from app.seed import migrate_legacy_job_ids
     migrate_legacy_job_ids(engine)
+
+
+def _purge_soft_deleted():
+    """Hard delete records soft-deleted more than 30 days ago."""
+    from datetime import timedelta
+    from app.models import CandidatePipeline, InterviewSession, Job, TestAssignment
+    cutoff = datetime.utcnow() - timedelta(days=30)
+    with Session(engine) as db:
+        for model in [TestAssignment, InterviewSession, CandidatePipeline, Job]:
+            stale = db.exec(
+                select(model).where(model.deleted_at.isnot(None), model.deleted_at < cutoff)
+            ).all()
+            for record in stale:
+                db.delete(record)
+        if stale:
+            db.commit()
 
 
 def get_session():
