@@ -1,0 +1,59 @@
+{% extends "base_app.html" %}
+{% block title %}Tests{% endblock %}
+{% block main_class %}layout-list{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Tests</h1>
+</div>
+
+<div data-sync-table="tests"
+     data-sync-search-fields="candidateName,title,position"
+     data-sync-archive-field="status"
+     data-sync-archive-values="submitted,cancelled"
+     data-sync-default-sort="createdAt:desc"
+     data-sync-filter-fields='[{"key":"status","label":"Status","type":"select","options":["pending","opened","submitted","cancelled"]},{"key":"candidateName","label":"Candidate","type":"text"},{"key":"position","label":"Position","type":"text"},{"key":"businessUnit","label":"Business Unit","type":"text"}]'
+     data-sync-display-options='{"sort":[{"value":"createdAt:desc","label":"Newest first","type":"date"},{"value":"createdAt:asc","label":"Oldest first","type":"date"},{"value":"candidateName:asc","label":"Candidate A-Z"}],"group":[{"value":"status","label":"Status"},{"value":"businessUnit","label":"Business Unit"}]}'>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search candidate or test title..." class="table-search">
+    </div>
+    <div class="sync-subcontrols">
+        <button type="button" class="archive-pill">Show completed</button>
+    </div>
+
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+        <span class="table-count"></span>
+    </div>
+</div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load tests.</p>
+</noscript>
+
+<script>
+window.__syncConfig = {
+    renderRow: function(r) {
+        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '';
+        var deadline = r.deadline ? new Date(r.deadline).toLocaleDateString() : '—';
+        return '<tr class="clickable-row" data-href="/pipeline/' + r.pipelineId + '">' +
+            '<td><div class="col-primary">' + (r.title || '—') + '</div>' +
+            '<div class="row-meta">' + (r.candidateName || '—') + ' · ' + (r.position || '—') + '</div></td>' +
+            '<td><span class="badge badge-' + r.status + '">' + r.status + '</span></td>' +
+            '<td class="row-meta">Due: ' + deadline + '</td>' +
+            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'pipeline\', ' + r.pipelineId + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
+            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            '</tr>';
+    },
+    contextMenu: function(r, baseUrl) {
+        var items = [];
+        items.push({label: '↗ View pipeline', href: '/pipeline/' + r.pipelineId});
+        items.push({label: '↗ View candidate', href: '/candidate/' + r.candidateId});
+        items.push({label: '⎘ Copy test link', copy: baseUrl + '/t/' + r.token});
+        return items;
+    }
+};
+</script>
+<script src="/static/sync-list.js?v=2"></script>
+{% endblock %}

@@ -1,5 +1,6 @@
 import os
 import re
+import asyncio
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
@@ -9,6 +10,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import TestAssignment
 from app.activity import record_activity
+from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
 
@@ -184,6 +186,8 @@ async def test_submit(
     db.commit()
     record_activity(db, "pipeline", assignment.pipeline_id, f"Test submitted — {assignment.title}", pipeline_id=assignment.pipeline_id)
     db.commit()
+
+    asyncio.create_task(sync_hub.broadcast("tests", "update", str(assignment.id), {"id": str(assignment.id), "status": "submitted"}))
 
     return RedirectResponse(f"/t/{token}/done", status_code=303)
 

@@ -27,12 +27,16 @@
                 <a href="/pipelines" class="{% if request.url.path.startswith('/pipeline') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> Pipelines
                 </a>
-                <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="8" y="3" rx="1"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M12 15h.01"/></svg> Interview
-                </a>
-                <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Review
-                </a>
+                <div class="sidebar-group" id="eval-group">
+                    <button class="sidebar-group-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
+                        <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Evaluation
+                    </button>
+                    <div class="sidebar-group-items">
+                        <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">Interview</a>
+                        <a href="/tests" class="{% if request.url.path == '/tests' %}active{% endif %}">Tests</a>
+                        <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">Review</a>
+                    </div>
+                </div>
                 <a href="/settings" class="{% if request.url.path.startswith('/settings') or request.url.path.startswith('/templates') %}active{% endif %}">
                     <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Settings
                 </a>

@@ -1140,6 +1140,11 @@ async def assign_test_submit(
     record_activity(db, "pipeline", pipeline_id, f"Test assigned — {title}", pipeline_id=pipeline_id)
     db.commit()
 
+    asyncio.create_task(sync_hub.broadcast("tests", "insert", str(assignment.id), {
+        "id": str(assignment.id), "title": assignment.title, "status": assignment.status,
+        "token": assignment.token, "pipelineId": pipeline_id,
+    }))
+
     return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
 
 
@@ -1159,6 +1164,7 @@ async def cancel_test_assignment(
         assignment.status = "cancelled"
         db.add(assignment)
         db.commit()
+        asyncio.create_task(sync_hub.broadcast("tests", "update", str(test_id), {"id": str(test_id), "status": "cancelled"}))
 
     if request.headers.get("HX-Request"):
         return HTMLResponse("", headers={"HX-Trigger": "toast:Test cancelled"})

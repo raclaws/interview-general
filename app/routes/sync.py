@@ -365,12 +365,53 @@ def _hydrate_pipelines(db: Session, since: int | None):
     return results
 
 
+def _hydrate_tests(db: Session, since: int | None):
+    from sqlalchemy import func
+
+    query = select(TestAssignment, CandidatePipeline, Candidate).join(
+        CandidatePipeline, TestAssignment.pipeline_id == CandidatePipeline.id
+    ).join(
+        Candidate, CandidatePipeline.candidate_id == Candidate.id
+    )
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(TestAssignment.created_at > since_dt)
+    query = query.order_by(TestAssignment.created_at.desc())
+
+    rows = db.exec(query).all()
+    if not rows:
+        return []
+
+    test_ids = [t.id for t, _, _ in rows]
+    counts = _comment_counts(db, "pipeline", [t.pipeline_id for t, _, _ in rows])
+
+    results = []
+    for test, pipeline, candidate in rows:
+        results.append({
+            "id": str(test.id),
+            "title": test.title,
+            "status": test.status,
+            "token": test.token,
+            "candidateName": candidate.name,
+            "candidateId": candidate.id,
+            "pipelineId": pipeline.id,
+            "position": pipeline.position or "",
+            "businessUnit": pipeline.business_unit or "",
+            "deadline": test.deadline.isoformat() if test.deadline else "",
+            "submittedAt": test.submitted_at.isoformat() if test.submitted_at else "",
+            "commentCount": counts.get(pipeline.id, 0),
+            "createdAt": int(test.created_at.timestamp() * 1000) if test.created_at else 0,
+        })
+    return results
+
+
 _HYDRATE_DISPATCH = {
     "sessions": _hydrate_sessions,
     "jobs": _hydrate_jobs,
     "candidates": _hydrate_candidates,
     "review_batches": _hydrate_review_batches,
     "pipelines": _hydrate_pipelines,
+    "tests": _hydrate_tests,
 }
 
 

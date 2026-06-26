@@ -286,6 +286,11 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
     return _render(request, "sessions_list.html", {"admin": admin, "template_names": template_names})
 
 
+@router.get("/tests", response_class=HTMLResponse)
+async def tests_list(request: Request, admin: AdminUser = Depends(get_current_admin)):
+    return _render(request, "tests_list.html", {"admin": admin})
+
+
 @router.post("/views")
 async def create_view(request: Request, page: str = Form(...), name: str = Form(...), config: str = Form(""), admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     view = TableView(page=page, name=name, config=config)
