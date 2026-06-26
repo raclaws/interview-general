@@ -114,26 +114,28 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .sidebar-group-toggle {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     width: 100%;
-    padding: 0.45rem 1.25rem;
+    padding: 0.3rem 1.25rem;
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.05em;
     cursor: pointer;
     transition: color 0.15s;
 }
-.sidebar-group-toggle:hover { color: var(--text-primary); }
-.sidebar-group-toggle .sidebar-icon { width: 14px; height: 14px; transition: transform 0.2s; }
+.sidebar-group-toggle:hover { color: var(--text-secondary); }
+.sidebar-group-toggle .sidebar-icon { width: 10px; height: 10px; transition: transform 0.2s; }
 .sidebar-group.collapsed .sidebar-group-toggle .sidebar-icon { transform: rotate(-90deg); }
-.sidebar-group-items { padding-left: 1rem; }
+.sidebar-group-items { padding-left: 0.5rem; }
 .sidebar-group-items a {
-    display: block;
-    padding: 0.4rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.45rem 1.25rem;
     color: var(--text-secondary);
     font-size: 0.82rem;
     font-weight: 500;
@@ -143,6 +145,7 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 }
 .sidebar-group-items a:hover { color: var(--text-primary); background: var(--bg-muted); }
 .sidebar-group-items a.active { color: var(--text-primary); border-left-color: var(--accent); background: var(--bg-muted); }
+.sidebar-group-items .sidebar-icon { width: 16px; height: 16px; }
 .sidebar-group.collapsed .sidebar-group-items { display: none; }
 
 .sidebar-footer {

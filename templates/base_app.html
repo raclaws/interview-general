@@ -29,12 +29,18 @@
                 </a>
                 <div class="sidebar-group" id="eval-group">
                     <button class="sidebar-group-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
-                        <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Evaluation
+                        <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Evaluation
                     </button>
                     <div class="sidebar-group-items">
-                        <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">Interview</a>
-                        <a href="/tests" class="{% if request.url.path == '/tests' %}active{% endif %}">Tests</a>
-                        <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">Review</a>
+                        <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="8" y="3" rx="1"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M12 15h.01"/></svg> Interview
+                        </a>
+                        <a href="/tests" class="{% if request.url.path == '/tests' %}active{% endif %}">
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Tests
+                        </a>
+                        <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Review
+                        </a>
                     </div>
                 </div>
                 <a href="/settings" class="{% if request.url.path.startswith('/settings') or request.url.path.startswith('/templates') %}active{% endif %}">
