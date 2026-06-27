@@ -1124,7 +1124,11 @@ async def pipeline_detail_update_stage(
             f'<option value="{s}" {"selected" if s == pipeline.stage else ""}>{s.replace("_", " ").title()}</option>'
             for s in PIPELINE_STAGES
         )
-        select_html = f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" hx-target="this" hx-swap="outerHTML" hx-trigger="change" class="inline-select">{options}</select>'
+        select_html = (
+            f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" '
+            f'hx-target="this" hx-swap="outerHTML" hx-trigger="change" '
+            f'onclick="event.stopPropagation()" class="inline-select">{options}</select>'
+        )
 
         # Auto-close prompt: check if job headcount is met
         toast_msg = "Stage updated"

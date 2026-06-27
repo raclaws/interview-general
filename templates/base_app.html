@@ -273,9 +273,10 @@ document.addEventListener('scroll', function() { dismissOverlays(); }, true);
 
     // Intercept HTMX confirms
     document.body.addEventListener('htmx:confirm', function(e) {
-        if (!e.detail.elt.hasAttribute('hx-confirm')) return;
+        var elt = e.detail.elt;
+        if (!elt || !elt.hasAttribute || !elt.hasAttribute('hx-confirm')) return;
         e.preventDefault();
-        var question = e.detail.elt.getAttribute('hx-confirm');
+        var question = elt.getAttribute('hx-confirm');
         show(question, function() {
             e.detail.issueRequest(true);
         });
