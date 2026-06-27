@@ -118,14 +118,31 @@
         toast(detail.value || detail.message || '', detail.severity || '');
     });
 
-    // CLA-43: Update row data-stage after inline select swap
+    // CLA-43: Update row data-stage after inline select swap + color sync
     document.body.addEventListener('htmx:afterSettle', function(e) {
         var sel = e.detail.elt;
         if (sel.tagName === 'SELECT' && sel.name === 'stage') {
+            sel.dataset.stage = sel.value;
             var row = sel.closest('tr');
             if (row) row.dataset.stage = sel.value;
         }
     });
+
+    // Sync data-stage on change (covers non-HTMX selects)
+    document.body.addEventListener('change', function(e) {
+        if (e.target.tagName === 'SELECT' && e.target.name === 'stage') {
+            e.target.dataset.stage = e.target.value;
+        }
+    });
+
+    // Init data-stage on existing selects + after sync-list renders
+    function syncStageSelects() {
+        document.querySelectorAll('select.inline-select[name="stage"]:not([data-stage])').forEach(function(sel) {
+            sel.dataset.stage = sel.value;
+        });
+    }
+    syncStageSelects();
+    setInterval(syncStageSelects, 500);
 })();
 
 // --- Shared utilities (CLA-133: guards at boundaries) ---

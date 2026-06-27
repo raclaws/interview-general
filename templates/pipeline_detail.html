@@ -48,7 +48,7 @@
     <div>
         <div class="row-meta" style="margin-bottom: 0.25rem;">Stage</div>
         <form method="post" action="/pipeline/{{ pipeline.id }}/stage"
-              style="display: inline-flex; align-items: center;">
+              hx-boost="false" style="display: inline-flex; align-items: center;">
             <select name="stage" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
                 {% for s in stages %}
                 <option value="{{ s }}" {% if pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>

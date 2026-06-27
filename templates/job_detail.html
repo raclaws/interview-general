@@ -97,7 +97,7 @@
 
         <div id="existing-section">
             <form method="post" action="/job/{{ job.id }}/add-candidate"
-                  hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                  hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML" hx-disinherit="*">
                 <input type="hidden" name="mode" value="existing">
                 <label class="form-label">Search local candidates</label>
                 <input type="text" id="job-candidate-search" placeholder="Type name..." autocomplete="off" class="form-input">
@@ -122,7 +122,7 @@
 
             <div id="job-nocodb-section">
                 <form method="post" action="/job/{{ job.id }}/add-candidate"
-                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML" hx-disinherit="*">
                     <input type="hidden" name="mode" value="nocodb">
                     <label class="form-label">Search NocoDB</label>
                     <input type="text" id="job-nocodb-input" placeholder="Type name..." autocomplete="off" class="form-input">
@@ -135,7 +135,7 @@
 
             <div id="job-manual-section" style="display: none;">
                 <form method="post" action="/job/{{ job.id }}/add-candidate"
-                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML">
+                      hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML" hx-disinherit="*">
                     <input type="hidden" name="mode" value="new">
                     <div class="form-row form-row--2col">
                         <div class="form-field">

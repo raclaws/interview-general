@@ -1126,8 +1126,8 @@ async def pipeline_detail_update_stage(
         )
         select_html = (
             f'<select name="stage" hx-post="/pipeline/{pipeline_id}/stage" '
-            f'hx-target="this" hx-swap="outerHTML" hx-trigger="change" '
-            f'onclick="event.stopPropagation()" class="inline-select">{options}</select>'
+            f'hx-target="this" hx-swap="outerHTML" hx-push-url="false" hx-trigger="change" '
+            f'hx-disinherit="*" onclick="event.stopPropagation()" class="inline-select">{options}</select>'
         )
 
         # Auto-close prompt: check if job headcount is met

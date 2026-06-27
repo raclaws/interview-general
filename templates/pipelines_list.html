@@ -56,8 +56,8 @@ window.__syncConfig = {
         return '<tr class="clickable-row" data-href="/pipeline/' + r.id + '">' +
             '<td><div class="col-primary">' + (r.candidateName || '—') + '</div>' +
             '<div class="row-meta">' + (r.jobTitle || r.businessUnit || '—') + (r.displayName ? ' · ' + r.displayName : '') + '</div></td>' +
-            '<td><select name="stage" class="inline-select" ' +
-            'hx-post="/pipeline/' + r.id + '/stage" hx-target="this" hx-swap="outerHTML" hx-trigger="change" ' +
+            '<td hx-disinherit="*"><select name="stage" class="inline-select" ' +
+            'hx-post="/pipeline/' + r.id + '/stage" hx-target="this" hx-swap="outerHTML" hx-push-url="false" hx-trigger="change" ' +
             'onclick="event.stopPropagation()">' + stageOptions + '</select></td>' +
             '<td>' + r.sessionCompleted + '/' + r.sessionTotal + '</td>' +
             '<td>' + testInfo + '</td>' +

@@ -700,22 +700,22 @@ tr:hover td { background: var(--bg-muted); }
 .badge-high::before { content: '●'; color: var(--text-primary); }
 .badge-screening, .badge-test, .badge-open,
 .badge-opened, .badge-submitted, .badge-normal,
-.badge-high { background: var(--bg-muted); color: var(--text-muted); }
+.badge-high { background: var(--bg-muted); color: var(--text-secondary); }
 /* In-progress — half-filled, accent */
 .badge-interview::before, .badge-offer::before,
 .badge-on_hold::before { content: '◐'; color: var(--text-primary); }
 .badge-interview, .badge-offer, .badge-on_hold {
-    background: var(--bg-muted); color: var(--text-muted);
+    background: var(--bg-muted); color: var(--text-secondary);
 }
 /* Success — checkmark, green */
 .badge-completed::before, .badge-hired::before, .badge-closed::before { content: '✓'; color: var(--success); }
 .badge-completed, .badge-hired, .badge-closed {
-    background: var(--success-bg); color: var(--text-muted);
+    background: var(--success-bg); color: var(--success);
 }
 /* Danger — cross, red */
 .badge-cancelled::before, .badge-rejected::before { content: '✕'; color: var(--danger); }
 .badge-cancelled, .badge-rejected {
-    background: var(--danger-bg); color: var(--text-muted);
+    background: var(--danger-bg); color: var(--danger);
 }
 /* Neutral — no icon emphasis */
 .badge-withdrawn::before, .badge-low::before { content: '○'; color: var(--text-muted); }
@@ -741,15 +741,27 @@ tr:hover td { background: var(--bg-muted); }
     font-size: var(--text-xs);
     font-weight: 500;
     border-radius: 20px;
-    border: none;
+    border: 1px solid var(--border);
     background: var(--bg-muted) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 0.4rem center;
     color: var(--text-muted);
     cursor: pointer;
     text-transform: capitalize;
-    transition: background-color 0.15s;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 .inline-select:hover { background-color: var(--border); }
 .inline-select:focus { outline: none; background-color: var(--border); }
+/* Stage-aware coloring */
+.inline-select[data-stage="screening"],
+.inline-select[data-stage="test"],
+.inline-select[data-stage="open"] { color: var(--text-secondary); border-color: var(--text-muted); }
+.inline-select[data-stage="interview"],
+.inline-select[data-stage="offer"],
+.inline-select[data-stage="on_hold"] { color: var(--text-primary); border-color: var(--text-primary); }
+.inline-select[data-stage="hired"],
+.inline-select[data-stage="completed"] { color: var(--success); border-color: var(--success); }
+.inline-select[data-stage="rejected"],
+.inline-select[data-stage="cancelled"] { color: var(--danger); border-color: var(--danger); }
+.inline-select[data-stage="withdrawn"] { color: var(--text-muted); border-color: var(--border); }
 
 .dropdown-menu {
     display: none;
