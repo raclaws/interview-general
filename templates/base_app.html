@@ -5,61 +5,90 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}INS ATS{% endblock %}</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/style.css?v=10">
+    <link rel="stylesheet" href="/static/style.css?v=13">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <script src="/static/shortcuts.js?v=2"></script>
+    <script src="/static/shortcuts.js?v=10"></script>
+    <script>
+    // Flash prevention: apply theme + sidebar state before paint
+    (function() {
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+    </script>
 </head>
 <body>
     <div class="app-shell">
         <aside class="sidebar" id="sidebar">
             <button class="sidebar-close" onclick="document.getElementById('sidebar').classList.remove('sidebar-open')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-            <div class="sidebar-brand">INS<br>ATS</div>
+            <div class="sidebar-header">
+                <div class="sidebar-brand">INS<br>ATS</div>
+                <button id="sidebar-collapse-btn" class="sidebar-collapse-btn" title="Toggle sidebar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                </button>
+            </div>
             <nav class="sidebar-nav" hx-boost="true" hx-target="#main" hx-select="#main" hx-swap="outerHTML" hx-push-url="true">
                 <a href="/" class="{% if request.url.path == '/' %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> Dashboard
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg> <span>Dashboard</span>
                 </a>
                 <a href="/jobs" class="{% if request.url.path.startswith('/job') and '/job-types' not in request.url.path %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M22 13a18.15 18.15 0 0 1-20 0"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg> Jobs
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12h.01"/><path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M22 13a18.15 18.15 0 0 1-20 0"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg> <span>Jobs</span>
                 </a>
                 <a href="/candidates" class="{% if request.url.path.startswith('/candidate') %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Candidates
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> <span>Candidates</span>
                 </a>
                 <a href="/pipelines" class="{% if request.url.path.startswith('/pipeline') %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> Pipelines
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg> <span>Pipelines</span>
                 </a>
                 <div class="sidebar-group" id="eval-group">
                     <button class="sidebar-group-toggle" onclick="this.parentElement.classList.toggle('collapsed')">
-                        <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Evaluation
+                        <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> <span>Evaluation</span>
                     </button>
                     <div class="sidebar-group-items">
                         <a href="/sessions" class="{% if request.url.path.startswith('/session') %}active{% endif %}">
-                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="8" y="3" rx="1"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M12 15h.01"/></svg> Interview
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="18" x="8" y="3" rx="1"/><path d="M12 7h.01"/><path d="M12 11h.01"/><path d="M12 15h.01"/></svg> <span>Interview</span>
                         </a>
                         <a href="/tests" class="{% if request.url.path == '/tests' %}active{% endif %}">
-                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> Tests
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg> <span>Tests</span>
                         </a>
                         <a href="/review-batches" class="{% if request.url.path.startswith('/review') %}active{% endif %}">
-                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Review
+                            <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> <span>Review</span>
                         </a>
                     </div>
                 </div>
                 <a href="/settings" class="{% if request.url.path.startswith('/settings') or request.url.path.startswith('/templates') %}active{% endif %}">
-                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Settings
+                    <svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> <span>Settings</span>
                 </a>
             </nav>
             <div class="sidebar-footer">
                 <form method="post" action="/logout">
-                    <button type="submit" class="sidebar-logout"><svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> Logout</button>
+                    <button type="submit" class="sidebar-logout"><svg class="sidebar-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> <span>Logout</span></button>
                 </form>
             </div>
         </aside>
         <div class="main-content {% block main_class %}{% endblock %}" id="main" hx-boost="true" hx-target="#main" hx-select="#main" hx-swap="outerHTML" hx-push-url="true">
-            <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+            <div class="topbar">
+                <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('sidebar-open')"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg></button>
+                <button id="theme-toggle-btn" class="theme-toggle-btn" title="Toggle dark mode">
+                    <svg id="theme-icon-light" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                    <span class="theme-track"><span class="theme-thumb"></span></span>
+                    <svg id="theme-icon-dark" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+            </div>
             {% block breadcrumb %}{% endblock %}
             {% block content %}{% endblock %}
         </div>
     </div>
 <aside id="peek-panel"></aside>
+<div id="confirm-dialog" class="confirm-overlay">
+    <div class="confirm-card">
+        <p class="confirm-message"></p>
+        <div class="confirm-actions">
+            <button class="confirm-cancel">Cancel</button>
+            <button class="confirm-ok">Confirm</button>
+        </div>
+    </div>
+</div>
 <script>
 // Toast notification system
 (function() {
@@ -159,6 +188,102 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener('scroll', function() { dismissOverlays(); }, true);
 
+// Sidebar collapse toggle
+(function() {
+    var sidebar = document.getElementById('sidebar');
+    var btn = document.getElementById('sidebar-collapse-btn');
+    if (!btn || !sidebar) return;
+
+    if (localStorage.getItem('sidebar-collapsed') === '1') {
+        sidebar.classList.add('sidebar-collapsed');
+    }
+
+    btn.addEventListener('click', function() {
+        sidebar.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebar-collapsed', sidebar.classList.contains('sidebar-collapsed') ? '1' : '0');
+    });
+})();
+
+// Theme toggle
+(function() {
+    var btn = document.getElementById('theme-toggle-btn');
+    if (!btn) return;
+
+    function getEffectiveTheme() {
+        var stored = localStorage.getItem('theme');
+        if (stored === 'dark' || stored === 'light') return stored;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    function applyTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+    }
+
+    applyTheme(getEffectiveTheme());
+
+    btn.addEventListener('click', function() {
+        var next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+    });
+})();
+
+// Custom confirm dialog
+(function() {
+    var overlay = document.getElementById('confirm-dialog');
+    var msg = overlay.querySelector('.confirm-message');
+    var okBtn = overlay.querySelector('.confirm-ok');
+    var cancelBtn = overlay.querySelector('.confirm-cancel');
+    var onConfirm = null;
+
+    function show(message, callback) {
+        msg.textContent = message;
+        onConfirm = callback;
+
+        var isDanger = /delete|permanently|cannot be undone|remove|cancel/i.test(message);
+        okBtn.classList.toggle('confirm-danger', isDanger);
+        okBtn.textContent = isDanger ? 'Delete' : 'Confirm';
+
+        overlay.classList.add('confirm-open');
+        okBtn.focus();
+    }
+
+    function hide() {
+        overlay.classList.remove('confirm-open');
+        onConfirm = null;
+    }
+
+    okBtn.addEventListener('click', function() {
+        var cb = onConfirm;
+        hide();
+        if (cb) cb();
+    });
+
+    cancelBtn.addEventListener('click', hide);
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) hide();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (!overlay.classList.contains('confirm-open')) return;
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); hide(); }
+        if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); okBtn.click(); }
+    });
+
+    // Intercept HTMX confirms
+    document.body.addEventListener('htmx:confirm', function(e) {
+        if (!e.detail.elt.hasAttribute('hx-confirm')) return;
+        e.preventDefault();
+        var question = e.detail.elt.getAttribute('hx-confirm');
+        show(question, function() {
+            e.detail.issueRequest(true);
+        });
+    });
+
+    window.showConfirm = show;
+})();
+
 // Close dropdown menus on outside click (legacy compat — now handled by dismissOverlays)
 
 // Context menu
@@ -172,7 +297,11 @@ document.addEventListener('scroll', function() { dismissOverlays(); }, true);
 
     document.addEventListener('contextmenu', function(e) {
         var row = e.target.closest('.clickable-row[data-ctx]');
-        if (!row) { menu.style.display = 'none'; return; }
+        if (!row) {
+            // Don't hide if inside sync-table (sync-list.js handles its own ctx menu)
+            if (!e.target.closest('[data-sync-table]')) menu.style.display = 'none';
+            return;
+        }
         e.preventDefault();
         ctxRow = row;
         var items = JSON.parse(row.dataset.ctx);

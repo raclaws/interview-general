@@ -158,3 +158,16 @@ Default port: 8000, Python >=3.12, FastAPI >=0.115.0, SQLModel 0.0.22.
 - **`onsubmit` doesn't block `hx-post` or boosted forms** — use `hx-confirm` exclusively for destructive actions inside HTMX-managed containers.
 - **hx-boost makes ALL child forms HTMX-managed** — links inside forms inherit `hx-target`. Cancel links must have `hx-boost="false"` to prevent partial swaps.
 - **Soft delete needs not_deleted() on ALL queries** — every SELECT that renders data to users must filter `deleted_at IS NULL`. Missing one filter = ghost records.
+- **DOM element must exist before JS references it** — if a script IIFE calls `getElementById()` on an element placed after the script tag, it returns null and crashes all subsequent code in that block. Place referenced elements before the script.
+- **Multiple keydown listeners fight over focus** — when two scripts (e.g. shortcuts.js + sync-list.js) both handle arrow keys, use `stopImmediatePropagation()` in the authoritative handler to prevent the other from overriding state.
+- **`htmx:confirm` fires for ALL requests** — guard with `elt.hasAttribute('hx-confirm')` to only intercept elements that actually have a confirm message, otherwise you block every HTMX request.
+- **CSS `accent-color` doesn't theme checkbox backgrounds on dark mode** — use `appearance: none` with custom border/background/checkmark for full control over checkbox styling in dark themes.
+- **Theme toggle needs flash prevention** — apply `data-theme` attribute in a `<head>` inline script (before CSS paints) to avoid light→dark flash on page load.
+
+## UI Patterns
+
+- **Seamless tables** — no row borders, hover-only delineation (Linear-style)
+- **Custom confirm dialog** — intercepts `htmx:confirm` globally, themed card with backdrop, danger detection by keyword
+- **Dark mode toggle** — horizontal switch (sun/track/moon) in topbar, `data-theme` on `<html>`, localStorage persistence
+- **Sidebar collapse** — icon-only 56px rail, toggle button in sidebar header rotates 180° when collapsed, localStorage persistence
+- **Keyboard shortcuts** — vim-style (j/k/n/c/x), anchor-based shift-select, Ctrl+Shift for jump-to-end, Backspace for back navigation
