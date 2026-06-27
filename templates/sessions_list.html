@@ -33,22 +33,19 @@
     <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load sessions.</p>
 </noscript>
 
+<script src="/static/cells.js?v=1"></script>
 <script>
 window.__syncConfig = {
     renderRow: function(r) {
         var name = r.candidateName || '—';
-        var nameHtml = r.candidateId
-            ? '<a href="/candidate/' + r.candidateId + '">' + name + '</a>'
-            : name;
-        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '';
+        var nameOpts = r.candidateId ? {link: '/candidate/' + r.candidateId} : null;
         return '<tr class="clickable-row" data-href="/session/' + r.id + '">' +
-            '<td><div class="col-primary">' + nameHtml + '</div>' +
-            '<div class="row-meta">' + (r.jobTitle || '') + ' · ' + (r.templateName || '—') + '</div></td>' +
-            '<td class="row-meta">' + (r.position || '—') + ' · ' + (r.businessUnit || '—') + '</td>' +
-            '<td>' + (r.completedCount || 0) + '/' + (r.interviewerCount || 0) + '</td>' +
-            '<td><span class="badge badge-' + r.status + '">' + r.status + '</span></td>' +
-            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'session\', ' + r.id + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
-            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            C.text(name, (r.jobTitle || '') + ' · ' + (r.templateName || '—'), nameOpts) +
+            C.compound([r.position, r.businessUnit]) +
+            C.ratio(r.completedCount, r.interviewerCount) +
+            C.badge(r.status) +
+            C.action('session', r.id, r.commentCount) +
+            C.date(r.createdAt) +
             '</tr>';
     },
     contextMenu: function(r, baseUrl) {

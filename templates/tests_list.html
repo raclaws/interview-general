@@ -33,18 +33,16 @@
     <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load tests.</p>
 </noscript>
 
+<script src="/static/cells.js?v=1"></script>
 <script>
 window.__syncConfig = {
     renderRow: function(r) {
-        var date = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '';
-        var deadline = r.deadline ? new Date(r.deadline).toLocaleDateString() : '—';
         return '<tr class="clickable-row" data-href="/pipeline/' + r.pipelineId + '">' +
-            '<td><div class="col-primary">' + (r.title || '—') + '</div>' +
-            '<div class="row-meta">' + (r.candidateName || '—') + ' · ' + (r.position || '—') + '</div></td>' +
-            '<td><span class="badge badge-' + r.status + '">' + r.status + '</span></td>' +
-            '<td class="row-meta">Due: ' + deadline + '</td>' +
-            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'pipeline\', ' + r.pipelineId + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
-            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            C.text(r.title, (r.candidateName || '—') + ' · ' + (r.position || '—')) +
+            C.badge(r.status) +
+            C.date(r.deadline, 'Due:') +
+            C.action('pipeline', r.pipelineId, r.commentCount) +
+            C.date(r.createdAt) +
             '</tr>';
     },
     contextMenu: function(r, baseUrl) {

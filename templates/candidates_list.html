@@ -29,22 +29,18 @@
     <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load candidates.</p>
 </noscript>
 
+<script src="/static/cells.js?v=1"></script>
 <script>
 window.__syncConfig = {
     renderRow: function(r) {
         var stages = (r.stages || '').split(',').filter(Boolean);
-        var badgesHtml = stages.length
-            ? stages.map(function(s) { return '<span class="badge badge-' + s + '">' + s.replace(/_/g, ' ') + '</span>'; }).join(' ')
-            : '—';
-        var date = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '';
         return '<tr class="clickable-row" data-href="/candidate/' + r.id + '">' +
-            '<td><div class="col-primary">' + (r.name || '—') + '</div>' +
-            '<div class="row-meta">' + (r.email || '') + '</div></td>' +
+            C.text(r.name, r.email) +
             '<td><div class="col-primary">' + (r.currentPosition || '—') + '</div>' +
-            '<div class="row-meta">' + badgesHtml + '</div></td>' +
-            '<td class="row-meta">' + (r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : '') + ' · ' + (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '') + '</td>' +
-            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'candidate\', ' + r.id + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
-            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            '<div class="row-meta">' + (stages.length ? C.multiBadge(stages, 3).replace(/<\/?td[^>]*>/g, '') : '—') + '</div></td>' +
+            C.compound([(r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : ''), (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '')]) +
+            C.action('candidate', r.id, r.commentCount) +
+            C.date(r.updatedAt) +
             '</tr>';
     },
     contextMenu: function(r, baseUrl) {

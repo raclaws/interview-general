@@ -723,6 +723,20 @@ tr:hover td { background: var(--bg-muted); }
 /* Plain badge — no status icon (for scores, counts) */
 .badge--plain::before { content: none; }
 
+/* Cell type standards — computed badge opacity */
+.badge { opacity: 0.85; }
+.badge-overflow { opacity: 0.6; font-size: var(--text-xs); }
+
+/* Cell type standards — fixed column widths */
+.cell-ratio { width: 60px; text-align: right; white-space: nowrap; }
+.cell-date { width: 90px; text-align: right; white-space: nowrap; }
+.cell-multi-badge { white-space: nowrap; overflow: hidden; max-width: 200px; }
+.peek-trigger { width: 40px; }
+
+/* Mutable select — full opacity, hover affordance */
+.inline-select { opacity: 1; }
+.inline-select:hover { border-color: var(--border-focus); }
+
 /* Inline expand (action bar → form below) */
 .inline-expand { margin-bottom: 1.5rem; }
 .inline-expand:not([open]) .inline-expand-body { display: none; }

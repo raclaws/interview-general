@@ -33,15 +33,13 @@
     <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load pipelines.</p>
 </noscript>
 
+<script src="/static/cells.js?v=1"></script>
 <script>
 var STAGES = ["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"];
 
 window.__syncConfig = {
     renderRow: function(r) {
-        var stageOptions = STAGES.map(function(s) {
-            var sel = s === r.stage ? ' selected' : '';
-            return '<option value="' + s + '"' + sel + '>' + s.replace(/_/g, ' ').replace(/\b\w/g, function(c){return c.toUpperCase();}) + '</option>';
-        }).join('');
+        var date = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '';
 
         var testInfo = r.testTotal
             ? '<span style="color:var(--text-secondary);font-size:0.8rem;">T ' + r.testSubmitted + '/' + r.testTotal + '</span>'
@@ -51,19 +49,14 @@ window.__syncConfig = {
             ? '<span class="row-meta">HR ' + r.hrAvg + ' · C ' + r.cultureAvg + '</span>'
             : '<span class="row-meta">—</span>';
 
-        var date = r.updatedAt ? new Date(r.updatedAt).toLocaleDateString() : '';
-
         return '<tr class="clickable-row" data-href="/pipeline/' + r.id + '">' +
-            '<td><div class="col-primary">' + (r.candidateName || '—') + '</div>' +
-            '<div class="row-meta">' + (r.jobTitle || r.businessUnit || '—') + (r.displayName ? ' · ' + r.displayName : '') + '</div></td>' +
-            '<td hx-disinherit="*"><select name="stage" class="inline-select" ' +
-            'hx-post="/pipeline/' + r.id + '/stage" hx-target="this" hx-swap="outerHTML" hx-push-url="false" hx-trigger="change" ' +
-            'onclick="event.stopPropagation()">' + stageOptions + '</select></td>' +
-            '<td>' + r.sessionCompleted + '/' + r.sessionTotal + '</td>' +
-            '<td>' + testInfo + '</td>' +
-            '<td>' + scoreInfo + '</td>' +
-            '<td class="peek-trigger" onclick="event.stopPropagation(); openPeek(\'pipeline\', ' + r.id + ')"><span class="peek-icon">' + (r.commentCount || '') + ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span></td>' +
-            '<td class="row-meta" style="text-align:right;">' + date + '</td>' +
+            C.text(r.candidateName, (r.jobTitle || r.businessUnit || '—') + (r.displayName ? ' · ' + r.displayName : '')) +
+            C.select(r.stage, STAGES, '/pipeline/' + r.id + '/stage') +
+            C.ratio(r.sessionCompleted, r.sessionTotal) +
+            C.raw(testInfo) +
+            C.raw(scoreInfo, 'row-meta') +
+            C.action('pipeline', r.id, r.commentCount) +
+            C.date(r.updatedAt) +
             '</tr>';
     },
     contextMenu: function(r, baseUrl) {
