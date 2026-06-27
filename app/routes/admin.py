@@ -121,9 +121,9 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         ).all()
         upcoming.append({"session": s, "interviewers": interviewers})
 
-    # Recent activity (last 5 pipeline updates)
+    # Recent activity (last 10 pipeline updates)
     recent_pipelines = db.exec(
-        select(CandidatePipeline).where(not_deleted(CandidatePipeline)).order_by(col(CandidatePipeline.updated_at).desc()).limit(5)
+        select(CandidatePipeline).where(not_deleted(CandidatePipeline)).order_by(col(CandidatePipeline.updated_at).desc()).limit(10)
     ).all()
     recent_activity = []
     if recent_pipelines:
