@@ -2060,6 +2060,18 @@ hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
     /* Dashboard widget */
     .dash-stat { min-width: 0; }
     .dash-stat-value { font-size: 1.4rem; }
+
+    /* Settings shell stacks on mobile */
+    .settings-shell { grid-template-columns: 1fr; gap: 1rem; }
+    .settings-nav { flex-direction: row; flex-wrap: wrap; gap: 0.25rem; }
+
+    /* Score tables scroll horizontally */
+    .score-table-wrap { overflow-x: auto; }
+    .score-table { min-width: 320px; }
+    .score-totals { flex-wrap: wrap; gap: 0.75rem; }
+
+    /* Quick actions wrap */
+    .dash-quick-actions { gap: 0.4rem; }
 }
 
 /* Toast notifications */
