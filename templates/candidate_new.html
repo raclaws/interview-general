@@ -68,6 +68,8 @@
         <form method="post" action="/candidate/new">
             <input type="hidden" name="mode" value="manual">
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+            <div class="detail-section-label">Identity</div>
             <div class="form-row form-row--2col">
                 <div class="form-field">
                     <label class="form-label">Name <span class="required">*</span></label>
@@ -90,6 +92,7 @@
                 </div>
             </div>
 
+            <div class="detail-section-label" style="margin-top: 1rem;">Technical</div>
             <div class="form-row form-row--2col">
                 <div class="form-field">
                     <label class="form-label">Years of Experience</label>
@@ -112,6 +115,7 @@
                 </div>
             </div>
 
+            <div class="detail-section-label" style="margin-top: 1rem;">Logistics</div>
             <div class="form-row form-row--2col">
                 <div class="form-field">
                     <label class="form-label">Working Arrangement</label>

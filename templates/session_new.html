@@ -79,6 +79,8 @@
 
         <hr class="form-divider">
 
+        <div class="detail-section-label" style="margin-top: 0.5rem;">Setup</div>
+
         <div class="form-field">
             <label class="form-label">Interview Template <span class="required">*</span></label>
             <select name="template_id" required class="form-input">
@@ -92,15 +94,17 @@
         </div>
 
         <div class="form-field">
-            <label class="form-label">Job Title</label>
-            <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job" readonly style="opacity: 0.7; cursor: default;">
-            {% if prefill_job %}<p class="form-hint">From: {{ prefill_job.title }}</p>{% else %}<p class="form-hint">Select a pipeline to auto-fill.</p>{% endif %}
-        </div>
-
-        <div class="form-field">
             <label class="form-label">Interviewer Names <span class="required">*</span></label>
             <input type="text" name="interviewer_names" required class="form-input" placeholder="Comma-separated, e.g. Alice, Bob, Charlie">
             <p class="form-hint">Each interviewer gets their own unique assessment link.</p>
+        </div>
+
+        <div class="detail-section-label" style="margin-top: 1rem;">Schedule</div>
+
+        <div class="form-field">
+            <label class="form-label">Job Title</label>
+            <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job" readonly style="opacity: 0.7; cursor: default;">
+            {% if prefill_job %}<p class="form-hint">From: {{ prefill_job.title }}</p>{% else %}<p class="form-hint">Select a pipeline to auto-fill.</p>{% endif %}
         </div>
 
         <div class="form-field">
@@ -108,6 +112,8 @@
             <input type="date" name="interview_date" required class="form-input" id="interview_date" onchange="var d=new Date(this.value);var t=new Date();t.setHours(0,0,0,0);if(d<t){this.style.borderColor='var(--warning)';this.nextElementSibling.style.display='block';}else{this.style.borderColor='';this.nextElementSibling.style.display='none';}">
             <p class="form-hint" style="display:none;color:var(--warning);">Date is in the past. Are you sure?</p>
         </div>
+
+        <div class="detail-section-label" style="margin-top: 1rem;">Options</div>
 
         <div class="form-field">
             <label class="checkbox-label">

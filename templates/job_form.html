@@ -13,6 +13,8 @@
 <div class="form-card form-card--wide">
     <form method="post" action="{% if editing %}/job/{{ job.id }}/edit{% else %}/job/new{% endif %}" id="job-form">
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        <div class="detail-section-label">Role</div>
         <div class="form-row form-row--2col">
             <div class="form-field">
                 <label class="form-label">Position <span class="required">*</span></label>
@@ -56,6 +58,7 @@
             </div>
         </div>
 
+        <div class="detail-section-label" style="margin-top: 1rem;">Planning</div>
         <div class="form-row form-row--3col">
             <div class="form-field">
                 <label class="form-label">Headcount</label>
@@ -78,6 +81,7 @@
             </div>
         </div>
 
+        <div class="detail-section-label" style="margin-top: 1rem;">People</div>
         <div class="form-row form-row--2col">
             <div class="form-field">
                 <label class="form-label">Recruiter</label>
@@ -96,6 +100,7 @@
             <input type="text" name="hiring_manager" value="{{ job.hiring_manager or '' if editing else '' }}" class="form-input" placeholder="Auto-filled from BU head">
         </div>
 
+        <div class="detail-section-label" style="margin-top: 1rem;">Compensation</div>
         <div class="form-row form-row--2col">
             <div class="form-field">
                 <label class="form-label">Salary Range Min</label>
@@ -113,6 +118,7 @@
             <input type="text" name="source" value="{{ job.source or '' if editing else '' }}" class="form-input" placeholder="e.g. Internal, Client request, Expansion">
         </div>
 
+        <div class="detail-section-label" style="margin-top: 1rem;">Description</div>
         <div class="form-field">
             <label class="form-label">Description</label>
             <textarea name="description" rows="4" class="form-input" placeholder="Job brief, requirements...">{{ job.description or '' if editing else '' }}</textarea>

@@ -37,55 +37,60 @@
     </div>
 </div>
 
-<div class="detail-grid">
-    <div class="detail-section">
-        <div class="detail-section-label">Session Info</div>
-        {% if pipeline %}
-        <p><strong>Pipeline:</strong> <a href="/pipeline/{{ pipeline.id }}">{{ pipeline.display_name or "—" }}</a></p>
-        {% if job %}
-        <p><strong>Job:</strong> <a href="/job/{{ job.id }}">{{ job.title }}</a></p>
-        {% endif %}
-        {% endif %}
-        <p><strong>Template:</strong> {{ template.name if template else "—" }}</p>
-        <p><strong>Job Title:</strong> {{ session.job_title }}</p>
-        <p><strong>Interview Date:</strong> {{ session.interview_date or "—" }}</p>
-        <p><strong>Status:</strong> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></p>
-        <p><strong>Created:</strong> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</p>
+<div class="detail-section">
+    <div class="detail-section-label">Candidate</div>
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+        <span class="cell-avatar" style="background: var(--accent);">{{ session.snapshot.get("name", "?")[:2] | upper }}</span>
+        <div>
+            <div class="col-primary">{% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">{{ session.snapshot.get("name", "—") }}</a>{% else %}{{ session.snapshot.get("name", "—") }}{% endif %}</div>
+            <div class="row-meta">{{ session.snapshot.get("current_position", "—") }}{% if session.snapshot.get("yoe") %} · {{ session.snapshot.get("yoe") }}{% endif %}</div>
+        </div>
     </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; font-size: var(--text-sm);">
+        {% if session.snapshot.get("languages") or session.snapshot.get("cloud") or session.snapshot.get("tools") %}
+        <div><span class="row-meta">Tech:</span> {{ session.snapshot.get("languages", "") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</div>
+        {% endif %}
+        {% if session.snapshot.get("working_arrangement") %}
+        <div><span class="row-meta">Arrangement:</span> {{ session.snapshot.get("working_arrangement") }}</div>
+        {% endif %}
+        {% if session.show_salary and (session.snapshot.get("current_salary") or session.snapshot.get("expected_salary")) %}
+        <div><span class="row-meta">Salary:</span> {{ session.snapshot.get("current_salary", "—") }} / {{ session.snapshot.get("expected_salary", "—") }}</div>
+        {% endif %}
+        {% if session.snapshot.get("notice_period") %}
+        <div><span class="row-meta">Notice:</span> {{ session.snapshot.get("notice_period") }}</div>
+        {% endif %}
+    </div>
+</div>
 
-    <div class="detail-section">
-        <div class="detail-section-label">Candidate Snapshot</div>
-        <p><strong>Name:</strong> {% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">{{ session.snapshot.get("name", "—") }}</a>{% else %}{{ session.snapshot.get("name", "—") }}{% endif %}</p>
-        <p><strong>Position:</strong> {{ session.snapshot.get("current_position", "—") }}</p>
-        <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
-        <p><strong>Tech Stack:</strong> {{ session.snapshot.get("languages", "—") }}{% if session.snapshot.get("cloud") %}, {{ session.snapshot.get("cloud") }}{% endif %}{% if session.snapshot.get("tools") %}, {{ session.snapshot.get("tools") }}{% endif %}</p>
-        <p><strong>Working Arrangement:</strong> {{ session.snapshot.get("working_arrangement", "—") }}</p>
-        <p><strong>Salary:</strong> {{ session.snapshot.get("current_salary", "—") }} / {{ session.snapshot.get("expected_salary", "—") }}</p>
-        <p><strong>Notice Period:</strong> {{ session.snapshot.get("notice_period", "—") }}</p>
+<div class="detail-section">
+    <div class="detail-section-label">Session</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; font-size: var(--text-sm);">
+        {% if pipeline %}
+        <div><span class="row-meta">Pipeline:</span> <a href="/pipeline/{{ pipeline.id }}">{{ pipeline.display_name or "—" }}</a></div>
+        {% endif %}
+        {% if job %}
+        <div><span class="row-meta">Job:</span> <a href="/job/{{ job.id }}">{{ job.title }}</a></div>
+        {% endif %}
+        <div><span class="row-meta">Template:</span> {{ template.name if template else "—" }}</div>
+        <div><span class="row-meta">Date:</span> {{ session.interview_date or "—" }}</div>
+        <div><span class="row-meta">Status:</span> <span class="badge badge-{{ session.status }}">{{ session.status }}</span></div>
+        <div><span class="row-meta">Created:</span> {{ session.created_at.strftime("%Y-%m-%d %H:%M") }}</div>
     </div>
 </div>
 
 <div class="detail-section">
     <div class="detail-section-label">Interviewers</div>
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Link</th>
-            </tr>
-        </thead>
+    <table class="table-clean">
         <tbody>
             {% for item in interviewer_data %}
             <tr>
-                <td>{{ item.interviewer.interviewer_name }}</td>
+                <td><div class="col-primary">{{ item.interviewer.interviewer_name }}</div></td>
                 <td><span class="badge badge-{{ item.interviewer.status }}">{{ item.interviewer.status }}</span></td>
                 <td>
                     {% if item.interviewer.status == "pending" %}
-                    <a href="/i/{{ item.interviewer.token }}" target="_blank">/i/{{ item.interviewer.token }}</a>
-                    <button type="button" class="btn-copy" onclick="copyLink('{{ item.interviewer.token }}', this)">Copy</button>
+                    <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="copyLink('{{ item.interviewer.token }}', this)">⎘ Copy Link</button>
                     {% else %}
-                    —
+                    <span class="row-meta">—</span>
                     {% endif %}
                 </td>
             </tr>

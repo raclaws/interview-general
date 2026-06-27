@@ -36,46 +36,37 @@
 
 <div class="detail-section">
     <div class="detail-section-label">Details</div>
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-        <div>
-            {% if job.priority in ("urgent", "high") %}
-            <div style="margin-bottom: 1rem;">
-                <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
-            </div>
-            {% endif %}
-            <table class="meta-table">
-                <tr><td class="row-meta">Position</td><td>{{ job.position }}</td></tr>
-                <tr><td class="row-meta">Level</td><td>{{ job.level }}</td></tr>
-                <tr><td class="row-meta">Type</td><td>{{ job.job_type }}</td></tr>
-                <tr><td class="row-meta">Business Unit</td><td>{{ bu.name if bu else "—" }}</td></tr>
-                <tr><td class="row-meta">Headcount</td><td>{{ filled }}/{{ job.headcount }} filled</td></tr>
-                <tr><td class="row-meta">Recruiter</td><td>{{ job.recruiter or "—" }}</td></tr>
-                <tr><td class="row-meta">Backup</td><td>{{ job.backup_recruiter or "—" }}</td></tr>
-                <tr><td class="row-meta">Hiring Manager</td><td>{{ job.hiring_manager or "—" }}</td></tr>
-                {% if job.salary_range_min or job.salary_range_max %}
-                <tr><td class="row-meta">Salary Range</td><td>{{ job.salary_range_min or "—" }} – {{ job.salary_range_max or "—" }}</td></tr>
-                {% endif %}
-                <tr><td class="row-meta">Target Date</td><td>{{ job.target_date or "—" }}</td></tr>
-                {% if job.closed_date %}
-                <tr><td class="row-meta">Closed Date</td><td>{{ job.closed_date }}</td></tr>
-                {% endif %}
-                {% if job.source %}
-                <tr><td class="row-meta">Source</td><td>{{ job.source }}</td></tr>
-                {% endif %}
-            </table>
-        </div>
-        <div>
-            {% if job.description %}
-            <h3 style="margin-bottom: 0.5rem;">Description</h3>
-            <p style="white-space: pre-wrap; font-size: 0.9rem;">{{ job.description }}</p>
-            {% endif %}
-
-            {% if job.notes %}
-            <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Notes</h3>
-            <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);">{{ job.notes }}</p>
-            {% endif %}
-        </div>
+    {% if job.priority in ("urgent", "high") %}
+    <div style="margin-bottom: 0.75rem;">
+        <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
     </div>
+    {% endif %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; font-size: var(--text-sm); margin-bottom: 1rem;">
+        <div><span class="row-meta">Position:</span> {{ job.position }}</div>
+        <div><span class="row-meta">Level:</span> {{ job.level }}</div>
+        <div><span class="row-meta">Type:</span> {{ job.job_type }}</div>
+        <div><span class="row-meta">Business Unit:</span> {{ bu.name if bu else "—" }}</div>
+        <div><span class="row-meta">Headcount:</span> {{ filled }}/{{ job.headcount }} filled</div>
+        <div><span class="row-meta">Recruiter:</span> {{ job.recruiter or "—" }}</div>
+        {% if job.backup_recruiter %}<div><span class="row-meta">Backup:</span> {{ job.backup_recruiter }}</div>{% endif %}
+        {% if job.hiring_manager %}<div><span class="row-meta">Hiring Manager:</span> {{ job.hiring_manager }}</div>{% endif %}
+        {% if job.salary_range_min or job.salary_range_max %}<div><span class="row-meta">Salary Range:</span> {{ job.salary_range_min or "—" }} – {{ job.salary_range_max or "—" }}</div>{% endif %}
+        <div><span class="row-meta">Target Date:</span> {{ job.target_date or "—" }}</div>
+        {% if job.closed_date %}<div><span class="row-meta">Closed Date:</span> {{ job.closed_date }}</div>{% endif %}
+        {% if job.source %}<div><span class="row-meta">Source:</span> {{ job.source }}</div>{% endif %}
+    </div>
+    {% if job.description %}
+    <div style="margin-bottom: 0.75rem;">
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Description</div>
+        <p style="white-space: pre-wrap; font-size: var(--text-sm);">{{ job.description }}</p>
+    </div>
+    {% endif %}
+    {% if job.notes %}
+    <div>
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Notes</div>
+        <p style="white-space: pre-wrap; font-size: var(--text-sm); color: var(--text-secondary);">{{ job.notes }}</p>
+    </div>
+    {% endif %}
 </div>
 
 <div id="job-links" style="margin-bottom: 1rem;">

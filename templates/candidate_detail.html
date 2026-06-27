@@ -37,18 +37,25 @@
 
 <div class="detail-section">
     <div class="detail-section-label">Profile</div>
-    <p><strong>Email:</strong> {{ candidate.email }}</p>
-    {% if candidate.phone %}<p><strong>Phone:</strong> {{ candidate.phone }}</p>{% endif %}
-    {% if candidate.current_position %}<p><strong>Position:</strong> {{ candidate.current_position }}</p>{% endif %}
-    {% if candidate.yoe %}<p><strong>Experience:</strong> {{ candidate.yoe }}</p>{% endif %}
-    {% if candidate.languages %}<p><strong>Languages:</strong> {{ candidate.languages }}</p>{% endif %}
-    {% if candidate.cloud %}<p><strong>Cloud:</strong> {{ candidate.cloud }}</p>{% endif %}
-    {% if candidate.tools %}<p><strong>Tools:</strong> {{ candidate.tools }}</p>{% endif %}
-    {% if candidate.working_arrangement %}<p><strong>Working Arrangement:</strong> {{ candidate.working_arrangement }}</p>{% endif %}
-    {% if candidate.current_salary %}<p><strong>Current Salary:</strong> {{ candidate.current_salary }}</p>{% endif %}
-    {% if candidate.expected_salary %}<p><strong>Expected Salary:</strong> {{ candidate.expected_salary }}</p>{% endif %}
-    {% if candidate.notice_period %}<p><strong>Notice Period:</strong> {{ candidate.notice_period }}</p>{% endif %}
-    {% if candidate.cv_link %}<p><strong>CV / Resume:</strong> <a href="{{ candidate.cv_link }}" target="_blank" rel="noopener" class="cell-link-inline">{{ candidate.cv_link | replace("https://", "") | replace("http://", "") | truncate(40) }} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></p>{% endif %}
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+        <span class="cell-avatar" style="background: var(--accent);">{{ candidate.name[:2] | upper }}</span>
+        <div>
+            <div class="col-primary">{{ candidate.name }}</div>
+            <div class="row-meta">{{ candidate.email }}{% if candidate.current_position %} · {{ candidate.current_position }}{% endif %}</div>
+        </div>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; font-size: var(--text-sm);">
+        {% if candidate.phone %}<div><span class="row-meta">Phone:</span> {{ candidate.phone }}</div>{% endif %}
+        {% if candidate.yoe %}<div><span class="row-meta">Experience:</span> {{ candidate.yoe }}</div>{% endif %}
+        {% if candidate.languages %}<div><span class="row-meta">Languages:</span> {{ candidate.languages }}</div>{% endif %}
+        {% if candidate.cloud %}<div><span class="row-meta">Cloud:</span> {{ candidate.cloud }}</div>{% endif %}
+        {% if candidate.tools %}<div><span class="row-meta">Tools:</span> {{ candidate.tools }}</div>{% endif %}
+        {% if candidate.working_arrangement %}<div><span class="row-meta">Arrangement:</span> {{ candidate.working_arrangement }}</div>{% endif %}
+        {% if candidate.current_salary %}<div><span class="row-meta">Current Salary:</span> {{ candidate.current_salary }}</div>{% endif %}
+        {% if candidate.expected_salary %}<div><span class="row-meta">Expected Salary:</span> {{ candidate.expected_salary }}</div>{% endif %}
+        {% if candidate.notice_period %}<div><span class="row-meta">Notice:</span> {{ candidate.notice_period }}</div>{% endif %}
+        {% if candidate.cv_link %}<div><span class="row-meta">CV:</span> <a href="{{ candidate.cv_link }}" target="_blank" rel="noopener" class="cell-link-inline">{{ candidate.cv_link | replace("https://", "") | replace("http://", "") | truncate(40) }} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>{% endif %}
+    </div>
 </div>
 
 <div class="detail-section">
