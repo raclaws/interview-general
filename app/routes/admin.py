@@ -917,6 +917,12 @@ async def generate_session_summary(
     return RedirectResponse(f"/session/{session_id}", status_code=303)
 
 
+@router.get("/session/{session_id}/cancel")
+@router.get("/session/{session_id}/delete")
+async def session_post_only_redirect(request: Request, session_id: int):
+    return RedirectResponse(f"/session/{session_id}", status_code=303)
+
+
 @router.post("/session/{session_id}/cancel")
 async def cancel_session(
     request: Request,

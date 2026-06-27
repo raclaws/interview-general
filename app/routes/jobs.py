@@ -274,6 +274,14 @@ async def job_edit_submit(
     return RedirectResponse(next or f"/job/{job.id}", status_code=303)
 
 
+@router.get("/job/{job_id}/close")
+@router.get("/job/{job_id}/reopen")
+@router.get("/job/{job_id}/delete")
+@router.get("/job/{job_id}/add-candidate")
+async def job_post_only_redirect(request: Request, job_id: int):
+    return RedirectResponse(f"/job/{job_id}", status_code=303)
+
+
 @router.post("/job/{job_id}/close")
 async def job_close(
     request: Request,

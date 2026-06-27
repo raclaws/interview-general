@@ -426,6 +426,11 @@ async def candidate_edit_submit(
     return RedirectResponse(next or f"/candidate/{candidate_id}", status_code=303)
 
 
+@router.get("/candidate/{candidate_id}/pipeline")
+async def pipeline_create_redirect(request: Request, candidate_id: int):
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
 @router.post("/candidate/{candidate_id}/pipeline")
 async def pipeline_create(
     request: Request,
@@ -564,7 +569,9 @@ async def pipeline_update_notes(
     db.commit()
 
     if request.headers.get("HX-Request"):
-        return _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
+        resp = _render(request, "partials/pipeline_list.html", _pipeline_partial_context(db, candidate_id))
+        resp.headers["HX-Trigger"] = '{"toast":"Notes saved"}'
+        return resp
 
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
 
@@ -1099,6 +1106,15 @@ async def pipeline_detail(
     return _render(request, "pipeline_detail.html", ctx)
 
 
+@router.get("/pipeline/{pipeline_id}/stage")
+@router.get("/pipeline/{pipeline_id}/notes")
+@router.get("/pipeline/{pipeline_id}/delete")
+@router.get("/pipeline/{pipeline_id}/test/{test_id}/cancel")
+@router.get("/pipeline/{pipeline_id}/test/{test_id}/delete")
+async def pipeline_post_only_redirect(request: Request, pipeline_id: int, test_id: int = None):
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
 @router.post("/pipeline/{pipeline_id}/stage")
 async def pipeline_detail_update_stage(
     request: Request,
@@ -1178,7 +1194,9 @@ async def pipeline_detail_update_notes(
     db.add(pipeline)
     db.commit()
 
-    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+    resp = RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+    resp.headers["HX-Trigger"] = '{"toast":"Notes saved"}'
+    return resp
 
 
 @router.post("/pipeline/{pipeline_id}/delete")

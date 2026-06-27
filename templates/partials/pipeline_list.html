@@ -4,11 +4,12 @@
         <div>
             <a href="/pipeline/{{ p.id }}" style="font-weight: 600; color: var(--text-primary); text-decoration: none;">{{ p.display_name or (p.position or "—") ~ " · " ~ (p.business_unit or "—") }}</a>
         </div>
-        <div style="display: inline-flex; align-items: center; gap: 1rem;">
+        <div style="display: inline-flex; align-items: center; gap: 1rem;" hx-disinherit="*">
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/stage"
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
+                  hx-push-url="false"
                   hx-on::before-request="this.style.opacity='0.5'"
                   style="display: inline-flex; align-items: center;">
                 <select name="stage" onchange="this.form.requestSubmit()" class="inline-select">
@@ -22,6 +23,7 @@
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
+                  hx-push-url="false"
                   hx-confirm="Remove this pipeline entry?"
                   hx-on::before-request="this.closest('.pipeline-entry').style.opacity='0.3'"
                   style="display: inline;">

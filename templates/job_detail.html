@@ -276,17 +276,32 @@
 </div>
 
 <div class="detail-section">
-    <div class="detail-section-label">Activity</div>
-    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#trail-job-{{ job.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+    <div class="detail-section-label">Comments</div>
+    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#comments-job-{{ job.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
         <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
     </form>
-    <div class="trail-list trail-list--capped" id="trail-job-{{ job.id }}">
-        {% for item in trail %}
+    <div class="trail-list" id="comments-job-{{ job.id }}">
+        {% for item in trail if item.kind == "comment" %}
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    {% if trail | length > 5 %}
-    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ trail | length }})</button>
+    {% if not trail | selectattr("kind", "equalto", "comment") | list %}
+    <p class="detail-section-empty">No comments yet.</p>
+    {% endif %}
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    {% set activity_count = trail | rejectattr("kind", "equalto", "comment") | list | length %}
+    <div class="trail-list{% if activity_count > 5 %} trail-list--capped{% endif %}" id="trail-job-{{ job.id }}">
+        {% for item in trail if item.kind != "comment" %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    {% if activity_count > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ activity_count }})</button>
+    {% elif activity_count == 0 %}
+    <p class="detail-section-empty">No activity yet.</p>
     {% endif %}
 </div>
 {% endblock %}

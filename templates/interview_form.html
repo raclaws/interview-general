@@ -7,10 +7,19 @@
     <p class="template-badge">{{ template.name }}</p>
     {% endif %}
 
-    <div class="candidate-card">
-        <h2>{{ session.snapshot.get("name", "N/A") }}</h2>
+    <div class="candidate-card detail-section">
+        <div class="detail-section-label">Candidate</div>
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem;">
+            <span class="cell-avatar" style="background: var(--accent);">{{ session.snapshot.get("name", "?")[:2] | upper }}</span>
+            <div>
+                <div class="col-primary">{{ session.snapshot.get("name", "N/A") }}</div>
+                {% if session.position %}
+                <div class="row-meta">{{ session.position }}{% if session.business_unit %} · {{ session.business_unit }}{% endif %}</div>
+                {% endif %}
+            </div>
+        </div>
         {% if session.snapshot.get("current_position") %}
-        <p><strong>Position:</strong> {{ session.snapshot.get("current_position") }}</p>
+        <p><strong>Current Position:</strong> {{ session.snapshot.get("current_position") }}</p>
         {% endif %}
         {% if session.snapshot.get("yoe") %}
         <p><strong>Experience:</strong> {{ session.snapshot.get("yoe") }}</p>
@@ -29,12 +38,6 @@
         {% endif %}
         {% if session.snapshot.get("cv_link") %}
         <p><strong>CV / Resume:</strong> <a href="{{ session.snapshot.get('cv_link') }}" target="_blank" rel="noopener" class="cell-link-inline">{{ session.snapshot.get('cv_link') | replace("https://", "") | replace("http://", "") | truncate(40) }} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></p>
-        {% endif %}
-        {% if session.position %}
-        <p><strong>Position Applied:</strong> {{ session.position }}</p>
-        {% endif %}
-        {% if session.business_unit %}
-        <p><strong>Business Unit:</strong> {{ session.business_unit }}</p>
         {% endif %}
     </div>
 

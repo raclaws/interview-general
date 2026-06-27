@@ -40,12 +40,21 @@
         <input type="hidden" name="manual_notice_period" value="{{ prefill_candidate.notice_period or '' }}">
         <input type="hidden" name="manual_cv_link" value="{{ prefill_candidate.cv_link or '' }}">
 
-        <div class="form-info">
-            <div class="col-primary">{{ prefill_candidate.name }}</div>
-            <div class="row-meta">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</div>
-            {% if prefill_pipeline %}
-            <div class="row-meta" style="margin-top: 0.25rem;">Pipeline: {{ prefill_pipeline.display_name or "—" }}</div>
-            {% endif %}
+        <div class="detail-section" style="margin-bottom: 1rem;">
+            <div class="detail-section-label">Candidate</div>
+            <div class="cell-person" style="display: flex; align-items: center; gap: var(--space-lg);">
+                <span class="cell-avatar" style="background: var(--accent);">{{ prefill_candidate.name[:2] | upper }}</span>
+                <div>
+                    <div class="col-primary">{{ prefill_candidate.name }}</div>
+                    <div class="row-meta">{{ prefill_candidate.email }}{% if prefill_candidate.current_position %} · {{ prefill_candidate.current_position }}{% endif %}</div>
+                    {% if prefill_pipeline %}
+                    <div class="row-meta">Pipeline: {{ prefill_pipeline.display_name or "—" }}{% if prefill_job %} · {{ prefill_job.title }}{% endif %}</div>
+                    {% endif %}
+                    {% if prefill_candidate.cv_link %}
+                    <div class="row-meta"><a href="{{ prefill_candidate.cv_link }}" target="_blank" rel="noopener" class="cell-link-inline">{{ prefill_candidate.cv_link | replace("https://", "") | replace("http://", "") | truncate(40) }} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         {% else %}
@@ -112,6 +121,8 @@
             <button type="submit" class="btn">Create Session</button>
             {% if next %}
             <a href="{{ next }}" class="btn-ghost" hx-boost="false">Cancel</a>
+            {% elif prefill_pipeline %}
+            <a href="/pipeline/{{ prefill_pipeline.id }}" class="btn-ghost" hx-boost="false">Cancel</a>
             {% elif prefill_candidate %}
             <a href="/candidate/{{ prefill_candidate.id }}" class="btn-ghost" hx-boost="false">Cancel</a>
             {% else %}

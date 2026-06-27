@@ -11,6 +11,18 @@
 </div>
 
 <div class="form-card">
+    <div class="detail-section" style="margin-bottom: 1rem;">
+        <div class="detail-section-label">Candidate</div>
+        <div class="cell-person" style="display: flex; align-items: center; gap: var(--space-lg);">
+            <span class="cell-avatar" style="background: var(--accent);">{{ candidate.name[:2] | upper }}</span>
+            <div>
+                <div class="col-primary">{{ candidate.name }}</div>
+                <div class="row-meta">{{ candidate.email }}{% if candidate.current_position %} · {{ candidate.current_position }}{% endif %}</div>
+                <div class="row-meta">Pipeline: {{ pipeline.display_name or "—" }}</div>
+            </div>
+        </div>
+    </div>
+
     <form method="post" action="/pipeline/{{ pipeline.id }}/assign-test" id="test-form">
         <div class="form-field">
             <label class="form-label">Title <span class="required">*</span></label>
