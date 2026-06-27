@@ -35,48 +35,8 @@
     <div class="detail-actions-destruct"></div>
 </div>
 
-<details id="add-to-job" class="inline-expand">
-    <summary hidden></summary>
-    <div class="inline-expand-body">
-        <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
-              hx-post="/candidate/{{ candidate.id }}/pipeline"
-              hx-target="#pipeline-section"
-              hx-swap="innerHTML"
-              hx-on::after-request="this.reset();document.getElementById('add-to-job').removeAttribute('open')">
-            <div class="form-row form-row--3col">
-                <div class="form-field">
-                    <label class="form-label">Job <span class="required">*</span></label>
-                    {% if jobs %}
-                    <select name="job_id" required class="form-input">
-                        <option value="">— Select —</option>
-                        {% for j in jobs %}
-                        <option value="{{ j.id }}">{{ j.title }}</option>
-                        {% endfor %}
-                    </select>
-                    {% else %}
-                    <p class="form-hint" style="padding: var(--space-md) 0;">No open jobs. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
-                    {% endif %}
-                </div>
-                <div class="form-field">
-                    <label class="form-label">Stage</label>
-                    <select name="stage" class="form-input">
-                        {% for s in stages %}
-                        <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-field">
-                    <label class="form-label">Notes</label>
-                    <input type="text" name="notes" class="form-input" placeholder="Optional...">
-                </div>
-            </div>
-            <button type="submit" class="btn">Add</button>
-            <button type="button" class="btn-ghost" onclick="document.getElementById('add-to-job').removeAttribute('open')">Cancel</button>
-        </form>
-    </div>
-</details>
-
-<div class="candidate-card">
+<div class="detail-section">
+    <div class="detail-section-label">Profile</div>
     <p><strong>Email:</strong> {{ candidate.email }}</p>
     {% if candidate.phone %}<p><strong>Phone:</strong> {{ candidate.phone }}</p>{% endif %}
     {% if candidate.current_position %}<p><strong>Position:</strong> {{ candidate.current_position }}</p>{% endif %}
@@ -91,14 +51,56 @@
     {% if candidate.cv_link %}<p><strong>CV / Resume:</strong> <a href="{{ candidate.cv_link }}" target="_blank" rel="noopener" class="cell-link-inline">{{ candidate.cv_link | replace("https://", "") | replace("http://", "") | truncate(40) }} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></p>{% endif %}
 </div>
 
-<hr>
-
-<h2>Pipeline</h2>
-
-<div id="pipeline-section">
-    {% with pipeline_scores=pipeline_scores, pipeline_sessions=pipeline_sessions %}
-    {% include "partials/pipeline_list.html" %}
-    {% endwith %}
+<div class="detail-section">
+    <div class="detail-section-label">Pipelines</div>
+    <details id="add-to-job" class="inline-expand">
+        <summary hidden></summary>
+        <div class="inline-expand-body">
+            <form method="post" action="/candidate/{{ candidate.id }}/pipeline"
+                  hx-post="/candidate/{{ candidate.id }}/pipeline"
+                  hx-target="#pipeline-section"
+                  hx-swap="innerHTML"
+                  hx-on::after-request="this.reset();document.getElementById('add-to-job').removeAttribute('open')">
+                <div class="form-row form-row--3col">
+                    <div class="form-field">
+                        <label class="form-label">Job <span class="required">*</span></label>
+                        {% if jobs %}
+                        <select name="job_id" required class="form-input">
+                            <option value="">— Select —</option>
+                            {% for j in jobs %}
+                            <option value="{{ j.id }}">{{ j.title }}</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <p class="form-hint" style="padding: var(--space-md) 0;">No open jobs. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
+                        {% endif %}
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Stage</label>
+                        <select name="stage" class="form-input">
+                            {% for s in stages %}
+                            <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Notes</label>
+                        <input type="text" name="notes" class="form-input" placeholder="Optional...">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Add</button>
+                <button type="button" class="btn-ghost" onclick="document.getElementById('add-to-job').removeAttribute('open')">Cancel</button>
+            </form>
+        </div>
+    </details>
+    <div id="pipeline-section">
+        {% with pipeline_scores=pipeline_scores, pipeline_sessions=pipeline_sessions %}
+        {% include "partials/pipeline_list.html" %}
+        {% endwith %}
+    </div>
+    {% if not pipelines %}
+    <p class="detail-section-empty">No pipelines yet · <a href="#" onclick="document.getElementById('add-to-job').toggleAttribute('open'); return false;">+ Add to Job</a></p>
+    {% endif %}
 </div>
 
 <script>
@@ -111,16 +113,19 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
-<div class="trail">
-    <h2 class="trail-title">Activity</h2>
-    <div class="trail-list" id="trail-candidate-{{ candidate.id }}">
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#trail-candidate-{{ candidate.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+    <div class="trail-list trail-list--capped" id="trail-candidate-{{ candidate.id }}">
         {% for item in trail %}
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#trail-candidate-{{ candidate.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
-        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
-    </form>
+    {% if trail | length > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ trail | length }})</button>
+    {% endif %}
 </div>
 
 {% endblock %}

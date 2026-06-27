@@ -34,52 +34,56 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-    <div>
-        {% if job.priority in ("urgent", "high") %}
-        <div style="margin-bottom: 1rem;">
-            <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
+<div class="detail-section">
+    <div class="detail-section-label">Details</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+            {% if job.priority in ("urgent", "high") %}
+            <div style="margin-bottom: 1rem;">
+                <span class="badge badge-{{ job.priority }}">{{ job.priority | title }}</span>
+            </div>
+            {% endif %}
+            <table class="meta-table">
+                <tr><td class="row-meta">Position</td><td>{{ job.position }}</td></tr>
+                <tr><td class="row-meta">Level</td><td>{{ job.level }}</td></tr>
+                <tr><td class="row-meta">Type</td><td>{{ job.job_type }}</td></tr>
+                <tr><td class="row-meta">Business Unit</td><td>{{ bu.name if bu else "—" }}</td></tr>
+                <tr><td class="row-meta">Headcount</td><td>{{ filled }}/{{ job.headcount }} filled</td></tr>
+                <tr><td class="row-meta">Recruiter</td><td>{{ job.recruiter or "—" }}</td></tr>
+                <tr><td class="row-meta">Backup</td><td>{{ job.backup_recruiter or "—" }}</td></tr>
+                <tr><td class="row-meta">Hiring Manager</td><td>{{ job.hiring_manager or "—" }}</td></tr>
+                {% if job.salary_range_min or job.salary_range_max %}
+                <tr><td class="row-meta">Salary Range</td><td>{{ job.salary_range_min or "—" }} – {{ job.salary_range_max or "—" }}</td></tr>
+                {% endif %}
+                <tr><td class="row-meta">Target Date</td><td>{{ job.target_date or "—" }}</td></tr>
+                {% if job.closed_date %}
+                <tr><td class="row-meta">Closed Date</td><td>{{ job.closed_date }}</td></tr>
+                {% endif %}
+                {% if job.source %}
+                <tr><td class="row-meta">Source</td><td>{{ job.source }}</td></tr>
+                {% endif %}
+            </table>
         </div>
-        {% endif %}
-        <table class="meta-table">
-            <tr><td class="row-meta">Position</td><td>{{ job.position }}</td></tr>
-            <tr><td class="row-meta">Level</td><td>{{ job.level }}</td></tr>
-            <tr><td class="row-meta">Type</td><td>{{ job.job_type }}</td></tr>
-            <tr><td class="row-meta">Business Unit</td><td>{{ bu.name if bu else "—" }}</td></tr>
-            <tr><td class="row-meta">Headcount</td><td>{{ filled }}/{{ job.headcount }} filled</td></tr>
-            <tr><td class="row-meta">Recruiter</td><td>{{ job.recruiter or "—" }}</td></tr>
-            <tr><td class="row-meta">Backup</td><td>{{ job.backup_recruiter or "—" }}</td></tr>
-            <tr><td class="row-meta">Hiring Manager</td><td>{{ job.hiring_manager or "—" }}</td></tr>
-            {% if job.salary_range_min or job.salary_range_max %}
-            <tr><td class="row-meta">Salary Range</td><td>{{ job.salary_range_min or "—" }} – {{ job.salary_range_max or "—" }}</td></tr>
+        <div>
+            {% if job.description %}
+            <h3 style="margin-bottom: 0.5rem;">Description</h3>
+            <p style="white-space: pre-wrap; font-size: 0.9rem;">{{ job.description }}</p>
             {% endif %}
-            <tr><td class="row-meta">Target Date</td><td>{{ job.target_date or "—" }}</td></tr>
-            {% if job.closed_date %}
-            <tr><td class="row-meta">Closed Date</td><td>{{ job.closed_date }}</td></tr>
-            {% endif %}
-            {% if job.source %}
-            <tr><td class="row-meta">Source</td><td>{{ job.source }}</td></tr>
-            {% endif %}
-        </table>
-    </div>
-    <div>
-        {% if job.description %}
-        <h3 style="margin-bottom: 0.5rem;">Description</h3>
-        <p style="white-space: pre-wrap; font-size: 0.9rem;">{{ job.description }}</p>
-        {% endif %}
 
-        {% if job.notes %}
-        <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Notes</h3>
-        <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);">{{ job.notes }}</p>
-        {% endif %}
+            {% if job.notes %}
+            <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Notes</h3>
+            <p style="white-space: pre-wrap; font-size: 0.9rem; color: var(--text-secondary);">{{ job.notes }}</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 
-<div id="job-links" style="margin-bottom: 2rem;">
+<div id="job-links" style="margin-bottom: 1rem;">
     {% include "partials/job_links.html" %}
 </div>
 
-<h2 style="margin-bottom: 1rem;">Pipelines ({{ pipelines | length }})</h2>
+<div class="detail-section">
+    <div class="detail-section-label">Pipelines ({{ pipelines | length }})</div>
 
 <details id="add-candidate" class="inline-expand">
     <summary hidden></summary>
@@ -267,18 +271,22 @@
     </tbody>
 </table>
 {% else %}
-<p class="row-meta">No candidates in pipeline for this job yet.</p>
+<p class="detail-section-empty">No candidates yet · <a href="#" onclick="document.getElementById('add-candidate').toggleAttribute('open'); return false;">+ Add Candidate</a></p>
 {% endif %}
+</div>
 
-<div class="trail">
-    <h2 class="trail-title">Activity</h2>
-    <div class="trail-list" id="trail-job-{{ job.id }}">
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#trail-job-{{ job.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+    <div class="trail-list trail-list--capped" id="trail-job-{{ job.id }}">
         {% for item in trail %}
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#trail-job-{{ job.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
-        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
-    </form>
+    {% if trail | length > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ trail | length }})</button>
+    {% endif %}
 </div>
 {% endblock %}

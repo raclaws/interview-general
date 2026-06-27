@@ -1418,10 +1418,50 @@ textarea { resize: vertical; min-height: 80px; }
 .peek-icon { font-size: var(--text-xs); color: var(--text-muted); transition: color 0.1s; display: inline-flex; align-items: center; gap: 0.25rem; }
 .peek-trigger:hover .peek-icon { color: var(--text-primary); }
 
+/* Detail page section cards */
+.detail-section {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+.detail-section-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+}
+.detail-section-empty {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    padding: 0.5rem 0;
+}
+.detail-section-empty a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.detail-section-empty a:hover { color: var(--text-primary); }
+
 /* Trail items (shared between peek + detail pages) */
 .trail { margin-top: 2rem; }
 .trail-title { font-size: var(--text-md); font-weight: 600; margin-bottom: 0.75rem; }
 .trail-list { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.75rem; }
+.trail-list--capped { max-height: 200px; overflow: hidden; position: relative; }
+.trail-list--capped::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--bg-card));
+    pointer-events: none;
+}
+.trail-show-more { font-size: var(--text-xs); margin-top: 0.25rem; }
 .trail-item { display: flex; gap: 0.6rem; font-size: var(--text-sm); padding: var(--space-sm) 0; align-items: baseline; }
 .trail-item--activity { color: var(--text-muted); font-style: italic; }
 .trail-item--comment { color: var(--text-primary); }

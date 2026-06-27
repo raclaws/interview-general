@@ -35,159 +35,170 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
-    <div>
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Candidate</div>
-        <a href="/candidate/{{ candidate.id }}" style="font-weight: 600;">{{ candidate.name }}</a>
-        <div class="row-meta">{{ candidate.email }}</div>
-    </div>
-    <div>
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Job</div>
-        <div>{% if job %}<a href="/job/{{ job.id }}">{{ job.title }}</a>{% else %}—{% endif %}</div>
-    </div>
-    <div>
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Stage</div>
-        <form method="post" action="/pipeline/{{ pipeline.id }}/stage"
-              hx-boost="false" style="display: inline-flex; align-items: center;">
-            <select name="stage" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
-                {% for s in stages %}
-                <option value="{{ s }}" {% if pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
-                {% endfor %}
-            </select>
-        </form>
-    </div>
-    <div>
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Updated</div>
-        <div>{{ pipeline.updated_at.strftime("%Y-%m-%d %H:%M") }}</div>
+<div class="detail-section">
+    <div class="detail-section-label">Candidate</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div>
+            <a href="/candidate/{{ candidate.id }}" style="font-weight: 600;">{{ candidate.name }}</a>
+            <div class="row-meta">{{ candidate.email }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Job</div>
+            <div>{% if job %}<a href="/job/{{ job.id }}">{{ job.title }}</a>{% else %}—{% endif %}</div>
+        </div>
+        <div>
+            <div class="row-meta">Stage</div>
+            <form method="post" action="/pipeline/{{ pipeline.id }}/stage"
+                  hx-boost="false" style="display: inline-flex; align-items: center;">
+                <select name="stage" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
+                    {% for s in stages %}
+                    <option value="{{ s }}" {% if pipeline.stage == s %}selected{% endif %}>{{ s | replace("_", " ") | title }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+        <div>
+            <div class="row-meta">Updated</div>
+            <div>{{ pipeline.updated_at.strftime("%Y-%m-%d %H:%M") }}</div>
+        </div>
     </div>
 </div>
 
-<details style="margin-bottom: 1.5rem;">
-    <summary class="row-meta" style="cursor: pointer;">Notes{% if pipeline.notes %} — {{ pipeline.notes[:60] }}{% if pipeline.notes|length > 60 %}…{% endif %}{% endif %}</summary>
+<div class="detail-section">
+    <div class="detail-section-label">Notes</div>
+    {% if pipeline.notes %}
+    <p style="white-space: pre-wrap; font-size: var(--text-sm); margin-bottom: 0.5rem;">{{ pipeline.notes }}</p>
+    {% endif %}
     <form method="post" action="/pipeline/{{ pipeline.id }}/notes"
-          onsubmit="this.style.opacity='0.5'"
-          style="margin-top: 0.5rem;">
-        <textarea name="notes" rows="3" style="width: 100%;">{{ pipeline.notes or "" }}</textarea>
+          onsubmit="this.style.opacity='0.5'">
+        <textarea name="notes" rows="2" style="width: 100%;" placeholder="Add notes...">{{ pipeline.notes or "" }}</textarea>
         <button type="submit" class="btn-ghost" style="margin-top: 0.25rem;">Save</button>
     </form>
-</details>
-
-{% if session_data %}
-<h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Sessions</h2>
-<table class="table-clean" style="margin-bottom: 1.5rem;">
-    <tbody>
-        {% for item in session_data %}
-        <tr class="clickable-row" data-href="/session/{{ item.session.id }}">
-            <td>
-                <div class="col-primary">{% if item.template %}{{ item.template.name }}{% else %}—{% endif %}</div>
-                <div class="row-meta">{{ item.interviewers | join(", ") }}</div>
-            </td>
-            <td>{{ item.completed }}/{{ item.total }}</td>
-            <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
-            <td class="row-meta">{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p class="hint" style="margin-bottom: 1.5rem;">No sessions linked to this pipeline.</p>
-{% endif %}
-
-<div style="margin-bottom: 0.5rem;">
-    <h2 style="font-size: 1rem; margin: 0;">Tests</h2>
 </div>
-{% if test_assignments %}
-<table class="table-clean" style="margin-bottom: 1.5rem;">
-    <tbody>
-        {% for t in test_assignments %}
-        <tr data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}t/{{ t.token }}"},{"label":"⎘ Copy password","copy":"{{ t.password }}"},{"label":"✕ Delete","href":"/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete","confirm":"Delete this test assignment?","delete":true}]'>
-            <td>
-                <div class="col-primary">{{ t.title }}</div>
-                <div class="row-meta">{{ t.external_url[:50] }}{% if t.external_url|length > 50 %}…{% endif %}</div>
-            </td>
-            <td>
-                {% if t.deadline %}<span class="row-meta">Due: {{ t.deadline.strftime("%Y-%m-%d %H:%M") }}</span>{% endif %}
-            </td>
-            <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span>{% if t.is_late %} <span class="badge" style="background: var(--warning-bg); color: var(--warning);">Late</span>{% endif %}</td>
-            <td style="white-space: nowrap;">
-                <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ request.base_url }}t/{{ t.token }}'); toast('Link copied')">Link</button>
-                <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ t.password }}'); toast('Password copied')">Pass</button>
-                {% if t.status == "pending" or t.status == "opened" %}
-                <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel" style="display: inline;"
-                      hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel"
-                      hx-confirm="Cancel this test assignment?"
-                      hx-swap="none">
-                    <button type="submit" class="icon-btn icon-btn-warn" style="font-size: 0.7rem;" title="Cancel">⊘</button>
-                </form>
-                {% endif %}
-                <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete" style="display: inline;"
-                      hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete"
-                      hx-confirm="Delete this test assignment?"
-                      hx-swap="none"
-                      hx-on::after-request="this.closest('tr').remove(); toast('Test deleted')">
-                    <button type="submit" class="icon-btn icon-btn-danger" style="font-size: 0.7rem;" title="Delete">✕</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{% else %}
-<p class="hint" style="margin-bottom: 1.5rem;">No tests assigned.</p>
-{% endif %}
+
+<div class="detail-section">
+    <div class="detail-section-label">Sessions</div>
+    {% if session_data %}
+    <table class="table-clean">
+        <tbody>
+            {% for item in session_data %}
+            <tr class="clickable-row" data-href="/session/{{ item.session.id }}">
+                <td>
+                    <div class="col-primary">{% if item.template %}{{ item.template.name }}{% else %}—{% endif %}</div>
+                    <div class="row-meta">{{ item.interviewers | join(", ") }}</div>
+                </td>
+                <td>{{ item.completed }}/{{ item.total }}</td>
+                <td><span class="badge badge-{{ item.session.status }}">{{ item.session.status }}</span></td>
+                <td class="row-meta">{{ item.session.interview_date or item.session.created_at.strftime("%Y-%m-%d") }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="detail-section-empty">No sessions yet · <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}">+ Add Interview</a></p>
+    {% endif %}
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Tests</div>
+    {% if test_assignments %}
+    <table class="table-clean">
+        <tbody>
+            {% for t in test_assignments %}
+            <tr data-ctx='[{"label":"⎘ Copy link","copy":"{{ request.base_url }}t/{{ t.token }}"},{"label":"⎘ Copy password","copy":"{{ t.password }}"},{"label":"✕ Delete","href":"/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete","confirm":"Delete this test assignment?","delete":true}]'>
+                <td>
+                    <div class="col-primary">{{ t.title }}</div>
+                    <div class="row-meta">{{ t.external_url[:50] }}{% if t.external_url|length > 50 %}…{% endif %}</div>
+                </td>
+                <td>
+                    {% if t.deadline %}<span class="row-meta">Due: {{ t.deadline.strftime("%Y-%m-%d %H:%M") }}</span>{% endif %}
+                </td>
+                <td><span class="badge badge-{{ t.status }}">{{ t.status }}</span>{% if t.is_late %} <span class="badge" style="background: var(--warning-bg); color: var(--warning);">Late</span>{% endif %}</td>
+                <td style="white-space: nowrap;">
+                    <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ request.base_url }}t/{{ t.token }}'); toast('Link copied')">Link</button>
+                    <button type="button" class="btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.4rem;" onclick="navigator.clipboard.writeText('{{ t.password }}'); toast('Password copied')">Pass</button>
+                    {% if t.status == "pending" or t.status == "opened" %}
+                    <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel" style="display: inline;"
+                          hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel"
+                          hx-confirm="Cancel this test assignment?"
+                          hx-swap="none">
+                        <button type="submit" class="icon-btn icon-btn-warn" style="font-size: 0.7rem;" title="Cancel">⊘</button>
+                    </form>
+                    {% endif %}
+                    <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete" style="display: inline;"
+                          hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete"
+                          hx-confirm="Delete this test assignment?"
+                          hx-swap="none"
+                          hx-on::after-request="this.closest('tr').remove(); toast('Test deleted')">
+                        <button type="submit" class="icon-btn icon-btn-danger" style="font-size: 0.7rem;" title="Delete">✕</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="detail-section-empty">No tests assigned · <a href="/pipeline/{{ pipeline.id }}/assign-test">+ Assign Test</a></p>
+    {% endif %}
+</div>
 
 {% if hr_data or culture_data %}
-<h2 style="font-size: 1rem; margin-bottom: 0.5rem;">Scorecard Summary</h2>
-<div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
-    <div>
-        <span style="font-weight: 600;">HR: {{ hr_total }}/12</span>
+<div class="detail-section">
+    <div class="detail-section-label">Scorecard Summary</div>
+    <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+        <div>
+            <span style="font-weight: 600;">HR: {{ hr_total }}/12</span>
+        </div>
+        <div>
+            <span style="font-weight: 600;">Culture: {{ culture_total }}/16</span>
+        </div>
+        <div>
+            <span class="row-meta">Total: {{ "%.1f"|format(hr_total + culture_total) }}/28</span>
+        </div>
     </div>
-    <div>
-        <span style="font-weight: 600;">Culture: {{ culture_total }}/16</span>
-    </div>
-    <div>
-        <span class="row-meta">Total: {{ "%.1f"|format(hr_total + culture_total) }}/28</span>
-    </div>
-</div>
 
-{% if hr_data %}
-<div style="margin-bottom: 1rem;">
-    <div class="row-meta" style="margin-bottom: 0.25rem;">HR (per interviewer)</div>
-    {% for entry in hr_data %}
-    <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
-        <span style="min-width: 120px;">{{ entry.name }}</span>
-        {% for dim in hr_dimensions %}
-        <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+    {% if hr_data %}
+    <div style="margin-bottom: 1rem;">
+        <div class="row-meta" style="margin-bottom: 0.25rem;">HR (per interviewer)</div>
+        {% for entry in hr_data %}
+        <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
+            <span style="min-width: 120px;">{{ entry.name }}</span>
+            {% for dim in hr_dimensions %}
+            <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+            {% endfor %}
+        </div>
         {% endfor %}
     </div>
-    {% endfor %}
-</div>
-{% endif %}
+    {% endif %}
 
-{% if culture_data %}
-<div style="margin-bottom: 1rem;">
-    <div class="row-meta" style="margin-bottom: 0.25rem;">Culture (per interviewer)</div>
-    {% for entry in culture_data %}
-    <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
-        <span style="min-width: 120px;">{{ entry.name }}</span>
-        {% for dim in culture_dimensions %}
-        <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+    {% if culture_data %}
+    <div style="margin-bottom: 1rem;">
+        <div class="row-meta" style="margin-bottom: 0.25rem;">Culture (per interviewer)</div>
+        {% for entry in culture_data %}
+        <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
+            <span style="min-width: 120px;">{{ entry.name }}</span>
+            {% for dim in culture_dimensions %}
+            <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
+            {% endfor %}
+        </div>
         {% endfor %}
     </div>
-    {% endfor %}
+    {% endif %}
 </div>
 {% endif %}
-{% endif %}
 
-<div class="trail">
-    <h2 class="trail-title">Activity</h2>
-    <div class="trail-list" id="trail-pipeline-{{ pipeline.id }}">
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#trail-pipeline-{{ pipeline.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+    <div class="trail-list trail-list--capped" id="trail-pipeline-{{ pipeline.id }}">
         {% for item in trail %}
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#trail-pipeline-{{ pipeline.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
-        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
-    </form>
+    {% if trail | length > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ trail | length }})</button>
+    {% endif %}
 </div>
 {% endblock %}

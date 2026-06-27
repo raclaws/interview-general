@@ -39,7 +39,7 @@
 
 <div class="detail-grid">
     <div class="detail-section">
-        <h2>Session Info</h2>
+        <div class="detail-section-label">Session Info</div>
         {% if pipeline %}
         <p><strong>Pipeline:</strong> <a href="/pipeline/{{ pipeline.id }}">{{ pipeline.display_name or "—" }}</a></p>
         {% if job %}
@@ -54,7 +54,7 @@
     </div>
 
     <div class="detail-section">
-        <h2>Candidate Details</h2>
+        <div class="detail-section-label">Candidate Snapshot</div>
         <p><strong>Name:</strong> {% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">{{ session.snapshot.get("name", "—") }}</a>{% else %}{{ session.snapshot.get("name", "—") }}{% endif %}</p>
         <p><strong>Position:</strong> {{ session.snapshot.get("current_position", "—") }}</p>
         <p><strong>Experience:</strong> {{ session.snapshot.get("yoe", "—") }}</p>
@@ -66,7 +66,7 @@
 </div>
 
 <div class="detail-section">
-    <h2>Interviewers</h2>
+    <div class="detail-section-label">Interviewers</div>
     <table>
         <thead>
             <tr>
@@ -98,7 +98,7 @@
 {% if has_responses %}
 <div class="detail-section results">
     <div class="page-header" style="margin-bottom: 1rem;">
-        <h2 style="margin-bottom: 0;">Assessment Results</h2>
+        <div class="detail-section-label" style="margin-bottom: 0;">Assessment Results</div>
         <div class="action-row" style="margin-top: 0; gap: 0.5rem;">
             <form method="post" action="/session/{{ session.id }}/generate-summary"
                   hx-post="/session/{{ session.id }}/generate-summary"
@@ -145,7 +145,7 @@
 </div>
 
 <div class="detail-section">
-    <h2>AI Summary</h2>
+    <div class="detail-section-label">AI Summary</div>
     <div id="summary-container">
         {% if session.aggregate_summary %}
         <p>{{ session.aggregate_summary }}</p>
@@ -195,7 +195,8 @@ function copyAsMarkdown() {
 </script>
 {% else %}
 <div class="detail-section">
-    <p>Awaiting interviewer submissions.</p>
+    <div class="detail-section-label">Assessment Results</div>
+    <p class="detail-section-empty">Awaiting interviewer submissions.</p>
 </div>
 {% endif %}
 
@@ -223,16 +224,19 @@ function copyLink(token, btn) {
 }
 </script>
 
-<div class="trail">
-    <h2 class="trail-title">Activity</h2>
-    <div class="trail-list" id="trail-session-{{ session.id }}">
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    <form hx-post="/peek/session/{{ session.id }}/comment" hx-target="#trail-session-{{ session.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+    <div class="trail-list trail-list--capped" id="trail-session-{{ session.id }}">
         {% for item in trail %}
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/session/{{ session.id }}/comment" hx-target="#trail-session-{{ session.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
-        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
-    </form>
+    {% if trail | length > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ trail | length }})</button>
+    {% endif %}
 </div>
 
 {% endblock %}
