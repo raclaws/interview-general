@@ -6,20 +6,20 @@
 </div>
 
 <div class="settings-shell">
-    <nav class="settings-nav">
+    <nav class="settings-nav" hx-disinherit="*">
         <a href="/settings" class="settings-tab {% if active_tab == 'llm' %}active{% endif %}"
-           hx-get="/settings" hx-target=".settings-content" hx-push-url="true">LLM</a>
+           hx-get="/settings" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">LLM</a>
         <a href="/settings/business-units" class="settings-tab {% if active_tab == 'business-units' %}active{% endif %}"
-           hx-get="/settings/business-units" hx-target=".settings-content" hx-push-url="true">Business Units</a>
+           hx-get="/settings/business-units" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Business Units</a>
         <a href="/settings/positions" class="settings-tab {% if active_tab == 'positions' %}active{% endif %}"
-           hx-get="/settings/positions" hx-target=".settings-content" hx-push-url="true">Positions</a>
+           hx-get="/settings/positions" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Positions</a>
         <a href="/settings/levels" class="settings-tab {% if active_tab == 'levels' %}active{% endif %}"
-           hx-get="/settings/levels" hx-target=".settings-content" hx-push-url="true">Levels</a>
+           hx-get="/settings/levels" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Levels</a>
         <a href="/settings/job-types" class="settings-tab {% if active_tab == 'job-types' %}active{% endif %}"
-           hx-get="/settings/job-types" hx-target=".settings-content" hx-push-url="true">Job Types</a>
-        <a href="/templates" class="settings-tab {% if active_tab == 'templates' %}active{% endif %}">Templates</a>
+           hx-get="/settings/job-types" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Job Types</a>
+        <a href="/templates" class="settings-tab {% if active_tab == 'templates' %}active{% endif %}" hx-boost="false">Templates</a>
     </nav>
-    <div class="settings-content">
+    <div class="settings-content" hx-disinherit="*">
         {% if tab_content %}
             {% include tab_content %}
         {% endif %}

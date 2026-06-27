@@ -162,6 +162,7 @@ Default port: 8000, Python >=3.12, FastAPI >=0.115.0, SQLModel 0.0.22.
 - **Multiple keydown listeners fight over focus** — when two scripts (e.g. shortcuts.js + sync-list.js) both handle arrow keys, use `stopImmediatePropagation()` in the authoritative handler to prevent the other from overriding state.
 - **`htmx:confirm` fires for ALL requests** — guard with `elt.hasAttribute('hx-confirm')` to only intercept elements that actually have a confirm message, otherwise you block every HTMX request.
 - **Event listeners on elements inside `#main` die on hx-boost swap** — `hx-boost` replaces `#main` with `outerHTML`, destroying all elements and their listeners. Use event delegation on `document.body` with `.closest()` for any interactive element inside the boosted container (theme toggle, dropdowns, etc.).
+- **`hx-select` inherits from boosted parent and breaks partial swaps** — if `#main` has `hx-select="#main"`, child elements with their own `hx-get` + `hx-target` inherit that select. The partial response doesn't contain `#main`, so the swap result is empty (blank). Fix: add `hx-select="unset"` on elements doing their own targeted HTMX requests inside a boosted container.
 - **CSS `accent-color` doesn't theme checkbox backgrounds on dark mode** — use `appearance: none` with custom border/background/checkmark for full control over checkbox styling in dark themes.
 - **Theme toggle needs flash prevention** — apply `data-theme` attribute in a `<head>` inline script (before CSS paints) to avoid light→dark flash on page load.
 
