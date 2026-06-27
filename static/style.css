@@ -733,6 +733,35 @@ tr:hover td { background: var(--bg-muted); }
 .cell-multi-badge { white-space: nowrap; overflow: hidden; max-width: 200px; }
 .peek-trigger { width: 40px; }
 
+/* Cell type — person (initials avatar + text) */
+.cell-person { display: flex; align-items: center; gap: var(--space-lg); }
+.cell-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: 0.02em;
+}
+
+/* Cell type — link (truncated URL with icon) */
+.cell-link a, .cell-link-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    text-decoration: none;
+}
+.cell-link a:hover, .cell-link-inline:hover { color: var(--text-primary); text-decoration: underline; }
+.cell-link svg, .cell-link-inline svg { opacity: 0.5; flex-shrink: 0; }
+.cell-link a:hover svg, .cell-link-inline:hover svg { opacity: 1; }
+
 /* Mutable select — full opacity, hover affordance */
 .inline-select { opacity: 1; }
 .inline-select:hover { border-color: var(--border-focus); }

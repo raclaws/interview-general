@@ -35,7 +35,7 @@ window.__syncConfig = {
     renderRow: function(r) {
         var stages = (r.stages || '').split(',').filter(Boolean);
         return '<tr class="clickable-row" data-href="/candidate/' + r.id + '">' +
-            C.text(r.name, r.email) +
+            C.person(r.name, r.email) +
             '<td><div class="col-primary">' + (r.currentPosition || '—') + '</div>' +
             '<div class="row-meta">' + (stages.length ? C.multiBadge(stages, 3).replace(/<\/?td[^>]*>/g, '') : '—') + '</div></td>' +
             C.compound([(r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : ''), (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '')]) +

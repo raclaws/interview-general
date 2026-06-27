@@ -19,6 +19,28 @@ var C = (function() {
         return val ? ' data-stage="' + esc(val) + '"' : '';
     }
 
+    function initials(name) {
+        if (!name) return '?';
+        var parts = name.trim().split(/\s+/);
+        if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+
+    function nameHash(name) {
+        var hash = 0;
+        for (var i = 0; i < (name || '').length; i++) {
+            hash = ((hash << 5) - hash) + name.charCodeAt(i);
+            hash |= 0;
+        }
+        return Math.abs(hash);
+    }
+
+    var AVATAR_COLORS = [
+        '#7287fd', '#e64553', '#fe640b', '#df8e1d',
+        '#40a02b', '#179299', '#04a5e5', '#8839ef',
+        '#ea76cb', '#d20f39', '#209fb5', '#1e66f5'
+    ];
+
     return {
         /**
          * Two-line text cell (identity column). Flex width.
@@ -132,6 +154,36 @@ var C = (function() {
                 '<span class="peek-icon">' + (count || '') +
                 ' <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
                 '</span></td>';
+        },
+
+        /**
+         * Person/candidate cell. Initials avatar + two-line text. Flex width.
+         * @param {string} name - Person name
+         * @param {string} [meta] - Subtitle (email, position, etc.)
+         * @param {object} [opts] - { link: '/url' } wraps name in <a>
+         */
+        person: function(name, meta, opts) {
+            var ini = initials(name);
+            var color = AVATAR_COLORS[nameHash(name) % AVATAR_COLORS.length];
+            var avatar = '<span class="cell-avatar" style="background:' + color + '">' + esc(ini) + '</span>';
+            var p = esc(name) || '—';
+            if (opts && opts.link) p = '<a href="' + esc(opts.link) + '">' + p + '</a>';
+            var html = '<td class="cell-person">' + avatar + '<div><div class="col-primary">' + p + '</div>';
+            if (meta) html += '<div class="row-meta">' + esc(meta) + '</div>';
+            return html + '</div></td>';
+        },
+
+        /**
+         * Link/URL cell. Truncated with external icon. Flex width.
+         * @param {string} url - Full URL
+         * @param {string} [label] - Display label (defaults to truncated URL)
+         */
+        link: function(url, label) {
+            if (!url) return '<td class="row-meta">—</td>';
+            var display = label || url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            if (display.length > 40) display = display.substring(0, 37) + '…';
+            return '<td class="cell-link"><a href="' + esc(url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">' +
+                esc(display) + ' <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a></td>';
         },
 
         /**

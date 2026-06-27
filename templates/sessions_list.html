@@ -40,7 +40,7 @@ window.__syncConfig = {
         var name = r.candidateName || '—';
         var nameOpts = r.candidateId ? {link: '/candidate/' + r.candidateId} : null;
         return '<tr class="clickable-row" data-href="/session/' + r.id + '">' +
-            C.text(name, (r.jobTitle || '') + ' · ' + (r.templateName || '—'), nameOpts) +
+            C.person(name, (r.jobTitle || '') + ' · ' + (r.templateName || '—'), nameOpts) +
             C.compound([r.position, r.businessUnit]) +
             C.ratio(r.completedCount, r.interviewerCount) +
             C.badge(r.status) +

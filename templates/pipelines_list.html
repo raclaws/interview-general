@@ -50,7 +50,7 @@ window.__syncConfig = {
             : '<span class="row-meta">—</span>';
 
         return '<tr class="clickable-row" data-href="/pipeline/' + r.id + '">' +
-            C.text(r.candidateName, (r.jobTitle || r.businessUnit || '—') + (r.displayName ? ' · ' + r.displayName : '')) +
+            C.person(r.candidateName, (r.jobTitle || r.businessUnit || '—') + (r.displayName ? ' · ' + r.displayName : '')) +
             C.select(r.stage, STAGES, '/pipeline/' + r.id + '/stage') +
             C.ratio(r.sessionCompleted, r.sessionTotal) +
             C.raw(testInfo) +
