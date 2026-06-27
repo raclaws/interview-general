@@ -147,43 +147,77 @@
 {% if hr_data or culture_data %}
 <div class="detail-section">
     <div class="detail-section-label">Scorecard Summary</div>
-    <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
-        <div>
-            <span style="font-weight: 600;">HR: {{ hr_total }}/12</span>
-        </div>
-        <div>
-            <span style="font-weight: 600;">Culture: {{ culture_total }}/16</span>
-        </div>
-        <div>
-            <span class="row-meta">Total: {{ "%.1f"|format(hr_total + culture_total) }}/28</span>
-        </div>
+    <div class="score-totals">
+        <span class="score-totals-item"><strong>{{ "%.1f"|format(hr_total) }}</strong><span class="row-meta">/12 HR</span></span>
+        <span class="score-totals-item"><strong>{{ "%.1f"|format(culture_total) }}</strong><span class="row-meta">/16 Culture</span></span>
+        <span class="score-totals-item"><strong>{{ "%.1f"|format(hr_total + culture_total) }}</strong><span class="row-meta">/28 Total</span></span>
     </div>
 
     {% if hr_data %}
-    <div style="margin-bottom: 1rem;">
-        <div class="row-meta" style="margin-bottom: 0.25rem;">HR (per interviewer)</div>
-        {% for entry in hr_data %}
-        <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
-            <span style="min-width: 120px;">{{ entry.name }}</span>
-            {% for dim in hr_dimensions %}
-            <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
-            {% endfor %}
-        </div>
-        {% endfor %}
+    <div class="score-table-wrap">
+        <div class="row-meta" style="margin-bottom: 0.3rem;">HR — Ownership, Maturity, Collaboration</div>
+        <table class="score-table">
+            <thead>
+                <tr>
+                    <th>Interviewer</th>
+                    {% for dim in hr_dimensions %}
+                    <th>{{ dim.label.split(" ")[0] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in hr_data %}
+                <tr>
+                    <td>{{ entry.name }}</td>
+                    {% for dim in hr_dimensions %}
+                    <td class="score-cell">{{ entry.scores.get(dim.key, "—") }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% if hr_data | length > 1 %}
+                <tr class="score-avg-row">
+                    <td>Avg</td>
+                    {% for dim in hr_dimensions %}
+                    <td class="score-cell">{{ hr_avg.get(dim.key, "—") }}</td>
+                    {% endfor %}
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
 
     {% if culture_data %}
-    <div style="margin-bottom: 1rem;">
-        <div class="row-meta" style="margin-bottom: 0.25rem;">Culture (per interviewer)</div>
-        {% for entry in culture_data %}
-        <div style="display: flex; gap: 1rem; font-size: 0.85rem; margin-bottom: 0.15rem;">
-            <span style="min-width: 120px;">{{ entry.name }}</span>
-            {% for dim in culture_dimensions %}
-            <span class="row-meta">{{ dim.label[:3] }}: {{ entry.scores.get(dim.key, "—") }}</span>
-            {% endfor %}
-        </div>
-        {% endfor %}
+    <div class="score-table-wrap">
+        <div class="row-meta" style="margin-bottom: 0.3rem;">Culture — Execution, Learn/Adapt, Impact, Clarity</div>
+        <table class="score-table">
+            <thead>
+                <tr>
+                    <th>Interviewer</th>
+                    {% for dim in culture_dimensions %}
+                    <th>{{ dim.label.split(" ")[0] }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in culture_data %}
+                <tr>
+                    <td>{{ entry.name }}</td>
+                    {% for dim in culture_dimensions %}
+                    <td class="score-cell">{{ entry.scores.get(dim.key, "—") }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% if culture_data | length > 1 %}
+                <tr class="score-avg-row">
+                    <td>Avg</td>
+                    {% for dim in culture_dimensions %}
+                    <td class="score-cell">{{ culture_avg.get(dim.key, "—") }}</td>
+                    {% endfor %}
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
     </div>
     {% endif %}
 </div>
