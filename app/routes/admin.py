@@ -1114,7 +1114,7 @@ async def settings_save(
 
 
 @router.get("/api/candidates")
-async def api_candidates(q: str = "", db: Session = Depends(get_session)):
+async def api_candidates(q: str = "", admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
     if len(q) < 2:
         return []
     from app.models import Candidate
@@ -1127,7 +1127,7 @@ async def api_candidates(q: str = "", db: Session = Depends(get_session)):
 
 
 @router.get("/api/nocodb-search")
-async def api_nocodb_search(q: str = ""):
+async def api_nocodb_search(q: str = "", admin: AdminUser = Depends(get_current_admin)):
     if len(q) < 2:
         return []
     from app.nocodb import search_candidates
@@ -1152,7 +1152,7 @@ async def login_submit(
     if not admin or not verify_password(password, admin.hashed_password):
         return _render(request, "login.html", {"error": "Invalid credentials"})
     response = RedirectResponse("/", status_code=303)
-    response.set_cookie(COOKIE_NAME, create_session_cookie(username), httponly=True)
+    response.set_cookie(COOKIE_NAME, create_session_cookie(username), httponly=True, secure=True, samesite="Lax")
     return response
 
 

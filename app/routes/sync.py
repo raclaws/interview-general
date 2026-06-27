@@ -432,6 +432,15 @@ async def hydrate(
 
 @router.websocket("/ws")
 async def websocket_sync(ws: WebSocket, tables: str = Query("sessions")):
+    cookie = ws.cookies.get("session")
+    if not cookie:
+        await ws.close(code=4401)
+        return
+    from app.auth import get_username_from_cookie
+    if not get_username_from_cookie(cookie):
+        await ws.close(code=4401)
+        return
+
     table_list = [t.strip() for t in tables.split(",") if t.strip()]
     if not table_list:
         table_list = ["sessions"]
