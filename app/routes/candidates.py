@@ -66,58 +66,8 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
             ).all()
         return _template_sections_cache[template_id]
 
-    pipeline_scores = {}
-    for p in pipelines:
-        p_sessions = db.exec(
-            select(InterviewSession).where(
-                InterviewSession.pipeline_id == p.id,
-                InterviewSession.status == "completed",
-                not_deleted(InterviewSession),
-            )
-        ).all()
-        hr_total = 0
-        culture_total = 0
-        hr_count = 0
-        culture_count = 0
-        for s in p_sessions:
-            template = db.get(Template, s.template_id) if s.template_id else None
-            if not template:
-                continue
-            is_hr = template.name == "HR Interview"
-            is_culture = template.name == "Culture Alignment"
-            if not is_hr and not is_culture:
-                continue
-            ivs = db.exec(
-                select(SessionInterviewer).where(
-                    SessionInterviewer.session_id == s.id,
-                    SessionInterviewer.status == "completed",
-                )
-            ).all()
-            for iv in ivs:
-                resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
-                if not resp:
-                    continue
-                scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
-                sections = get_template_sections(template.id)
-                section_map = {sec.id: sec for sec in sections}
-                iv_total = 0
-                for sr in scores:
-                    sec = section_map.get(sr.section_id)
-                    if sec and sec.measurement_type == "rating_1_4" and sr.value:
-                        try:
-                            iv_total += int(sr.value)
-                        except ValueError:
-                            pass
-                if is_hr:
-                    hr_total += iv_total
-                    hr_count += 1
-                elif is_culture:
-                    culture_total += iv_total
-                    culture_count += 1
-        pipeline_scores[p.id] = {
-            "hr_avg": round(hr_total / hr_count, 1) if hr_count else 0,
-            "culture_avg": round(culture_total / culture_count, 1) if culture_count else 0,
-        }
+    from app.helpers import compute_pipeline_scores
+    pipeline_scores = compute_pipeline_scores(db, [p.id for p in pipelines])
 
     pipeline_sessions = {}
     sessions = db.exec(
@@ -272,59 +222,8 @@ async def candidate_detail(
         .order_by(CandidatePipeline.updated_at.desc())
     ).all()
 
-    pipeline_scores = {}
-    for p in pipelines:
-        # Compute scores from completed sessions
-        p_sessions = db.exec(
-            select(InterviewSession).where(
-                InterviewSession.pipeline_id == p.id,
-                InterviewSession.status == "completed",
-                not_deleted(InterviewSession),
-            )
-        ).all()
-        hr_total = 0
-        culture_total = 0
-        hr_count = 0
-        culture_count = 0
-        for s in p_sessions:
-            template = db.get(Template, s.template_id) if s.template_id else None
-            if not template:
-                continue
-            is_hr = template.name == "HR Interview"
-            is_culture = template.name == "Culture Alignment"
-            if not is_hr and not is_culture:
-                continue
-            ivs = db.exec(
-                select(SessionInterviewer).where(
-                    SessionInterviewer.session_id == s.id,
-                    SessionInterviewer.status == "completed",
-                )
-            ).all()
-            for iv in ivs:
-                resp = db.exec(select(Response).where(Response.session_interviewer_id == iv.id)).first()
-                if not resp:
-                    continue
-                scores = db.exec(select(ResponseScore).where(ResponseScore.response_id == resp.id)).all()
-                sections = db.exec(select(TemplateSection).where(TemplateSection.template_id == template.id)).all()
-                section_map = {sec.id: sec for sec in sections}
-                iv_total = 0
-                for sr in scores:
-                    sec = section_map.get(sr.section_id)
-                    if sec and sec.measurement_type == "rating_1_4" and sr.value:
-                        try:
-                            iv_total += int(sr.value)
-                        except ValueError:
-                            pass
-                if is_hr:
-                    hr_total += iv_total
-                    hr_count += 1
-                elif is_culture:
-                    culture_total += iv_total
-                    culture_count += 1
-        pipeline_scores[p.id] = {
-            "hr_avg": round(hr_total / hr_count, 1) if hr_count else 0,
-            "culture_avg": round(culture_total / culture_count, 1) if culture_count else 0,
-        }
+    from app.helpers import compute_pipeline_scores
+    pipeline_scores = compute_pipeline_scores(db, [p.id for p in pipelines])
 
     sessions = db.exec(
         select(InterviewSession)
@@ -916,7 +815,7 @@ async def test_new_submit(
     db.add(assignment)
     db.commit()
     db.refresh(assignment)
-    record_activity(db, "test", assignment.id, f"Test assigned — {title.strip()}", pipeline_id=pipeline.id)
+    record_activity(db, "pipeline", pipeline.id, f"Test assigned — {title.strip()}", pipeline_id=pipeline.id)
     db.commit()
 
     asyncio.ensure_future(sync_hub.broadcast("tests", "insert", str(assignment.id), {"id": assignment.id}))
@@ -1156,6 +1055,7 @@ async def pipeline_detail_update_stage(
                     select(CandidatePipeline).where(
                         CandidatePipeline.job_id == job.id,
                         CandidatePipeline.stage == "hired",
+                        not_deleted(CandidatePipeline),
                     )
                 ).all())
                 if filled >= job.headcount:

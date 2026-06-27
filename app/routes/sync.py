@@ -78,20 +78,17 @@ hub = SyncHub()
 router = APIRouter(prefix="/sync")
 
 
-def _serialize_session(s: InterviewSession, interviewers, template, pipeline) -> dict:
+def _serialize_session(s: InterviewSession, interviewers, template, pipeline, db=None) -> dict:
     snapshot = json.loads(s.candidate_snapshot) if s.candidate_snapshot else {}
     position = ""
     business_unit = ""
     if pipeline:
-        if pipeline.job_id:
-            from app.database import engine
-            from sqlmodel import Session as DBSession
-            with DBSession(engine) as db:
-                job = db.get(Job, pipeline.job_id)
-                if job:
-                    position = job.position or ""
-                    bu = db.get(BusinessUnit, job.business_unit_id)
-                    business_unit = bu.name if bu else ""
+        if pipeline.job_id and db:
+            job = db.get(Job, pipeline.job_id)
+            if job:
+                position = job.position or ""
+                bu = db.get(BusinessUnit, job.business_unit_id)
+                business_unit = bu.name if bu else ""
         else:
             position = pipeline.position or ""
             business_unit = pipeline.business_unit or ""
@@ -130,7 +127,7 @@ def _hydrate_sessions(db: Session, since: int | None):
         ).all()
         template = db.get(Template, s.template_id) if s.template_id else None
         pipeline = db.get(CandidatePipeline, s.pipeline_id) if s.pipeline_id else None
-        row = _serialize_session(s, interviewers, template, pipeline)
+        row = _serialize_session(s, interviewers, template, pipeline, db)
         row["commentCount"] = counts.get(s.id, 0)
         results.append(row)
     return results

@@ -10,25 +10,13 @@ from sqlmodel import Session, select, func, col
 from app.database import get_session
 from app.auth import get_current_admin
 from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView, Comment, not_deleted
-from app.nocodb import search_candidates, fetch_candidate
+from app.nocodb import fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
 from app.helpers import render_gone
 
 router = APIRouter()
-
-
-POSITIONS = [
-    "Data Analyst", "Data Engineer", "Data Scientist",
-    "Machine Learning Engineer / AI Engineer", "Data Quality Control",
-    "Data Governance", "Fullstack Developer", "QA Engineer",
-    "Project Manager", "CRM StrategistC", "CRM Operation",
-    "CRM Assistant", "Account Manager", "Business Analyst",
-    "Digital Marketing", "Design Graphic", "Other"
-]
-
-BUSINESS_UNITS = ["Markethac", "APEX", "EXONIA", "1011", "R&D", "Group Support", "LUPIN"]
 
 
 def _generate_token() -> str:
@@ -491,6 +479,35 @@ async def purge_entity(
     if not entity or not entity.deleted_at:
         return JSONResponse({"detail": "Not found or not soft-deleted"}, status_code=404)
 
+    # Cascade delete dependent records
+    if entity_type == "pipeline":
+        sessions = db.exec(select(InterviewSession).where(InterviewSession.pipeline_id == entity_id)).all()
+        for s in sessions:
+            interviewers = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)).all()
+            for i in interviewers:
+                db.delete(i)
+            db.delete(s)
+        tests = db.exec(select(TestAssignment).where(TestAssignment.pipeline_id == entity_id)).all()
+        for t in tests:
+            db.delete(t)
+    elif entity_type == "session":
+        interviewers = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == entity_id)).all()
+        for i in interviewers:
+            db.delete(i)
+    elif entity_type == "job":
+        pipelines = db.exec(select(CandidatePipeline).where(CandidatePipeline.job_id == entity_id)).all()
+        for p in pipelines:
+            sessions = db.exec(select(InterviewSession).where(InterviewSession.pipeline_id == p.id)).all()
+            for s in sessions:
+                si = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)).all()
+                for i in si:
+                    db.delete(i)
+                db.delete(s)
+            tests = db.exec(select(TestAssignment).where(TestAssignment.pipeline_id == p.id)).all()
+            for t in tests:
+                db.delete(t)
+            db.delete(p)
+
     db.delete(entity)
     db.commit()
     return JSONResponse({"purged": True})
@@ -797,7 +814,7 @@ async def session_new_submit(
     template = db.get(Template, session.template_id) if session.template_id else None
     pipeline = db.get(CandidatePipeline, session.pipeline_id) if session.pipeline_id else None
     from app.routes.sync import _serialize_session
-    asyncio.create_task(sync_hub.broadcast("sessions", "insert", str(session.id), _serialize_session(session, interviewers, template, pipeline)))
+    asyncio.create_task(sync_hub.broadcast("sessions", "insert", str(session.id), _serialize_session(session, interviewers, template, pipeline, db)))
 
     if is_htmx:
         redirect_to = next or f"/session/{session.id}"

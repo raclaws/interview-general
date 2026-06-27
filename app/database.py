@@ -67,13 +67,15 @@ def _purge_soft_deleted():
     from app.models import CandidatePipeline, InterviewSession, Job, TestAssignment
     cutoff = datetime.utcnow() - timedelta(days=30)
     with Session(engine) as db:
+        deleted_any = False
         for model in [TestAssignment, InterviewSession, CandidatePipeline, Job]:
             stale = db.exec(
                 select(model).where(model.deleted_at.isnot(None), model.deleted_at < cutoff)
             ).all()
             for record in stale:
                 db.delete(record)
-        if stale:
+                deleted_any = True
+        if deleted_any:
             db.commit()
 
 

@@ -146,8 +146,8 @@ class CandidatePipeline(SQLModel, table=True):
     __tablename__ = "candidate_pipelines"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    candidate_id: int = Field(foreign_key="candidates.id")
-    job_id: Optional[int] = Field(default=None, foreign_key="jobs.id")
+    candidate_id: int = Field(foreign_key="candidates.id", index=True)
+    job_id: Optional[int] = Field(default=None, foreign_key="jobs.id", index=True)
     display_name: Optional[str] = None
     business_unit: Optional[str] = None
     position: Optional[str] = None
