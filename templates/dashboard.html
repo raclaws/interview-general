@@ -61,6 +61,11 @@
             {% endfor %}
         </div>
     </div>
+    {% else %}
+    <div class="detail-section">
+        <div class="detail-section-label">Needs Attention</div>
+        <p class="detail-section-empty">Nothing overdue — all clear.</p>
+    </div>
     {% endif %}
 
     <div class="dash-columns">

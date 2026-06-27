@@ -10,21 +10,47 @@ from app.models import (
 
 router = APIRouter(prefix="/settings")
 
+_LIST_CONFIG = {
+    "positions": {"model": ManagedPosition, "tab": "positions", "label_field": "title", "job_field": "position"},
+    "levels": {"model": ManagedLevel, "tab": "levels", "label_field": "label", "job_field": "level"},
+    "job-types": {"model": ManagedJobType, "tab": "job-types", "label_field": "label", "job_field": "job_type"},
+}
+
 
 def _render(request: Request, name: str, context: dict = None):
     ctx = context or {}
     return request.app.state.templates.TemplateResponse(request, name, ctx)
 
 
+def _toast_error(msg: str):
+    import json
+    trigger = json.dumps({"toast": {"value": msg, "severity": "error"}})
+    return HTMLResponse('', status_code=422, headers={
+        "HX-Reswap": "none",
+        "HX-Trigger": trigger,
+    })
+
+
 def _job_usage_counts(db: Session, field: str) -> dict:
-    """Count active jobs per distinct value of a field (position, level, job_type)."""
+    """Count open (non-deleted, status=open) jobs per distinct value of a field."""
     col_attr = getattr(Job, field)
     rows = db.exec(
         select(col_attr, func.count(Job.id))
-        .where(not_deleted(Job))
+        .where(Job.status == "open", not_deleted(Job))
         .group_by(col_attr)
     ).all()
     return {val: count for val, count in rows if val}
+
+
+def _render_list(request, db, admin, list_type):
+    cfg = _LIST_CONFIG[list_type]
+    items = db.exec(select(cfg["model"]).order_by(cfg["model"].order)).all()
+    usage = _job_usage_counts(db, cfg["job_field"])
+    return _render(request, "settings_list.html", {
+        "admin": admin, "items": items,
+        "active_tab": cfg["tab"], "list_type": list_type,
+        "label_field": cfg["label_field"], "usage": usage,
+    })
 
 
 # --- Business Units ---
@@ -54,7 +80,7 @@ async def settings_bu_create(
 ):
     existing = db.exec(select(BusinessUnit).where(BusinessUnit.name == name.strip())).first()
     if existing:
-        return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": '{"toast":{"value":"Business unit already exists","severity":"error"}}'})
+        return _toast_error("Business unit already exists")
 
     bu = BusinessUnit(
         name=name.strip(),
@@ -107,7 +133,7 @@ async def settings_bu_deactivate(
         select(Job).where(Job.business_unit_id == bu_id, Job.status == "open", not_deleted(Job))
     ).all()
     if active_jobs:
-        return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": f'{{"toast":{{"value":"Cannot deactivate — {len(active_jobs)} active job(s) reference this BU","severity":"error"}}}}'})
+        return _toast_error(f"Cannot deactivate — {len(active_jobs)} open job(s) reference this BU")
 
     bu.is_active = not bu.is_active
     db.add(bu)
@@ -126,9 +152,10 @@ async def settings_positions(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    items = db.exec(select(ManagedPosition).order_by(ManagedPosition.order)).all()
-    usage = _job_usage_counts(db, "position")
-    ctx = {"admin": admin, "items": items, "active_tab": "positions", "list_type": "positions", "label_field": "title", "usage": usage}
+    cfg = _LIST_CONFIG["positions"]
+    items = db.exec(select(cfg["model"]).order_by(cfg["model"].order)).all()
+    usage = _job_usage_counts(db, cfg["job_field"])
+    ctx = {"admin": admin, "items": items, "active_tab": cfg["tab"], "list_type": "positions", "label_field": cfg["label_field"], "usage": usage}
     if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
@@ -143,16 +170,13 @@ async def settings_positions_add(
 ):
     existing = db.exec(select(ManagedPosition).where(ManagedPosition.title == value.strip())).first()
     if existing:
-        return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": '{"toast":{"value":"Already exists","severity":"error"}}'})
+        return _toast_error("Already exists")
 
     max_order = db.exec(select(ManagedPosition).order_by(ManagedPosition.order.desc())).first()
     order = (max_order.order + 1) if max_order else 0
     db.add(ManagedPosition(title=value.strip(), order=order))
     db.commit()
-
-    items = db.exec(select(ManagedPosition).order_by(ManagedPosition.order)).all()
-    usage = _job_usage_counts(db, "position")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "positions", "list_type": "positions", "label_field": "title", "usage": usage})
+    return _render_list(request, db, admin, "positions")
 
 
 @router.post("/positions/{item_id}/delete", response_class=HTMLResponse)
@@ -166,10 +190,7 @@ async def settings_positions_delete(
     if item:
         db.delete(item)
         db.commit()
-
-    items = db.exec(select(ManagedPosition).order_by(ManagedPosition.order)).all()
-    usage = _job_usage_counts(db, "position")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "positions", "list_type": "positions", "label_field": "title", "usage": usage})
+    return _render_list(request, db, admin, "positions")
 
 
 @router.post("/positions/{item_id}/edit", response_class=HTMLResponse)
@@ -185,10 +206,7 @@ async def settings_positions_edit(
         item.title = value.strip()
         db.add(item)
         db.commit()
-
-    items = db.exec(select(ManagedPosition).order_by(ManagedPosition.order)).all()
-    usage = _job_usage_counts(db, "position")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "positions", "list_type": "positions", "label_field": "title", "usage": usage})
+    return _render_list(request, db, admin, "positions")
 
 
 # --- Managed Levels ---
@@ -200,9 +218,10 @@ async def settings_levels(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
-    usage = _job_usage_counts(db, "level")
-    ctx = {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label", "usage": usage}
+    cfg = _LIST_CONFIG["levels"]
+    items = db.exec(select(cfg["model"]).order_by(cfg["model"].order)).all()
+    usage = _job_usage_counts(db, cfg["job_field"])
+    ctx = {"admin": admin, "items": items, "active_tab": cfg["tab"], "list_type": "levels", "label_field": cfg["label_field"], "usage": usage}
     if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
@@ -217,16 +236,13 @@ async def settings_levels_add(
 ):
     existing = db.exec(select(ManagedLevel).where(ManagedLevel.label == value.strip())).first()
     if existing:
-        return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": '{"toast":{"value":"Already exists","severity":"error"}}'})
+        return _toast_error("Already exists")
 
     max_order = db.exec(select(ManagedLevel).order_by(ManagedLevel.order.desc())).first()
     order = (max_order.order + 1) if max_order else 0
     db.add(ManagedLevel(label=value.strip(), order=order))
     db.commit()
-
-    items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
-    usage = _job_usage_counts(db, "level")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "levels")
 
 
 @router.post("/levels/{item_id}/delete", response_class=HTMLResponse)
@@ -240,10 +256,7 @@ async def settings_levels_delete(
     if item:
         db.delete(item)
         db.commit()
-
-    items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
-    usage = _job_usage_counts(db, "level")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "levels")
 
 
 @router.post("/levels/{item_id}/edit", response_class=HTMLResponse)
@@ -259,10 +272,7 @@ async def settings_levels_edit(
         item.label = value.strip()
         db.add(item)
         db.commit()
-
-    items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
-    usage = _job_usage_counts(db, "level")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "levels")
 
 
 @router.post("/levels/reorder", response_class=HTMLResponse)
@@ -281,10 +291,7 @@ async def settings_levels_reorder(
                 item.order = i
                 db.add(item)
         db.commit()
-
-    items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
-    usage = _job_usage_counts(db, "level")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "levels")
 
 
 # --- Managed Job Types ---
@@ -296,9 +303,10 @@ async def settings_job_types(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    items = db.exec(select(ManagedJobType).order_by(ManagedJobType.order)).all()
-    usage = _job_usage_counts(db, "job_type")
-    ctx = {"admin": admin, "items": items, "active_tab": "job-types", "list_type": "job-types", "label_field": "label", "usage": usage}
+    cfg = _LIST_CONFIG["job-types"]
+    items = db.exec(select(cfg["model"]).order_by(cfg["model"].order)).all()
+    usage = _job_usage_counts(db, cfg["job_field"])
+    ctx = {"admin": admin, "items": items, "active_tab": cfg["tab"], "list_type": "job-types", "label_field": cfg["label_field"], "usage": usage}
     if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
@@ -313,16 +321,13 @@ async def settings_job_types_add(
 ):
     existing = db.exec(select(ManagedJobType).where(ManagedJobType.label == value.strip())).first()
     if existing:
-        return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": '{"toast":{"value":"Already exists","severity":"error"}}'})
+        return _toast_error("Already exists")
 
     max_order = db.exec(select(ManagedJobType).order_by(ManagedJobType.order.desc())).first()
     order = (max_order.order + 1) if max_order else 0
     db.add(ManagedJobType(label=value.strip(), order=order))
     db.commit()
-
-    items = db.exec(select(ManagedJobType).order_by(ManagedJobType.order)).all()
-    usage = _job_usage_counts(db, "job_type")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "job-types", "list_type": "job-types", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "job-types")
 
 
 @router.post("/job-types/{item_id}/delete", response_class=HTMLResponse)
@@ -336,10 +341,7 @@ async def settings_job_types_delete(
     if item:
         db.delete(item)
         db.commit()
-
-    items = db.exec(select(ManagedJobType).order_by(ManagedJobType.order)).all()
-    usage = _job_usage_counts(db, "job_type")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "job-types", "list_type": "job-types", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "job-types")
 
 
 @router.post("/job-types/{item_id}/edit", response_class=HTMLResponse)
@@ -355,7 +357,4 @@ async def settings_job_types_edit(
         item.label = value.strip()
         db.add(item)
         db.commit()
-
-    items = db.exec(select(ManagedJobType).order_by(ManagedJobType.order)).all()
-    usage = _job_usage_counts(db, "job_type")
-    return _render(request, "settings_list.html", {"admin": admin, "items": items, "active_tab": "job-types", "list_type": "job-types", "label_field": "label", "usage": usage})
+    return _render_list(request, db, admin, "job-types")

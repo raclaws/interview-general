@@ -24,7 +24,7 @@
                 <form method="post" action="/settings/{{ list_type }}/{{ item.id }}/delete"
                       hx-post="/settings/{{ list_type }}/{{ item.id }}/delete"
                       hx-target="closest .settings-content" hx-swap="innerHTML"
-                      hx-confirm="{% set count = usage.get(item[label_field], 0) if usage is defined else 0 %}{% if count %}Remove '{{ item[label_field] }}'? Used by {{ count }} active job{{ 's' if count != 1 }}. Existing jobs keep this value but it won't be available for new ones.{% else %}Remove '{{ item[label_field] }}'?{% endif %}"
+                      hx-confirm="{% set count = usage.get(item[label_field], 0) if usage is defined else 0 %}{% if count %}Remove '{{ item[label_field] }}'? Used by {{ count }} open job{{ 's' if count != 1 }}. Existing jobs keep this value but it won't be available for new ones.{% else %}Remove '{{ item[label_field] }}'?{% endif %}"
                       style="display: inline;">
                     <button type="submit" class="btn-icon" title="Remove">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>

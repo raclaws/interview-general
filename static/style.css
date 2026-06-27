@@ -1399,6 +1399,7 @@ textarea { resize: vertical; min-height: 80px; }
 .dash-attention-item:hover { background: var(--bg-muted); }
 .dash-attention-icon { font-size: var(--text-md); color: var(--warning); flex-shrink: 0; }
 .dash-attention-item--muted .dash-attention-icon { color: var(--text-muted); }
+.dash-attention-item--muted .col-primary { color: var(--text-secondary); }
 
 
 /* Peek panel */

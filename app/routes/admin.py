@@ -106,7 +106,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         candidates = db.exec(select(Candidate).where(col(Candidate.id).in_(cids))).all()
         stale_candidates = {c.id: c.name for c in candidates}
 
-    # Upcoming interviews
+    # Upcoming interviews (batched interviewer query)
     upcoming_sessions = db.exec(
         select(InterviewSession).where(
             InterviewSession.status == "pending",
@@ -115,11 +115,14 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         ).order_by(InterviewSession.interview_date).limit(10)
     ).all()
     upcoming = []
-    for s in upcoming_sessions:
-        interviewers = db.exec(
-            select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
-        ).all()
-        upcoming.append({"session": s, "interviewers": interviewers})
+    if upcoming_sessions:
+        sids = [s.id for s in upcoming_sessions]
+        all_ivs = db.exec(select(SessionInterviewer).where(col(SessionInterviewer.session_id).in_(sids))).all()
+        iv_map = {}
+        for iv in all_ivs:
+            iv_map.setdefault(iv.session_id, []).append(iv)
+        for s in upcoming_sessions:
+            upcoming.append({"session": s, "interviewers": iv_map.get(s.id, [])})
 
     # Recent activity (last 10 pipeline updates)
     recent_pipelines = db.exec(
