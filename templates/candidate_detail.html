@@ -46,12 +46,16 @@
             <div class="form-row form-row--3col">
                 <div class="form-field">
                     <label class="form-label">Job <span class="required">*</span></label>
+                    {% if jobs %}
                     <select name="job_id" required class="form-input">
                         <option value="">— Select —</option>
                         {% for j in jobs %}
                         <option value="{{ j.id }}">{{ j.title }}</option>
                         {% endfor %}
                     </select>
+                    {% else %}
+                    <p class="form-hint" style="padding: var(--space-md) 0;">No open jobs. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
+                    {% endif %}
                 </div>
                 <div class="form-field">
                     <label class="form-label">Stage</label>
@@ -67,6 +71,7 @@
                 </div>
             </div>
             <button type="submit" class="btn">Add</button>
+            <button type="button" class="btn-ghost" onclick="document.getElementById('add-to-job').removeAttribute('open')">Cancel</button>
         </form>
     </div>
 </details>
@@ -113,7 +118,7 @@ document.addEventListener('click', function(e) {
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#trail-candidate-{{ candidate.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#trail-candidate-{{ candidate.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
         <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
     </form>
 </div>

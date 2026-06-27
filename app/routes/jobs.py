@@ -22,11 +22,11 @@ router = APIRouter()
 def _serialize_job_for_broadcast(job: Job, bu: BusinessUnit | None, db: Session) -> dict:
     from sqlalchemy import func
     pipeline_count = db.exec(
-        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id)
+        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id, not_deleted(CandidatePipeline))
     ).one()
     filled = db.exec(
         select(func.count(CandidatePipeline.id)).where(
-            CandidatePipeline.job_id == job.id, CandidatePipeline.stage == "hired"
+            CandidatePipeline.job_id == job.id, CandidatePipeline.stage == "hired", not_deleted(CandidatePipeline)
         )
     ).one()
     return {
@@ -68,6 +68,7 @@ def _filled_count(db: Session, job_id: int) -> int:
         select(CandidatePipeline).where(
             CandidatePipeline.job_id == job_id,
             CandidatePipeline.stage == "hired",
+            not_deleted(CandidatePipeline),
         )
     ).all()
     return len(pipelines)
@@ -347,7 +348,7 @@ async def job_delete(
         return HTMLResponse("Not found", status_code=404)
 
     pipeline_count = db.exec(
-        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id)
+        select(func.count(CandidatePipeline.id)).where(CandidatePipeline.job_id == job.id, not_deleted(CandidatePipeline))
     ).one()
 
     if pipeline_count > 0:
@@ -504,6 +505,7 @@ async def job_add_candidate(
         select(CandidatePipeline).where(
             CandidatePipeline.candidate_id == candidate.id,
             CandidatePipeline.job_id == job_id,
+            not_deleted(CandidatePipeline),
         )
     ).first()
 

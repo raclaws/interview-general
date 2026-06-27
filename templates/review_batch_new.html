@@ -30,12 +30,16 @@
 
         <div class="form-field">
             <label class="form-label">Job <span class="required">*</span></label>
+            {% if jobs %}
             <select name="job_id" required class="form-input">
                 <option value="">Select job...</option>
                 {% for j in jobs %}
                 <option value="{{ j.id }}" {% if prefill_job_id == j.id %}selected{% endif %}>{{ j.title }}</option>
                 {% endfor %}
             </select>
+            {% else %}
+            <p class="form-hint" style="padding: var(--space-md) 0;">No jobs available. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
+            {% endif %}
         </div>
 
         {% if existing_batches is defined and existing_batches %}

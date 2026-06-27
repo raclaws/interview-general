@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import ReviewBatch, ReviewScore, TestAssignment, CandidatePipeline, Candidate
+from app.models import ReviewBatch, ReviewScore, TestAssignment, CandidatePipeline, Candidate, not_deleted
 
 router = APIRouter()
 
@@ -25,7 +25,7 @@ def _get_review_data(batch: ReviewBatch, db: Session):
     """Find all test assignments matching this batch's job."""
     if batch.job_id:
         pipelines = db.exec(
-            select(CandidatePipeline).where(CandidatePipeline.job_id == batch.job_id)
+            select(CandidatePipeline).where(CandidatePipeline.job_id == batch.job_id, not_deleted(CandidatePipeline))
         ).all()
     else:
         # Legacy fallback: match by position+BU strings
@@ -33,6 +33,7 @@ def _get_review_data(batch: ReviewBatch, db: Session):
             select(CandidatePipeline).where(
                 CandidatePipeline.position == batch.position,
                 CandidatePipeline.business_unit == batch.business_unit,
+                not_deleted(CandidatePipeline),
             )
         ).all()
 
@@ -44,6 +45,7 @@ def _get_review_data(batch: ReviewBatch, db: Session):
         assignments = db.exec(
             select(TestAssignment).where(
                 TestAssignment.pipeline_id == p.id,
+                not_deleted(TestAssignment),
             )
         ).all()
         for a in assignments:

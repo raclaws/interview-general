@@ -158,7 +158,7 @@ def _hydrate_jobs(db: Session, since: int | None):
                 func.count(CandidatePipeline.id).label("total"),
                 func.sum(func.iif(CandidatePipeline.stage == "hired", 1, 0)).label("filled"),
             )
-            .where(CandidatePipeline.job_id.in_(job_ids))
+            .where(CandidatePipeline.job_id.in_(job_ids), not_deleted(CandidatePipeline))
             .group_by(CandidatePipeline.job_id)
         ).all()
         for row in rows:
@@ -209,6 +209,7 @@ def _hydrate_candidates(db: Session, since: int | None):
             func.group_concat(CandidatePipeline.stage).label("stages_csv"),
         )
         .where(CandidatePipeline.candidate_id.in_(candidate_ids))
+        .where(not_deleted(CandidatePipeline))
         .group_by(CandidatePipeline.candidate_id)
     ).all()
     pipeline_map = {r[0]: {"count": r[1], "stages": r[2] or ""} for r in pipeline_rows}
@@ -220,6 +221,7 @@ def _hydrate_candidates(db: Session, since: int | None):
             func.count(InterviewSession.id).label("count"),
         )
         .where(InterviewSession.candidate_id.in_(candidate_ids))
+        .where(not_deleted(InterviewSession))
         .group_by(InterviewSession.candidate_id)
     ).all()
     session_map = {r[0]: r[1] for r in session_rows}
@@ -307,7 +309,7 @@ def _hydrate_pipelines(db: Session, since: int | None):
             func.sum(func.iif(SessionInterviewer.status == "completed", 1, 0)).label("completed"),
         )
         .join(SessionInterviewer, SessionInterviewer.session_id == InterviewSession.id)
-        .where(InterviewSession.pipeline_id.in_(pipeline_ids))
+        .where(InterviewSession.pipeline_id.in_(pipeline_ids), not_deleted(InterviewSession))
         .group_by(InterviewSession.pipeline_id)
     ).all()
     session_map = {r[0]: {"total": r[1], "completed": int(r[2] or 0)} for r in session_rows}
@@ -319,7 +321,7 @@ def _hydrate_pipelines(db: Session, since: int | None):
             func.count(TestAssignment.id).label("total"),
             func.sum(func.iif(TestAssignment.status == "submitted", 1, 0)).label("submitted"),
         )
-        .where(TestAssignment.pipeline_id.in_(pipeline_ids))
+        .where(TestAssignment.pipeline_id.in_(pipeline_ids), not_deleted(TestAssignment))
         .group_by(TestAssignment.pipeline_id)
     ).all()
     test_map = {r[0]: {"total": r[1], "submitted": int(r[2] or 0)} for r in test_rows}

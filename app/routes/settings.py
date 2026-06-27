@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
-    AdminUser, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType, Job,
+    AdminUser, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType, Job, not_deleted,
 )
 
 router = APIRouter(prefix="/settings")
@@ -27,7 +27,7 @@ async def settings_bu(
 ):
     bus = db.exec(select(BusinessUnit).order_by(BusinessUnit.name)).all()
     ctx = {"admin": admin, "business_units": bus, "active_tab": "business-units"}
-    if request.headers.get("HX-Request"):
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_bu.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_bu.html"})
 
@@ -96,7 +96,7 @@ async def settings_bu_deactivate(
         return HTMLResponse("Not found", status_code=404)
 
     active_jobs = db.exec(
-        select(Job).where(Job.business_unit_id == bu_id, Job.status == "open")
+        select(Job).where(Job.business_unit_id == bu_id, Job.status == "open", not_deleted(Job))
     ).all()
     if active_jobs:
         return HTMLResponse(
@@ -123,7 +123,7 @@ async def settings_positions(
 ):
     items = db.exec(select(ManagedPosition).order_by(ManagedPosition.order)).all()
     ctx = {"admin": admin, "items": items, "active_tab": "positions", "list_type": "positions", "label_field": "title"}
-    if request.headers.get("HX-Request"):
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
 
@@ -193,7 +193,7 @@ async def settings_levels(
 ):
     items = db.exec(select(ManagedLevel).order_by(ManagedLevel.order)).all()
     ctx = {"admin": admin, "items": items, "active_tab": "levels", "list_type": "levels", "label_field": "label"}
-    if request.headers.get("HX-Request"):
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
 
@@ -284,7 +284,7 @@ async def settings_job_types(
 ):
     items = db.exec(select(ManagedJobType).order_by(ManagedJobType.order)).all()
     ctx = {"admin": admin, "items": items, "active_tab": "job-types", "list_type": "job-types", "label_field": "label"}
-    if request.headers.get("HX-Request"):
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_list.html", ctx)
     return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
 

@@ -1,0 +1,65 @@
+{% extends "base_app.html" %}
+{% block title %}Create Pipeline{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/pipelines">Pipelines</a> / <span>New</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Create Pipeline</h1>
+</div>
+
+<div class="form-card form-card--narrow">
+    <form method="post" action="/pipeline/new" hx-boost="false">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        <div class="form-field">
+            <label class="form-label">Candidate <span class="required">*</span></label>
+            {% if candidates %}
+            <select name="candidate_id" required class="form-input">
+                <option value="">Select candidate...</option>
+                {% for c in candidates %}
+                <option value="{{ c.id }}" {% if prefill_candidate_id == c.id %}selected{% endif %}>{{ c.name }} ({{ c.email }})</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <p class="form-hint" style="padding: var(--space-md) 0;">No candidates yet. <a href="/candidate/new" hx-boost="false">Add a candidate first.</a></p>
+            {% endif %}
+        </div>
+
+        <div class="form-field">
+            <label class="form-label">Job <span class="required">*</span></label>
+            {% if jobs %}
+            <select name="job_id" required class="form-input">
+                <option value="">Select job...</option>
+                {% for j in jobs %}
+                <option value="{{ j.id }}" {% if prefill_job_id == j.id %}selected{% endif %}>{{ j.title }}</option>
+                {% endfor %}
+            </select>
+            {% else %}
+            <p class="form-hint" style="padding: var(--space-md) 0;">No open jobs. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
+            {% endif %}
+        </div>
+
+        <div class="form-field">
+            <label class="form-label">Stage</label>
+            <select name="stage" class="form-input">
+                {% for s in stages %}
+                <option value="{{ s }}">{{ s | replace("_", " ") | title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-field">
+            <label class="form-label">Notes</label>
+            <input type="text" name="notes" class="form-input" placeholder="Optional...">
+        </div>
+
+        <div class="form-footer">
+            <button type="submit" class="btn" {% if not candidates or not jobs %}disabled{% endif %}>Create Pipeline</button>
+            <a href="{{ next or '/pipelines' }}" class="btn-ghost" hx-boost="false">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

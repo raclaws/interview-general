@@ -13,8 +13,8 @@
 <div class="form-card">
     <form method="post" action="/session/{{ session.id }}/edit">
         <div class="form-field">
-            <label class="form-label">Job Title <span class="required">*</span></label>
-            <input type="text" name="job_title" value="{{ session.job_title }}" required class="form-input">
+            <label class="form-label">Job Title</label>
+            <input type="text" name="job_title" value="{{ session.job_title }}" class="form-input" readonly style="opacity: 0.7; cursor: default;">
         </div>
 
         {% if session.position %}

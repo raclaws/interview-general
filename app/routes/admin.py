@@ -9,7 +9,7 @@ from sqlmodel import Session, select, func, col
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView, Comment
+from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView, Comment, not_deleted
 from app.nocodb import search_candidates, fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
@@ -49,19 +49,21 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
     stale_cutoff = datetime.utcnow() - timedelta(days=14)
 
     # Stats
-    open_jobs = db.exec(select(func.count(Job.id)).where(Job.status == "open")).one()
+    open_jobs = db.exec(select(func.count(Job.id)).where(Job.status == "open", not_deleted(Job))).one()
     active_pipelines = db.exec(
         select(func.count(CandidatePipeline.id)).where(
-            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES)
+            col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES),
+            not_deleted(CandidatePipeline),
         )
     ).one()
     pending_sessions = db.exec(
-        select(func.count(InterviewSession.id)).where(InterviewSession.status == "pending")
+        select(func.count(InterviewSession.id)).where(InterviewSession.status == "pending", not_deleted(InterviewSession))
     ).one()
     completed_this_week = db.exec(
         select(func.count(InterviewSession.id)).where(
             InterviewSession.status == "completed",
             col(InterviewSession.created_at) >= week_ago,
+            not_deleted(InterviewSession),
         )
     ).one()
 
@@ -71,6 +73,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
             InterviewSession.status == "pending",
             col(InterviewSession.interview_date) < today_str,
             col(InterviewSession.interview_date).isnot(None),
+            not_deleted(InterviewSession),
         ).order_by(InterviewSession.interview_date).limit(5)
     ).all()
 
@@ -83,6 +86,8 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
             TestAssignment.status.in_(["pending", "opened"]),
             col(TestAssignment.deadline).isnot(None),
             col(TestAssignment.deadline) < datetime.utcnow(),
+            not_deleted(TestAssignment),
+            not_deleted(CandidatePipeline),
         ).limit(5)
     ).all()
     overdue_tests = [{"test": t, "candidate": c, "pipeline": p} for t, p, c in overdue_tests_raw]
@@ -92,6 +97,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         select(CandidatePipeline).where(
             col(CandidatePipeline.stage).notin_(PIPELINE_ENDED_STAGES),
             col(CandidatePipeline.updated_at) < stale_cutoff,
+            not_deleted(CandidatePipeline),
         ).order_by(CandidatePipeline.updated_at).limit(5)
     ).all()
     stale_candidates = {}
@@ -105,6 +111,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
         select(InterviewSession).where(
             InterviewSession.status == "pending",
             col(InterviewSession.interview_date) >= today_str,
+            not_deleted(InterviewSession),
         ).order_by(InterviewSession.interview_date).limit(10)
     ).all()
     upcoming = []
@@ -116,7 +123,7 @@ async def dashboard(request: Request, admin: AdminUser = Depends(get_current_adm
 
     # Recent activity (last 5 pipeline updates)
     recent_pipelines = db.exec(
-        select(CandidatePipeline).order_by(col(CandidatePipeline.updated_at).desc()).limit(5)
+        select(CandidatePipeline).where(not_deleted(CandidatePipeline)).order_by(col(CandidatePipeline.updated_at).desc()).limit(5)
     ).all()
     recent_activity = []
     if recent_pipelines:
@@ -288,6 +295,13 @@ async def sessions_list(request: Request, admin: AdminUser = Depends(get_current
     templates = db.exec(select(Template)).all()
     template_names = sorted(set(t.name for t in templates))
     return _render(request, "sessions_list.html", {"admin": admin, "template_names": template_names})
+
+
+@router.get("/sessions-v2", response_class=HTMLResponse)
+async def sessions_list_v2(request: Request, admin: AdminUser = Depends(get_current_admin), db: Session = Depends(get_session)):
+    templates = db.exec(select(Template)).all()
+    template_names = sorted(set(t.name for t in templates))
+    return _render(request, "sessions_list_v2.html", {"admin": admin, "template_names": template_names})
 
 
 @router.get("/tests", response_class=HTMLResponse)
@@ -520,6 +534,7 @@ async def session_new_form(request: Request, candidate_id: int = None, pipeline_
         results = db.exec(
             select(CandidatePipeline, Candidate).join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
             .where(CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES))
+            .where(not_deleted(CandidatePipeline))
             .order_by(CandidatePipeline.updated_at.desc())
         ).all()
         pipelines = [{"pipeline": p, "candidate": c} for p, c in results]
@@ -685,6 +700,7 @@ async def session_new_submit(
             select(CandidatePipeline).where(
                 CandidatePipeline.candidate_id == candidate_record.id,
                 CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
+                not_deleted(CandidatePipeline),
             )
         ).first()
         if not pipeline_record:
@@ -701,7 +717,7 @@ async def session_new_submit(
     # Validate session limits per pipeline
     if pipeline_record:
         existing_sessions = db.exec(
-            select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_record.id)
+            select(InterviewSession).where(InterviewSession.pipeline_id == pipeline_record.id, not_deleted(InterviewSession))
         ).all()
         if len(existing_sessions) >= 4:
             if is_htmx:
@@ -1061,7 +1077,7 @@ async def settings_page(request: Request, admin: AdminUser = Depends(get_current
         "active_tab": "llm",
         "tab_content": "settings_llm.html",
     }
-    if request.headers.get("HX-Request"):
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
         return _render(request, "settings_llm.html", ctx)
     return _render(request, "settings_layout.html", ctx)
 

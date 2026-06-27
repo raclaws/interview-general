@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}INS ATS{% endblock %}</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="/static/style.css?v=9">
+    <link rel="stylesheet" href="/static/style.css?v=10">
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="/static/shortcuts.js?v=2"></script>
 </head>
@@ -99,25 +99,67 @@
     });
 })();
 
+// --- Shared utilities (CLA-133: guards at boundaries) ---
+
+// 1. dismissOverlays — one function for all overlays (ctx-menu, filter, display, peek, dropdowns)
+window.dismissOverlays = function() {
+    var ctx = document.getElementById('ctx-menu');
+    if (ctx) ctx.style.display = 'none';
+    document.querySelectorAll('.sync-menu').forEach(function(m) { m.style.display = 'none'; });
+    document.querySelectorAll('.dropdown-menu.show').forEach(function(m) { m.classList.remove('show'); });
+};
+
+// 2. positionOverlay — viewport-safe positioning for any overlay
+window.positionOverlay = function(el, x, y) {
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    el.style.display = 'block';
+    // Edge detection: flip if overflowing viewport
+    var rect = el.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+        el.style.left = Math.max(0, x - rect.width) + 'px';
+    }
+    if (rect.bottom > window.innerHeight) {
+        el.style.top = Math.max(0, y - rect.height) + 'px';
+    }
+};
+
+// 3. Global submit loading handler — replaces per-form copypaste
+document.addEventListener('submit', function(e) {
+    var form = e.target;
+    if (form.dataset.noLoading) return;
+    var btn = form.querySelector('button[type="submit"]:not([disabled]), .btn[type="submit"]:not([disabled])');
+    if (!btn || btn.classList.contains('btn--loading')) return;
+    // Skip HTMX inline actions — they don't navigate and resolve instantly
+    if (form.hasAttribute('hx-post') || form.hasAttribute('hx-get')) return;
+    btn.disabled = true;
+    btn.dataset.originalText = btn.textContent;
+    btn.textContent = btn.dataset.loadingText || 'Saving...';
+    btn.classList.add('btn--loading');
+});
+
+// Dismiss overlays on: click-outside, Escape, scroll
 document.addEventListener('click', function(e) {
     var row = e.target.closest('.clickable-row');
     if (row && !e.target.closest('a, button, select, input, form')) {
         if (e.ctrlKey || e.shiftKey) return;
         window.location.href = row.dataset.href;
     }
-    // Close any open context menu
-    var menu = document.getElementById('ctx-menu');
-    if (menu) menu.style.display = 'none';
+    if (!e.target.closest('.ctx-menu, .sync-menu, .dropdown-menu')) {
+        dismissOverlays();
+    }
 });
 
-// Close dropdown menus on outside click
-document.addEventListener('click', function(e) {
-    document.querySelectorAll('.dropdown-menu.show').forEach(function(menu) {
-        if (!menu.parentElement.contains(e.target)) {
-            menu.classList.remove('show');
-        }
-    });
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        dismissOverlays();
+        document.getElementById('peek-panel').classList.remove('peek-open');
+    }
 });
+
+document.addEventListener('scroll', function() { dismissOverlays(); }, true);
+
+// Close dropdown menus on outside click (legacy compat — now handled by dismissOverlays)
 
 // Context menu
 (function() {
@@ -135,21 +177,19 @@ document.addEventListener('click', function(e) {
         ctxRow = row;
         var items = JSON.parse(row.dataset.ctx);
         menu.innerHTML = items.map(function(it) {
-            var cls = it.confirm ? 'ctx-item ctx-danger' : 'ctx-item';
+            var cls = (it.confirm && it.delete) ? 'ctx-item ctx-danger' : 'ctx-item';
             if (it.confirm && it.delete) {
-                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" hx-confirm="' + it.confirm + '" data-ctx-delete style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
+                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" hx-push-url="false" hx-confirm="' + it.confirm + '" data-ctx-delete style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
             }
             if (it.confirm) {
-                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-target="this" hx-swap="outerHTML" hx-confirm="' + it.confirm + '" style="margin:0;"><button type="submit" class="' + cls + '">' + it.label + '</button></form>';
+                return '<form method="post" action="' + it.href + '" hx-post="' + it.href + '" hx-swap="none" hx-push-url="false" hx-confirm="' + it.confirm + '" style="margin:0;"><button type="submit" class="ctx-item">' + it.label + '</button></form>';
             }
             if (it.copy) {
-                return '<div class="' + cls + '" data-copy="' + it.copy + '">' + it.label + '</div>';
+                return '<div class="ctx-item" data-copy="' + it.copy + '">' + it.label + '</div>';
             }
-            return '<a href="' + it.href + '" class="' + cls + '">' + it.label + '</a>';
+            return '<a href="' + it.href + '" class="ctx-item">' + it.label + '</a>';
         }).join('');
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        menu.style.display = 'block';
+        positionOverlay(menu, e.pageX, e.pageY);
         htmx.process(menu);
 
         // Copy handler
@@ -193,9 +233,6 @@ window.openPeek = function(type, id) {
     panel.classList.add('peek-open');
     htmx.ajax('GET', '/peek/' + type + '/' + id, {target: '#peek-panel', swap: 'innerHTML'});
 };
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') document.getElementById('peek-panel').classList.remove('peek-open');
-});
 document.addEventListener('click', function(e) {
     var panel = document.getElementById('peek-panel');
     if (panel.classList.contains('peek-open') && !panel.contains(e.target) && !e.target.closest('.peek-trigger')) {

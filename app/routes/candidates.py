@@ -24,11 +24,11 @@ router = APIRouter()
 
 def _candidate_broadcast(candidate: Candidate, db: Session) -> dict:
     pipelines = db.exec(
-        select(CandidatePipeline).where(CandidatePipeline.candidate_id == candidate.id)
+        select(CandidatePipeline).where(CandidatePipeline.candidate_id == candidate.id, not_deleted(CandidatePipeline))
     ).all()
     stages = list(set(p.stage for p in pipelines if p.stage))
     session_count = db.exec(
-        select(func.count(InterviewSession.id)).where(InterviewSession.candidate_id == candidate.id)
+        select(func.count(InterviewSession.id)).where(InterviewSession.candidate_id == candidate.id, not_deleted(InterviewSession))
     ).one()
     return {
         "id": str(candidate.id),
@@ -72,6 +72,7 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
             select(InterviewSession).where(
                 InterviewSession.pipeline_id == p.id,
                 InterviewSession.status == "completed",
+                not_deleted(InterviewSession),
             )
         ).all()
         hr_total = 0
@@ -121,7 +122,7 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
     pipeline_sessions = {}
     sessions = db.exec(
         select(InterviewSession)
-        .where(InterviewSession.candidate_id == candidate_id)
+        .where(InterviewSession.candidate_id == candidate_id, not_deleted(InterviewSession))
         .order_by(InterviewSession.created_at.desc())
     ).all()
     for s in sessions:
@@ -137,7 +138,10 @@ def _pipeline_partial_context(db: Session, candidate_id: int) -> dict:
     pipeline_tests = {}
     for p in pipelines:
         tests = db.exec(
-            select(TestAssignment).where(TestAssignment.pipeline_id == p.id)
+            select(TestAssignment).where(
+                TestAssignment.pipeline_id == p.id,
+                not_deleted(TestAssignment),
+            )
         ).all()
         submitted = len([t for t in tests if t.status == "submitted"])
         pipeline_tests[p.id] = {"total": len(tests), "submitted": submitted}
@@ -275,6 +279,7 @@ async def candidate_detail(
             select(InterviewSession).where(
                 InterviewSession.pipeline_id == p.id,
                 InterviewSession.status == "completed",
+                not_deleted(InterviewSession),
             )
         ).all()
         hr_total = 0
@@ -323,7 +328,7 @@ async def candidate_detail(
 
     sessions = db.exec(
         select(InterviewSession)
-        .where(InterviewSession.candidate_id == candidate.id)
+        .where(InterviewSession.candidate_id == candidate.id, not_deleted(InterviewSession))
         .order_by(InterviewSession.created_at.desc())
     ).all()
 
@@ -355,7 +360,7 @@ async def candidate_detail(
         "pipeline_sessions": pipeline_sessions,
         "admin": admin,
         "stages": PIPELINE_STAGES,
-        "jobs": db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all(),
+        "jobs": db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned", not_deleted(Job)).order_by(Job.title)).all(),
         "templates": templates,
         "trail": db.exec(
             select(Comment).where(Comment.entity_type == "candidate", Comment.entity_id == candidate_id).order_by(Comment.created_at)
@@ -452,6 +457,7 @@ async def pipeline_create(
             CandidatePipeline.candidate_id == candidate.id,
             CandidatePipeline.job_id == job_id,
             CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
+            not_deleted(CandidatePipeline),
         )
     ).first()
     if active_dup:
@@ -465,6 +471,7 @@ async def pipeline_create(
         select(CandidatePipeline).where(
             CandidatePipeline.candidate_id == candidate.id,
             CandidatePipeline.job_id == job_id,
+            not_deleted(CandidatePipeline),
         )
     ).all()
     same_month = [p for p in existing if p.created_at.strftime("%m%y") == mmyy]
@@ -524,6 +531,7 @@ async def pipeline_update_stage(
                 select(CandidatePipeline).where(
                     CandidatePipeline.job_id == job.id,
                     CandidatePipeline.stage == "hired",
+                    not_deleted(CandidatePipeline),
                 )
             ).all())
             if filled >= job.headcount:
@@ -630,6 +638,7 @@ async def pipeline_score_view(
         select(InterviewSession).where(
             InterviewSession.pipeline_id == pipeline_id,
             InterviewSession.status == "completed",
+            not_deleted(InterviewSession),
         )
     ).all()
 
@@ -741,6 +750,172 @@ async def pipelines_list(
     return _render(request, "pipelines_list.html", {"admin": admin, "bu_names": bu_names})
 
 
+@router.get("/pipeline/new", response_class=HTMLResponse)
+async def pipeline_new_form(
+    request: Request,
+    candidate_id: int = None,
+    job_id: int = None,
+    next: str = None,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    candidates = db.exec(select(Candidate).order_by(Candidate.name)).all()
+    jobs = db.exec(select(Job).where(Job.status == "open").where(not_deleted(Job)).order_by(Job.title)).all()
+    return _render(request, "pipeline_new.html", {
+        "admin": admin,
+        "candidates": candidates,
+        "jobs": jobs,
+        "stages": PIPELINE_STAGES[:4],
+        "prefill_candidate_id": candidate_id,
+        "prefill_job_id": job_id,
+        "next": next,
+    })
+
+
+@router.post("/pipeline/new")
+async def pipeline_new_submit(
+    request: Request,
+    candidate_id: int = Form(...),
+    job_id: int = Form(...),
+    stage: str = Form("screening"),
+    notes: str = Form(""),
+    next: str = Form(None),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    candidate = db.get(Candidate, candidate_id)
+    if not candidate:
+        return render_gone(request, "Candidate", "/candidates", "Candidates")
+
+    job = db.get(Job, job_id)
+    if not job:
+        return render_gone(request, "Job", "/jobs", "Jobs")
+
+    bu = db.get(BusinessUnit, job.business_unit_id)
+    pos = job.position
+    bu_name = bu.name if bu else "N/A"
+
+    from app.models import PIPELINE_ENDED_STAGES
+    active_dup = db.exec(
+        select(CandidatePipeline).where(
+            CandidatePipeline.candidate_id == candidate.id,
+            CandidatePipeline.job_id == job_id,
+            CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES),
+            not_deleted(CandidatePipeline),
+        )
+    ).first()
+    if active_dup:
+        return RedirectResponse(f"/pipeline/new?candidate_id={candidate_id}&job_id={job_id}", status_code=303)
+
+    mmyy = datetime.utcnow().strftime("%m%y")
+    existing = db.exec(
+        select(CandidatePipeline).where(
+            CandidatePipeline.candidate_id == candidate.id,
+            CandidatePipeline.job_id == job_id,
+            not_deleted(CandidatePipeline),
+        )
+    ).all()
+    same_month = [p for p in existing if p.created_at.strftime("%m%y") == mmyy]
+    seq = len(same_month) + 1
+    display_name = f"{pos} {mmyy} #{seq} — {bu_name}"
+
+    pipeline = CandidatePipeline(
+        candidate_id=candidate.id,
+        job_id=job_id,
+        display_name=display_name,
+        position=pos,
+        business_unit=bu_name,
+        stage=stage if stage in PIPELINE_STAGES else "screening",
+        notes=notes.strip() or None,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db.add(pipeline)
+    db.commit()
+    db.refresh(pipeline)
+    record_activity(db, "pipeline", pipeline.id, f"Pipeline created — {display_name}", pipeline_id=pipeline.id)
+    db.commit()
+
+    asyncio.ensure_future(sync_hub.broadcast("pipelines", "insert", str(pipeline.id), {"id": pipeline.id}))
+    return RedirectResponse(next or f"/pipeline/{pipeline.id}", status_code=303)
+
+
+@router.get("/test/new", response_class=HTMLResponse)
+async def test_new_form(
+    request: Request,
+    pipeline_id: int = None,
+    next: str = None,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import PIPELINE_ENDED_STAGES
+    results = db.exec(
+        select(CandidatePipeline, Candidate).join(Candidate, CandidatePipeline.candidate_id == Candidate.id)
+        .where(CandidatePipeline.stage.notin_(PIPELINE_ENDED_STAGES))
+        .where(not_deleted(CandidatePipeline))
+        .order_by(CandidatePipeline.updated_at.desc())
+    ).all()
+    pipelines = [{"pipeline": p, "candidate": c} for p, c in results]
+
+    return _render(request, "test_new.html", {
+        "admin": admin,
+        "pipelines": pipelines,
+        "prefill_pipeline_id": pipeline_id,
+        "today": datetime.utcnow().strftime("%Y-%m-%d"),
+        "next": next,
+    })
+
+
+@router.post("/test/new")
+async def test_new_submit(
+    request: Request,
+    pipeline_id: int = Form(...),
+    title: str = Form(...),
+    external_url: str = Form(...),
+    instructions: str = Form(""),
+    time_limit: int = Form(None),
+    max_upload_size: int = Form(25),
+    deadline: str = Form(None),
+    expiry: str = Form(None),
+    next: str = Form(None),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import secrets
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline or pipeline.deleted_at:
+        return render_gone(request, "Pipeline", "/pipelines", "Pipelines")
+
+    token = secrets.token_urlsafe(16)
+    password = secrets.token_urlsafe(6)[:8]
+    deadline_dt = datetime.fromisoformat(deadline) if deadline else None
+    expiry_dt = datetime.fromisoformat(expiry) if expiry else None
+
+    assignment = TestAssignment(
+        pipeline_id=pipeline.id,
+        title=title.strip(),
+        external_url=external_url.strip(),
+        instructions=instructions.strip() or None,
+        time_limit=time_limit,
+        max_upload_size=max_upload_size,
+        deadline=deadline_dt,
+        expiry=expiry_dt,
+        token=token,
+        password=password,
+        status="pending",
+        created_at=datetime.utcnow(),
+    )
+    db.add(assignment)
+    db.commit()
+    db.refresh(assignment)
+    record_activity(db, "test", assignment.id, f"Test assigned — {title.strip()}", pipeline_id=pipeline.id)
+    db.commit()
+
+    asyncio.ensure_future(sync_hub.broadcast("tests", "insert", str(assignment.id), {"id": assignment.id}))
+    return RedirectResponse(next or f"/pipeline/{pipeline.id}", status_code=303)
+
+
 # --- CLA-20: Pipeline Detail Page ---
 
 def _annotate_test_assignments(assignments):
@@ -766,7 +941,7 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
     """Build context for pipeline detail page."""
     sessions = db.exec(
         select(InterviewSession)
-        .where(InterviewSession.pipeline_id == pipeline.id)
+        .where(InterviewSession.pipeline_id == pipeline.id, not_deleted(InterviewSession))
         .order_by(InterviewSession.created_at.desc())
     ).all()
 
@@ -895,7 +1070,7 @@ def _pipeline_detail_context(db: Session, pipeline: CandidatePipeline, candidate
         "stages": PIPELINE_STAGES,
         "test_assignments": _annotate_test_assignments(db.exec(
             select(TestAssignment)
-            .where(TestAssignment.pipeline_id == pipeline.id)
+            .where(TestAssignment.pipeline_id == pipeline.id, not_deleted(TestAssignment))
             .order_by(TestAssignment.created_at.desc())
         ).all()),
     }
@@ -1087,6 +1262,7 @@ async def assign_test_submit(
             TestAssignment.pipeline_id == pipeline_id,
             TestAssignment.external_url == external_url.strip(),
             TestAssignment.status != "cancelled",
+            not_deleted(TestAssignment),
         )
     ).first()
     if existing_test:
@@ -1187,7 +1363,7 @@ async def review_batch_new_form(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all()
+    jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned", not_deleted(Job)).order_by(Job.title)).all()
     return _render(request, "review_batch_new.html", {
         "admin": admin,
         "jobs": jobs,
@@ -1219,7 +1395,7 @@ async def review_batch_new_submit(
     ).all()
 
     if existing and confirm != "yes":
-        jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned").order_by(Job.title)).all()
+        jobs = db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned", not_deleted(Job)).order_by(Job.title)).all()
         return _render(request, "review_batch_new.html", {
             "admin": admin,
             "jobs": jobs,

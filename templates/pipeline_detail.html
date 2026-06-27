@@ -186,7 +186,7 @@
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#trail-pipeline-{{ pipeline.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#trail-pipeline-{{ pipeline.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
         <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
     </form>
 </div>

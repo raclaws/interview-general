@@ -14,7 +14,7 @@
 <div class="detail-actions">
     <div class="detail-actions-nav">
         {% if session.candidate_id %}<a href="/candidate/{{ session.candidate_id }}">↗ Candidate</a>{% endif %}
-        {% if pipeline %}<a href="/pipeline/{{ pipeline.id }}">↗ Pipeline</a>{% endif %}
+        {% if pipeline and not pipeline.deleted_at %}<a href="/pipeline/{{ pipeline.id }}">↗ Pipeline</a>{% endif %}
     </div>
     <div class="detail-actions-export">
         {% set has_responses = interviewer_data | selectattr("response") | list %}
@@ -230,7 +230,7 @@ function copyLink(token, btn) {
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/session/{{ session.id }}/comment" hx-target="#trail-session-{{ session.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <form hx-post="/peek/session/{{ session.id }}/comment" hx-target="#trail-session-{{ session.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
         <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
     </form>
 </div>

@@ -1,0 +1,82 @@
+{% extends "base_app.html" %}
+{% block title %}Assign Test{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/tests">Tests</a> / <span>New</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Assign Test</h1>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/test/new" id="test-form" hx-boost="false">
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        <div class="form-field">
+            <label class="form-label">Pipeline <span class="required">*</span></label>
+            {% if pipelines %}
+            <select name="pipeline_id" required class="form-input">
+                <option value="">Select pipeline...</option>
+                {% for p in pipelines %}
+                <option value="{{ p.pipeline.id }}" {% if prefill_pipeline_id == p.pipeline.id %}selected{% endif %}>
+                    {{ p.candidate.name }} — {{ p.pipeline.display_name or "—" }}
+                </option>
+                {% endfor %}
+            </select>
+            <p class="form-hint">Candidate + Job context inherited from pipeline.</p>
+            {% else %}
+            <p class="form-hint" style="padding: var(--space-md) 0;">No eligible pipelines found. <a href="/candidates" hx-boost="false">Add a candidate to a job first.</a></p>
+            {% endif %}
+        </div>
+
+        <hr class="form-divider">
+
+        <div class="form-field">
+            <label class="form-label">Title <span class="required">*</span></label>
+            <input type="text" name="title" required class="form-input" placeholder="e.g. HackerRank Backend Assessment">
+        </div>
+
+        <div class="form-field">
+            <label class="form-label">External URL <span class="required">*</span></label>
+            <input type="url" name="external_url" required class="form-input" placeholder="https://www.hackerrank.com/test/...">
+            <p class="form-hint">Full URL including https:// protocol</p>
+        </div>
+
+        <div class="form-field">
+            <label class="form-label">Instructions</label>
+            <textarea name="instructions" rows="4" class="form-input" placeholder="Instructions shown to the candidate before taking the test..."></textarea>
+        </div>
+
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Time Limit (days)</label>
+                <input type="number" name="time_limit" min="1" class="form-input" placeholder="e.g. 3">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Max Upload Size (MB)</label>
+                <input type="number" name="max_upload_size" min="1" value="25" class="form-input">
+            </div>
+        </div>
+
+        <div class="form-row form-row--2col">
+            <div class="form-field">
+                <label class="form-label">Deadline</label>
+                <input type="datetime-local" name="deadline" class="form-input" min="{{ today }}T00:00">
+                <p class="form-hint">Cannot be earlier than today.</p>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Expiry</label>
+                <input type="datetime-local" name="expiry" class="form-input" min="{{ today }}T00:00">
+                <p class="form-hint">Link becomes invalid after this date.</p>
+            </div>
+        </div>
+
+        <div class="form-footer">
+            <button type="submit" class="btn" {% if not pipelines %}disabled{% endif %}>Assign Test</button>
+            <a href="{{ next or '/tests' }}" class="btn-ghost" hx-boost="false">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

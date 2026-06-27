@@ -165,6 +165,7 @@
                 </form>
             </div>
         </div>
+        <button type="button" class="btn-ghost" style="margin-top: 0.5rem;" onclick="document.getElementById('add-candidate').removeAttribute('open')">Cancel</button>
     </div>
 </details>
 
@@ -276,7 +277,7 @@
         {% include "partials/trail_item.html" %}
         {% endfor %}
     </div>
-    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#trail-job-{{ job.id }}" hx-swap="beforeend" hx-on::after-request="this.reset()">
+    <form hx-post="/peek/job/{{ job.id }}/comment" hx-target="#trail-job-{{ job.id }}" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()">
         <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
     </form>
 </div>

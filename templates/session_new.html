@@ -51,6 +51,7 @@
         {% else %}
         <div class="form-field">
             <label class="form-label">Pipeline <span class="required">*</span></label>
+            {% if pipelines %}
             <select name="pipeline_id" required class="form-input">
                 <option value="">Select pipeline...</option>
                 {% for p in pipelines %}
@@ -60,6 +61,9 @@
                 {% endfor %}
             </select>
             <p class="form-hint">Candidate + Job context inherited from pipeline.</p>
+            {% else %}
+            <p class="form-hint" style="padding: var(--space-md) 0;">No eligible pipelines found. <a href="/candidates" hx-boost="false">Add a candidate to a job first.</a></p>
+            {% endif %}
         </div>
         <input type="hidden" name="entry_mode" value="pipeline">
         {% endif %}
@@ -80,8 +84,8 @@
 
         <div class="form-field">
             <label class="form-label">Job Title</label>
-            <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job">
-            <p class="form-hint">Inherited from pipeline's job. Override if needed.</p>
+            <input type="text" name="job_title" value="{{ prefill_job.title if prefill_job else '' }}" class="form-input" placeholder="Auto-filled from pipeline job" readonly style="opacity: 0.7; cursor: default;">
+            {% if prefill_job %}<p class="form-hint">From: {{ prefill_job.title }}</p>{% else %}<p class="form-hint">Select a pipeline to auto-fill.</p>{% endif %}
         </div>
 
         <div class="form-field">
