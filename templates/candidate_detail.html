@@ -15,7 +15,7 @@
     <div class="detail-actions-nav"></div>
     <div class="detail-actions-export"></div>
     <div class="detail-actions-mutate">
-        <a href="/candidate/{{ candidate.id }}/edit">Edit</a>
+        <a href="/candidate/{{ candidate.id }}/edit" hx-boost="false">Edit</a>
         {% if pipelines %}
         <div class="dropdown" style="display: inline-block; position: relative;">
             <button type="button" onclick="this.nextElementSibling.classList.toggle('show')">+ Interview ▾</button>
@@ -28,7 +28,7 @@
             </div>
         </div>
         {% else %}
-        <a href="/session/new?candidate_id={{ candidate.id }}">+ Interview</a>
+        <a href="/session/new?candidate_id={{ candidate.id }}" hx-boost="false">+ Interview</a>
         {% endif %}
         <button type="button" onclick="document.getElementById('add-to-job').toggleAttribute('open')">+ Add to Job</button>
     </div>

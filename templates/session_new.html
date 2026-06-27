@@ -13,7 +13,7 @@
 <div class="form-card">
     {% if not prefill_candidate %}
     <div class="form-info">
-        <strong>New candidate?</strong> Add them first via <a href="/candidate/new">Candidates → Add Candidate</a>, then create a pipeline from their profile before scheduling an interview.
+        <strong>New candidate?</strong> Add them first via <a href="/candidate/new" hx-boost="false">Candidates → Add Candidate</a>, then create a pipeline from their profile before scheduling an interview.
         <br>Flow: <span style="color: var(--text-muted);">Job → Candidate → Pipeline → Interview Session</span>
     </div>
     {% endif %}

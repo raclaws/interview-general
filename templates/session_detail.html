@@ -23,7 +23,7 @@
         {% endif %}
     </div>
     <div class="detail-actions-mutate">
-        <a href="/session/{{ session.id }}/edit">Edit</a>
+        <a href="/session/{{ session.id }}/edit" hx-boost="false">Edit</a>
     </div>
     <div class="detail-actions-destruct">
         {% if session.status == "pending" %}

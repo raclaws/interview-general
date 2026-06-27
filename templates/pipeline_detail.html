@@ -21,9 +21,9 @@
         <a href="/pipeline/{{ pipeline.id }}/export/csv" title="Export CSV" hx-boost="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</a>
     </div>
     <div class="detail-actions-mutate">
-        <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score">Scorecard</a>
-        <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}">+ Interview</a>
-        <a href="/pipeline/{{ pipeline.id }}/assign-test">+ Test</a>
+        <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score" hx-boost="false">Scorecard</a>
+        <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" hx-boost="false">+ Interview</a>
+        <a href="/pipeline/{{ pipeline.id }}/assign-test" hx-boost="false">+ Test</a>
     </div>
     <div class="detail-actions-destruct">
         <form method="post" action="/pipeline/{{ pipeline.id }}/delete"
@@ -98,7 +98,7 @@
         </tbody>
     </table>
     {% else %}
-    <p class="detail-section-empty">No sessions yet · <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}">+ Add Interview</a></p>
+    <p class="detail-section-empty">No sessions yet · <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" hx-boost="false">+ Add Interview</a></p>
     {% endif %}
 </div>
 
@@ -140,7 +140,7 @@
         </tbody>
     </table>
     {% else %}
-    <p class="detail-section-empty">No tests assigned · <a href="/pipeline/{{ pipeline.id }}/assign-test">+ Assign Test</a></p>
+    <p class="detail-section-empty">No tests assigned · <a href="/pipeline/{{ pipeline.id }}/assign-test" hx-boost="false">+ Assign Test</a></p>
     {% endif %}
 </div>
 

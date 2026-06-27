@@ -141,7 +141,7 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">{% if editing %}Save Changes{% else %}Create Job{% endif %}</button>
-            <a href="{{ next or ('/job/' ~ job.id if editing else '/jobs') }}" class="btn-ghost">Cancel</a>
+            <a href="{{ next or ('/job/' ~ job.id if editing else '/jobs') }}" class="btn-ghost" hx-boost="false">Cancel</a>
         </div>
     </form>
 </div>

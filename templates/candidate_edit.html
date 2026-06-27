@@ -86,7 +86,7 @@
 
         <div class="form-footer">
             <button type="submit" class="btn">Save Changes</button>
-            <a href="{{ next or '/candidate/' ~ candidate.id }}" class="btn-ghost">Cancel</a>
+            <a href="{{ next or '/candidate/' ~ candidate.id }}" class="btn-ghost" hx-boost="false">Cancel</a>
         </div>
     </form>
 </div>
