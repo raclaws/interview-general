@@ -7,9 +7,9 @@
 <div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Generate Reports</h1>
     <button type="button" class="btn-ghost" style="font-size: 0.8rem;"
-            hx-get="/reports/history" hx-target="#report-history-panel" hx-swap="innerHTML"
+            hx-get="/reports/history" hx-target="#report-history-content" hx-swap="innerHTML"
             hx-select="unset" hx-push-url="false" hx-disinherit="*"
-            onclick="document.getElementById('report-history-panel').toggleAttribute('open')">
+            onclick="document.getElementById('report-history-panel').setAttribute('open','')">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         History
     </button>
@@ -17,7 +17,7 @@
 
 <details id="report-history-panel" class="detail-section" style="margin-bottom: 1rem;">
     <summary class="detail-section-label" style="cursor: pointer;">Report History <span class="row-meta">(last 3 months)</span></summary>
-    <div style="padding-top: 0.5rem;"></div>
+    <div id="report-history-content" style="padding-top: 0.5rem;"></div>
 </details>
 
 <div class="detail-section">
