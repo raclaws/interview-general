@@ -12,7 +12,7 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import AdminUser, Job, BusinessUnit, CandidatePipeline, Candidate, ManagedLevel, ReportHistory, not_deleted
 from app.reports import collect_general_data, collect_pipeline_data, collect_job_data
-from app.llm import generate_report
+from app.llm import generate_report, get_llm_config
 
 router = APIRouter(prefix="/reports")
 
@@ -31,6 +31,20 @@ def _render(request: Request, name: str, context: dict = None):
 def _render_report(template_name: str, data: dict, llm: dict) -> str:
     template = _report_env.get_template(template_name)
     return template.render(data=data, llm=llm, generated_date=datetime.utcnow().strftime("%b %d, %Y"))
+
+
+def _toast_error(msg: str):
+    trigger = json.dumps({"toast": {"value": msg, "severity": "error"}})
+    return HTMLResponse('', status_code=422, headers={"HX-Reswap": "none", "HX-Trigger": trigger})
+
+
+def _check_llm_config():
+    _, api_key, model, _ = get_llm_config()
+    if not api_key or api_key == "change-me":
+        return "LLM API key not configured. Go to Settings → LLM to set it up."
+    if not model:
+        return "LLM model not configured. Go to Settings → LLM to set it up."
+    return None
 
 
 def _save_report(report_type: str, entity_id: str, html: str) -> str:
@@ -136,12 +150,17 @@ async def report_general(
         if days:
             since = datetime.utcnow() - timedelta(days=days)
 
+    llm_err = _check_llm_config()
+    if llm_err:
+        return _toast_error(llm_err)
+
     try:
         data = collect_general_data(db, bu_ids=bu_list, level=level or None, since=since)
+        if data["total_pipelines"] == 0 and data["open_jobs"] == 0:
+            return _toast_error("No data to report — no open jobs or active pipelines found with these filters.")
         llm = await generate_report("general", data)
         html = _render_report("general.html", data, llm)
         filename = _save_report("general", "all", html)
-        # Build human-readable filter summary
         bu_label = "All BUs"
         if bu_list:
             bus = db.exec(select(BusinessUnit).where(BusinessUnit.id.in_(bu_list))).all()
@@ -150,9 +169,7 @@ async def report_general(
         _record_history(db, "general", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
-        return HTMLResponse(
-            f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-        )
+        return _toast_error(f"Report generation failed: {str(e)}")
 
 
 @router.post("/pipeline/{pipeline_id}", response_class=HTMLResponse)
@@ -165,7 +182,15 @@ async def report_pipeline(
     try:
         data = collect_pipeline_data(db, pipeline_id)
         if data.get("error"):
-            return HTMLResponse(f'<div class="form-error">{data["error"]}</div>')
+            return _toast_error(data["error"])
+
+        llm_err = _check_llm_config()
+        if llm_err:
+            return _toast_error(llm_err)
+
+        if not data.get("sessions") and not data.get("tests"):
+            return _toast_error("No interview or test data yet for this pipeline — nothing to analyze.")
+
         llm = await generate_report("pipeline", data)
         html = _render_report("pipeline.html", data, llm)
         filename = _save_report("pipeline", str(pipeline_id), html)
@@ -175,9 +200,7 @@ async def report_pipeline(
         _record_history(db, "pipeline", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
-        return HTMLResponse(
-            f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-        )
+        return _toast_error(f"Report generation failed: {str(e)}")
 
 
 @router.post("/job/{job_id}", response_class=HTMLResponse)
@@ -194,10 +217,18 @@ async def report_job(
         if days:
             since = datetime.utcnow() - timedelta(days=days)
 
+    llm_err = _check_llm_config()
+    if llm_err:
+        return _toast_error(llm_err)
+
     try:
         data = collect_job_data(db, job_id, since=since)
         if data.get("error"):
-            return HTMLResponse(f'<div class="form-error">{data["error"]}</div>')
+            return _toast_error(data["error"])
+
+        if not data.get("candidates"):
+            return _toast_error("No candidates in pipeline for this job — nothing to analyze.")
+
         llm = await generate_report("job", data)
         html = _render_report("job.html", data, llm)
         filename = _save_report("job", str(job_id), html)
@@ -206,6 +237,4 @@ async def report_job(
         _record_history(db, "job", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
-        return HTMLResponse(
-            f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-        )
+        return _toast_error(f"Report generation failed: {str(e)}")
