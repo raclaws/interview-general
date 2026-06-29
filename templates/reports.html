@@ -4,9 +4,21 @@
 <nav class="breadcrumb"><span>Reports</span></nav>
 {% endblock %}
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h1>Generate Reports</h1>
+    <button type="button" class="btn-ghost" style="font-size: 0.8rem;"
+            hx-get="/reports/history" hx-target="#report-history-panel" hx-swap="innerHTML"
+            hx-select="unset" hx-push-url="false" hx-disinherit="*"
+            onclick="document.getElementById('report-history-panel').toggleAttribute('open')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        History
+    </button>
 </div>
+
+<details id="report-history-panel" class="detail-section" style="margin-bottom: 1rem;">
+    <summary class="detail-section-label" style="cursor: pointer;">Report History <span class="row-meta">(last 3 months)</span></summary>
+    <div style="padding-top: 0.5rem;"></div>
+</details>
 
 <div class="detail-section">
     <div class="detail-section-label">Recruitment General</div>
@@ -15,6 +27,7 @@
           hx-target="#result-general"
           hx-swap="innerHTML"
           hx-select="unset"
+          hx-push-url="false"
           hx-disinherit="*"
           hx-on::before-request="reportStart(this)"
           hx-on::after-request="reportEnd(this)">
@@ -59,6 +72,7 @@
           hx-target="#result-pipeline"
           hx-swap="innerHTML"
           hx-select="unset"
+          hx-push-url="false"
           hx-disinherit="*"
           hx-on::before-request="reportStart(this)"
           hx-on::after-request="reportEnd(this)"
@@ -87,6 +101,7 @@
           hx-target="#result-job"
           hx-swap="innerHTML"
           hx-select="unset"
+          hx-push-url="false"
           hx-disinherit="*"
           hx-on::before-request="reportStart(this)"
           hx-on::after-request="reportEnd(this)"

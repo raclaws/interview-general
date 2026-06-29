@@ -368,3 +368,13 @@ class Comment(SQLModel, table=True):
     body: str
     author: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ReportHistory(SQLModel, table=True):
+    __tablename__ = "report_history"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    report_type: str
+    filename: str
+    filters: str = ""
+    created_at: datetime = Field(default_factory=datetime.utcnow)

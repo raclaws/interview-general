@@ -10,7 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from app.database import get_session
 from app.auth import get_current_admin
-from app.models import AdminUser, Job, BusinessUnit, CandidatePipeline, Candidate, ManagedLevel, not_deleted
+from app.models import AdminUser, Job, BusinessUnit, CandidatePipeline, Candidate, ManagedLevel, ReportHistory, not_deleted
 from app.reports import collect_general_data, collect_pipeline_data, collect_job_data
 from app.llm import generate_report
 
@@ -41,11 +41,45 @@ def _save_report(report_type: str, entity_id: str, html: str) -> str:
     return filename
 
 
+def _record_history(db: Session, report_type: str, filename: str, filters: dict):
+    entry = ReportHistory(
+        report_type=report_type,
+        filename=filename,
+        filters=json.dumps(filters, default=str),
+        created_at=datetime.utcnow(),
+    )
+    db.add(entry)
+    db.commit()
+
+
+def _purge_expired_history(db: Session):
+    cutoff = datetime.utcnow() - timedelta(days=90)
+    expired = db.exec(select(ReportHistory).where(ReportHistory.created_at < cutoff)).all()
+    for entry in expired:
+        filepath = REPORTS_DIR / entry.filename
+        if filepath.exists():
+            filepath.unlink()
+        db.delete(entry)
+    if expired:
+        db.commit()
+
+
 @router.get("/general")
 @router.get("/pipeline/{pipeline_id}")
 @router.get("/job/{job_id}")
 async def report_post_only_redirect(request: Request, pipeline_id: int = 0, job_id: int = 0):
     return RedirectResponse("/reports", status_code=303)
+
+
+@router.get("/history", response_class=HTMLResponse)
+async def report_history(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    _purge_expired_history(db)
+    entries = db.exec(select(ReportHistory).order_by(ReportHistory.created_at.desc()).limit(50)).all()
+    return _render(request, "partials/report_history.html", {"entries": entries})
 
 
 @router.get("", response_class=HTMLResponse)
@@ -95,6 +129,7 @@ async def report_general(
         llm = await generate_report("general", data)
         html = _render_report("general.html", data, llm)
         filename = _save_report("general", "all", html)
+        _record_history(db, "general", filename, {"bu_ids": bu_ids, "level": level, "period": period})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
@@ -116,6 +151,7 @@ async def report_pipeline(
         llm = await generate_report("pipeline", data)
         html = _render_report("pipeline.html", data, llm)
         filename = _save_report("pipeline", str(pipeline_id), html)
+        _record_history(db, "pipeline", filename, {"pipeline_id": pipeline_id, "candidate": data.get("candidate", {}).get("name", "")})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
@@ -144,6 +180,7 @@ async def report_job(
         llm = await generate_report("job", data)
         html = _render_report("job.html", data, llm)
         filename = _save_report("job", str(job_id), html)
+        _record_history(db, "job", filename, {"job_id": job_id, "period": period, "title": data.get("job", {}).get("title", "")})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
