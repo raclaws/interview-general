@@ -1,14 +1,14 @@
 {% if entries %}
 <table class="table-clean" style="font-size: var(--text-sm);">
     <tbody>
-        {% for e in entries %}
+        {% for e in entries[:10] %}
         <tr>
             <td style="white-space: nowrap;">
                 <span class="badge badge-{{ e.report_type }}">{{ e.report_type | title }}</span>
             </td>
             <td>
                 <div class="col-primary">{{ e.report_type | title }} Report</div>
-                <div class="row-meta">{{ e.filters }}</div>
+                <div class="row-meta">{{ e.display }}</div>
             </td>
             <td class="row-meta" style="white-space: nowrap;">{{ e.created_at.strftime("%b %d, %Y %H:%M") }}</td>
             <td style="text-align: right; white-space: nowrap;">
@@ -19,6 +19,31 @@
         {% endfor %}
     </tbody>
 </table>
+{% if entries | length > 10 %}
+<details style="margin-top: 0.5rem;">
+    <summary class="row-meta" style="cursor: pointer;">Show {{ entries | length - 10 }} more</summary>
+    <table class="table-clean" style="font-size: var(--text-sm); margin-top: 0.25rem;">
+        <tbody>
+            {% for e in entries[10:] %}
+            <tr>
+                <td style="white-space: nowrap;">
+                    <span class="badge badge-{{ e.report_type }}">{{ e.report_type | title }}</span>
+                </td>
+                <td>
+                    <div class="col-primary">{{ e.report_type | title }} Report</div>
+                    <div class="row-meta">{{ e.display }}</div>
+                </td>
+                <td class="row-meta" style="white-space: nowrap;">{{ e.created_at.strftime("%b %d, %Y %H:%M") }}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <a href="/static/reports/{{ e.filename }}" target="_blank" class="btn-ghost" style="font-size: 0.7rem; text-decoration: none;">↗ View</a>
+                    <a href="/static/reports/{{ e.filename }}" download class="btn-ghost" style="font-size: 0.7rem; text-decoration: none;">↓</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</details>
+{% endif %}
 {% else %}
 <p class="detail-section-empty">No reports generated yet.</p>
 {% endif %}

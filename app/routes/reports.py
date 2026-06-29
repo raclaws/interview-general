@@ -72,7 +72,19 @@ async def report_history(
 ):
     _purge_expired_history(db)
     entries = db.exec(select(ReportHistory).order_by(ReportHistory.created_at.desc()).limit(50)).all()
-    return _render(request, "partials/report_history.html", {"entries": entries})
+    history = []
+    for e in entries:
+        try:
+            filters = json.loads(e.filters) if e.filters else {}
+        except (json.JSONDecodeError, TypeError):
+            filters = {}
+        history.append({
+            "report_type": e.report_type,
+            "filename": e.filename,
+            "display": filters.get("display", "—"),
+            "created_at": e.created_at,
+        })
+    return _render(request, "partials/report_history.html", {"entries": history})
 
 
 @router.get("/general")
@@ -129,7 +141,13 @@ async def report_general(
         llm = await generate_report("general", data)
         html = _render_report("general.html", data, llm)
         filename = _save_report("general", "all", html)
-        _record_history(db, "general", filename, {"bu_ids": bu_ids, "level": level, "period": period})
+        # Build human-readable filter summary
+        bu_label = "All BUs"
+        if bu_list:
+            bus = db.exec(select(BusinessUnit).where(BusinessUnit.id.in_(bu_list))).all()
+            bu_label = ", ".join(b.name for b in bus) if bus else "All BUs"
+        filters_display = f"BU: {bu_label} · Level: {level or 'All'} · Period: {period or 'All time'}"
+        _record_history(db, "general", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
@@ -151,7 +169,10 @@ async def report_pipeline(
         llm = await generate_report("pipeline", data)
         html = _render_report("pipeline.html", data, llm)
         filename = _save_report("pipeline", str(pipeline_id), html)
-        _record_history(db, "pipeline", filename, {"pipeline_id": pipeline_id, "candidate": data.get("candidate", {}).get("name", "")})
+        candidate_name = data.get("candidate", {}).get("name", "—")
+        job_title = data.get("job", {}).get("title", "—") if data.get("job") else "—"
+        filters_display = f"Candidate: {candidate_name} · Job: {job_title}"
+        _record_history(db, "pipeline", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
@@ -180,7 +201,9 @@ async def report_job(
         llm = await generate_report("job", data)
         html = _render_report("job.html", data, llm)
         filename = _save_report("job", str(job_id), html)
-        _record_history(db, "job", filename, {"job_id": job_id, "period": period, "title": data.get("job", {}).get("title", "")})
+        job_title = data.get("job", {}).get("title", "—")
+        filters_display = f"Job: {job_title} · Period: {period or 'All time'}"
+        _record_history(db, "job", filename, {"display": filters_display})
         return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
