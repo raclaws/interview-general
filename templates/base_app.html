@@ -191,7 +191,7 @@ document.addEventListener('click', function(e) {
         if (e.ctrlKey || e.shiftKey) return;
         window.location.href = row.dataset.href;
     }
-    if (!e.target.closest('.ctx-menu, .sync-menu, .dropdown-menu')) {
+    if (!e.target.closest('.ctx-menu, .sync-menu, .dropdown-menu, .dropdown')) {
         dismissOverlays();
     }
 });

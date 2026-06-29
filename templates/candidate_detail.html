@@ -17,7 +17,7 @@
     <div class="detail-actions-mutate">
         <a href="/candidate/{{ candidate.id }}/edit" hx-boost="false">Edit</a>
         {% if pipelines %}
-        <div class="dropdown" style="display: inline-block; position: relative;">
+        <div class="dropdown" hx-boost="false" style="display: inline-block; position: relative;">
             <button type="button" onclick="this.nextElementSibling.classList.toggle('show')">+ Interview ▾</button>
             <div class="dropdown-menu">
                 {% for p in pipelines %}
@@ -67,8 +67,10 @@
                   hx-post="/candidate/{{ candidate.id }}/pipeline"
                   hx-target="#pipeline-section"
                   hx-swap="innerHTML"
+                  hx-select="unset"
                   hx-push-url="false"
                   hx-boost="false"
+                  hx-disinherit="*"
                   hx-on::after-request="this.reset();document.getElementById('add-to-job').removeAttribute('open')">
                 <div class="form-row form-row--3col">
                     <div class="form-field">
