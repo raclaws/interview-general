@@ -196,6 +196,7 @@ def collect_job_data(db: Session, job_id: int, since: datetime | None = None) ->
         c = candidates.get(p.candidate_id)
         sc = scores.get(p.id, {"hr_avg": 0, "culture_avg": 0})
         pipeline_summaries.append({
+            "pipeline_id": p.id,
             "candidate": c.name if c else "—",
             "stage": p.stage,
             "days": (now - p.created_at).days,

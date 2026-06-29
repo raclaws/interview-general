@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Job Report — {{ data.job.title }}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f2; --surface: #fff; --ink: #141414; --ink-2: #444; --ink-3: #888; --rule: #e2dfd8;
+    --accent: #c84b00; --accent-bg: #fff0e6; --accent-border: #ffd0b0;
+    --green: #1c7a52; --green-bg: #e6f5ef; --green-border: #b3ddc9;
+    --danger: #c0392b; --danger-bg: #fdf0f0; --danger-border: #f5c6c6;
+    --warning: #9b4800; --warning-bg: #fff3e0; --warning-border: #ffd5a0;
+    --blue: #1a3cff; --blue-bg: #edf0ff; --blue-border: #c5ccff;
+    --gray: #555; --gray-bg: #f0efeb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); font-size: 13px; line-height: 1.6; }
+  .page { max-width: 860px; margin: 0 auto; padding: 52px 48px 80px; }
+  .header { border-bottom: 2px solid var(--ink); padding-bottom: 20px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+  .h-left .overline { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 8px; }
+  .h-left h1 { font-family: 'DM Serif Display', serif; font-size: 36px; font-weight: 400; line-height: 1.1; letter-spacing: -.02em; }
+  .h-left h1 span { color: var(--accent); }
+  .h-right { text-align: right; font-size: 12px; color: var(--ink-3); line-height: 2; flex-shrink: 0; }
+  .divider { width: 40px; height: 2px; background: var(--accent); margin: 6px 0 16px; }
+  .sub { font-size: 12px; color: var(--ink-3); }
+  .strip { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 28px; }
+  .sc { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 14px 14px 12px; }
+  .sc-n { font-family: 'DM Serif Display', serif; font-size: 26px; line-height: 1; margin-bottom: 4px; }
+  .sc-n.green { color: var(--green); } .sc-n.red { color: var(--danger); } .sc-n.amber { color: var(--warning); } .sc-n.orange { color: var(--accent); }
+  .sc-l { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--ink-3); }
+  .exec { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 22px; margin-bottom: 24px; font-size: 14px; line-height: 1.7; color: var(--ink-2); }
+  .flags { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 32px; }
+  .flag { border-radius: 8px; padding: 12px 14px; border: 1px solid; }
+  .flag-green { background: var(--green-bg); border-color: var(--green-border); }
+  .flag-amber { background: var(--warning-bg); border-color: var(--warning-border); }
+  .flag-red { background: var(--danger-bg); border-color: var(--danger-border); }
+  .flag-blue { background: var(--blue-bg); border-color: var(--blue-border); }
+  .flag-head { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 3px; }
+  .flag-green .flag-head { color: var(--green); } .flag-amber .flag-head { color: var(--warning); }
+  .flag-red .flag-head { color: var(--danger); } .flag-blue .flag-head { color: var(--blue); }
+  .flag p { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
+  .section-head { display: flex; align-items: center; gap: 10px; margin: 28px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--rule); }
+  .section-head h2 { font-family: 'DM Serif Display', serif; font-size: 19px; font-weight: 400; }
+  .card { background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-bottom: 10px; }
+  .card-top { display: flex; align-items: center; justify-content: space-between; padding: 13px 18px; border-bottom: 1px solid var(--rule); gap: 12px; }
+  .card-name { font-size: 14px; font-weight: 600; }
+  .card-since { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .card-scores { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 3px 10px; border-radius: 100px; white-space: nowrap; flex-shrink: 0; }
+  .b-screening { background: var(--blue-bg); color: var(--blue); }
+  .b-interview { background: var(--blue-bg); color: var(--blue); }
+  .b-test { background: var(--warning-bg); color: var(--warning); }
+  .b-offer { background: var(--green-bg); color: var(--green); }
+  .b-hired { background: var(--green-bg); color: var(--green); }
+  .b-rejected { background: var(--danger-bg); color: var(--danger); }
+  .b-withdrawn { background: var(--gray-bg); color: var(--gray); }
+  .b-on-hold { background: var(--gray-bg); color: var(--gray); }
+  .card-body { padding: 12px 18px; font-size: 12px; color: var(--ink-2); }
+  .nxt { display: flex; align-items: center; gap: 10px; padding: 9px 18px; border-top: 1px solid var(--rule); }
+  .nxt-red { background: var(--danger-bg); } .nxt-amber { background: var(--warning-bg); }
+  .nxt-green { background: var(--green-bg); } .nxt-gray { background: #f5f5f5; }
+  .nxt-lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; white-space: nowrap; }
+  .nxt-red .nxt-lbl { color: var(--danger); } .nxt-amber .nxt-lbl { color: var(--warning); }
+  .nxt-green .nxt-lbl { color: var(--green); } .nxt-gray .nxt-lbl { color: #999; }
+  .nxt-txt { font-size: 12px; color: var(--ink); flex: 1; }
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; margin-top: 14px; }
+  thead tr { background: var(--bg); }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); border-bottom: 1px solid var(--rule); }
+  td { padding: 11px 16px; border-bottom: 1px solid var(--rule); vertical-align: middle; font-size: 13px; }
+  tr:last-child td { border-bottom: none; }
+  .recs { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px 20px; margin-top: 24px; }
+  .recs h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--ink-3); margin-bottom: 8px; }
+  .recs li { font-size: 13px; margin-bottom: 4px; color: var(--ink-2); }
+  .footer { margin-top: 52px; padding-top: 16px; border-top: 1px solid var(--rule); display: flex; justify-content: space-between; font-size: 11px; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div class="h-left">
+      <div class="overline">Insignia.co.id · Talent Acquisition</div>
+      <h1>{{ data.job.position }}<br><span>Job Report</span></h1>
+      <div class="divider"></div>
+      <div class="sub">{{ data.job.level }} · {{ data.job.bu }} · Recruiter: {{ data.job.recruiter or "—" }}</div>
+    </div>
+    <div class="h-right">
+      Status: {{ data.job.status | title }}<br>
+      Priority: {{ data.job.priority | title }}<br>
+      Target: {{ data.job.target_date or "Not set" }}<br>
+      Generated: {{ generated_date }}
+    </div>
+  </div>
+
+  {% set hired_count = data.candidates | selectattr("stage", "equalto", "hired") | list | length %}
+  {% set stale_count = data.candidates | selectattr("stale") | list | length %}
+  <div class="strip">
+    <div class="sc"><div class="sc-n orange">{{ data.job.headcount }}</div><div class="sc-l">Headcount</div></div>
+    <div class="sc"><div class="sc-n green">{{ hired_count }}</div><div class="sc-l">Filled</div></div>
+    <div class="sc"><div class="sc-n">{{ data.total_candidates }}</div><div class="sc-l">Candidates</div></div>
+    <div class="sc"><div class="sc-n amber">{{ stale_count }}</div><div class="sc-l">Stale (14d+)</div></div>
+    <div class="sc"><div class="sc-n">{{ data.fill_progress }}</div><div class="sc-l">Progress</div></div>
+  </div>
+
+  {% if llm.executive_summary %}
+  <div class="exec">{{ llm.executive_summary }}</div>
+  {% endif %}
+
+  {% if llm.alerts %}
+  <div class="flags">
+    {% for alert in llm.alerts[:4] %}
+    <div class="flag flag-{{ alert.severity }}">
+      <div class="flag-head">{{ alert.title }}</div>
+      <p>{{ alert.body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="section-head"><h2>Candidates</h2></div>
+  {% for c in data.candidates %}
+  {% set narr = llm.candidate_narratives.get(c.pipeline_id | string, {}) if llm.candidate_narratives else {} %}
+  <div class="card"{% if c.stage in ["rejected", "withdrawn"] %} style="opacity:.6;"{% endif %}>
+    <div class="card-top">
+      <div>
+        <div class="card-name">{{ c.candidate }}</div>
+        <div class="card-since">In pipeline {{ c.days }} days{% if c.stale %} · <strong style="color:var(--warning);">Stale</strong>{% endif %}</div>
+        {% if c.total > 0 %}<div class="card-scores">Score: {{ c.total }}/28 (HR {{ c.hr_avg }}/12 · Culture {{ c.culture_avg }}/16)</div>{% endif %}
+      </div>
+      <span class="badge b-{{ c.stage }}">{{ c.stage | replace("_", " ") | title }}</span>
+    </div>
+    {% if narr.verdict %}
+    <div class="card-body">{{ narr.verdict }}</div>
+    {% endif %}
+    {% if narr.next_action %}
+    <div class="nxt nxt-{{ narr.next_action_urgency or 'gray' }}">
+      <span class="nxt-lbl">Next</span>
+      <span class="nxt-txt">{{ narr.next_action }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <div class="section-head"><h2>Summary</h2></div>
+  <table>
+    <thead><tr><th>Candidate</th><th>Stage</th><th>Days</th><th>Score</th><th>Status</th></tr></thead>
+    <tbody>
+      {% for c in data.candidates %}
+      <tr>
+        <td style="font-weight:500;">{{ c.candidate }}</td>
+        <td><span class="badge b-{{ c.stage }}">{{ c.stage | replace("_", " ") | title }}</span></td>
+        <td>{{ c.days }}d</td>
+        <td>{% if c.total > 0 %}{{ c.total }}/28{% else %}—{% endif %}</td>
+        <td style="font-size:12px;">{% if c.stale %}<span style="color:var(--warning);">Stale</span>{% else %}Active{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% if llm.recommendations %}
+  <div class="recs">
+    <h3>Recommendations</h3>
+    <ol>
+      {% for rec in llm.recommendations %}
+      <li>{{ rec }}</li>
+      {% endfor %}
+    </ol>
+  </div>
+  {% endif %}
+
+  <div class="footer">
+    <span>Insignia.co.id — Job Report: {{ data.job.title }}</span>
+    <span>{{ generated_date }} · Data: INS ATS</span>
+  </div>
+</div>
+</body>
+</html>

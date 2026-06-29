@@ -1,10 +1,12 @@
 import json
+import os
 from datetime import datetime, timedelta
+from pathlib import Path
 
-import markdown as md
 from fastapi import APIRouter, Depends, Request, Form
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, FileResponse
 from sqlmodel import Session, select
+from jinja2 import Environment, FileSystemLoader
 
 from app.database import get_session
 from app.auth import get_current_admin
@@ -14,14 +16,29 @@ from app.llm import generate_report
 
 router = APIRouter(prefix="/reports")
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+REPORTS_DIR = BASE_DIR / "static" / "reports"
+REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+_report_env = Environment(loader=FileSystemLoader(str(BASE_DIR / "templates" / "reports")), autoescape=True)
+
 
 def _render(request: Request, name: str, context: dict = None):
     ctx = context or {}
     return request.app.state.templates.TemplateResponse(request, name, ctx)
 
 
-def _md_to_html(text: str) -> str:
-    return md.markdown(text, extensions=["tables", "fenced_code"])
+def _render_report(template_name: str, data: dict, llm: dict) -> str:
+    template = _report_env.get_template(template_name)
+    return template.render(data=data, llm=llm, generated_date=datetime.utcnow().strftime("%b %d, %Y"))
+
+
+def _save_report(report_type: str, entity_id: str, html: str) -> str:
+    ts = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    filename = f"{report_type}_{entity_id}_{ts}.html"
+    path = REPORTS_DIR / filename
+    path.write_text(html, encoding="utf-8")
+    return filename
 
 
 @router.get("/general")
@@ -75,13 +92,13 @@ async def report_general(
 
     try:
         data = collect_general_data(db, bu_ids=bu_list, level=level or None, since=since)
-        raw = await generate_report("general", data)
-        html = _md_to_html(raw)
-        return _render(request, "partials/report_result.html", {"markdown": html, "raw_markdown": raw})
+        llm = await generate_report("general", data)
+        html = _render_report("general.html", data, llm)
+        filename = _save_report("general", "all", html)
+        return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
             f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-            headers={"HX-Reswap": "innerHTML"},
         )
 
 
@@ -96,13 +113,13 @@ async def report_pipeline(
         data = collect_pipeline_data(db, pipeline_id)
         if data.get("error"):
             return HTMLResponse(f'<div class="form-error">{data["error"]}</div>')
-        raw = await generate_report("pipeline", data)
-        html = _md_to_html(raw)
-        return _render(request, "partials/report_result.html", {"markdown": html, "raw_markdown": raw})
+        llm = await generate_report("pipeline", data)
+        html = _render_report("pipeline.html", data, llm)
+        filename = _save_report("pipeline", str(pipeline_id), html)
+        return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
             f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-            headers={"HX-Reswap": "innerHTML"},
         )
 
 
@@ -124,11 +141,11 @@ async def report_job(
         data = collect_job_data(db, job_id, since=since)
         if data.get("error"):
             return HTMLResponse(f'<div class="form-error">{data["error"]}</div>')
-        raw = await generate_report("job", data)
-        html = _md_to_html(raw)
-        return _render(request, "partials/report_result.html", {"markdown": html, "raw_markdown": raw})
+        llm = await generate_report("job", data)
+        html = _render_report("job.html", data, llm)
+        filename = _save_report("job", str(job_id), html)
+        return _render(request, "partials/report_result.html", {"filename": filename})
     except Exception as e:
         return HTMLResponse(
             f'<div class="detail-section"><div class="form-error">Report generation failed: {str(e)}</div></div>',
-            headers={"HX-Reswap": "innerHTML"},
         )

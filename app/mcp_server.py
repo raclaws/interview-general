@@ -131,10 +131,11 @@ async def list_sessions(candidate_id: int | None = None) -> list[dict]:
 
 @mcp.tool()
 async def generate_recruitment_report(bu_name: str | None = None, level: str | None = None, period_days: int | None = None) -> str:
-    """Generate an LLM-powered recruitment general report. Optionally filter by business unit name, level, or period (days back)."""
+    """Generate an LLM-powered recruitment general report as standalone HTML. Optionally filter by business unit name, level, or period (days back)."""
     from app.models import BusinessUnit, not_deleted
     from app.reports import collect_general_data
     from app.llm import generate_report
+    from app.routes.reports import _render_report, _save_report
 
     with _get_db() as db:
         bu_ids = None
@@ -148,27 +149,35 @@ async def generate_recruitment_report(bu_name: str | None = None, level: str | N
             since = datetime.utcnow() - timedelta(days=period_days)
 
         data = collect_general_data(db, bu_ids=bu_ids, level=level, since=since)
-        return await generate_report("general", data)
+        llm = await generate_report("general", data)
+        html = _render_report("general.html", data, llm)
+        filename = _save_report("general", "all", html)
+        return f"Report saved: static/reports/{filename}"
 
 
 @mcp.tool()
 async def generate_pipeline_report(pipeline_id: int) -> str:
-    """Generate an LLM-powered candidate assessment report for a specific pipeline."""
+    """Generate an LLM-powered candidate assessment report as standalone HTML for a specific pipeline."""
     from app.reports import collect_pipeline_data
     from app.llm import generate_report
+    from app.routes.reports import _render_report, _save_report
 
     with _get_db() as db:
         data = collect_pipeline_data(db, pipeline_id)
         if data.get("error"):
             return f"Error: {data['error']}"
-        return await generate_report("pipeline", data)
+        llm = await generate_report("pipeline", data)
+        html = _render_report("pipeline.html", data, llm)
+        filename = _save_report("pipeline", str(pipeline_id), html)
+        return f"Report saved: static/reports/{filename}"
 
 
 @mcp.tool()
 async def generate_job_report(job_id: int, period_days: int | None = None) -> str:
-    """Generate an LLM-powered job role health report — candidate comparison, bottlenecks, and recommendations."""
+    """Generate an LLM-powered job role health report as standalone HTML."""
     from app.reports import collect_job_data
     from app.llm import generate_report
+    from app.routes.reports import _render_report, _save_report
 
     since = None
     if period_days:
@@ -178,7 +187,10 @@ async def generate_job_report(job_id: int, period_days: int | None = None) -> st
         data = collect_job_data(db, job_id, since=since)
         if data.get("error"):
             return f"Error: {data['error']}"
-        return await generate_report("job", data)
+        llm = await generate_report("job", data)
+        html = _render_report("job.html", data, llm)
+        filename = _save_report("job", str(job_id), html)
+        return f"Report saved: static/reports/{filename}"
 
 
 if __name__ == "__main__":
