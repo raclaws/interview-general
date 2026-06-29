@@ -1,6 +1,6 @@
 import json
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastmcp import FastMCP
 from sqlmodel import Session, select, create_engine
@@ -127,6 +127,58 @@ async def list_sessions(candidate_id: int | None = None) -> list[dict]:
                 "created_at": s.created_at.isoformat(),
             })
         return results
+
+
+@mcp.tool()
+async def generate_recruitment_report(bu_name: str | None = None, level: str | None = None, period_days: int | None = None) -> str:
+    """Generate an LLM-powered recruitment general report. Optionally filter by business unit name, level, or period (days back)."""
+    from app.models import BusinessUnit, not_deleted
+    from app.reports import collect_general_data
+    from app.llm import generate_report
+
+    with _get_db() as db:
+        bu_ids = None
+        if bu_name:
+            bu = db.exec(select(BusinessUnit).where(BusinessUnit.name == bu_name)).first()
+            if bu:
+                bu_ids = [bu.id]
+
+        since = None
+        if period_days:
+            since = datetime.utcnow() - timedelta(days=period_days)
+
+        data = collect_general_data(db, bu_ids=bu_ids, level=level, since=since)
+        return await generate_report("general", data)
+
+
+@mcp.tool()
+async def generate_pipeline_report(pipeline_id: int) -> str:
+    """Generate an LLM-powered candidate assessment report for a specific pipeline."""
+    from app.reports import collect_pipeline_data
+    from app.llm import generate_report
+
+    with _get_db() as db:
+        data = collect_pipeline_data(db, pipeline_id)
+        if data.get("error"):
+            return f"Error: {data['error']}"
+        return await generate_report("pipeline", data)
+
+
+@mcp.tool()
+async def generate_job_report(job_id: int, period_days: int | None = None) -> str:
+    """Generate an LLM-powered job role health report — candidate comparison, bottlenecks, and recommendations."""
+    from app.reports import collect_job_data
+    from app.llm import generate_report
+
+    since = None
+    if period_days:
+        since = datetime.utcnow() - timedelta(days=period_days)
+
+    with _get_db() as db:
+        data = collect_job_data(db, job_id, since=since)
+        if data.get("error"):
+            return f"Error: {data['error']}"
+        return await generate_report("job", data)
 
 
 if __name__ == "__main__":

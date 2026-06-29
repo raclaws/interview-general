@@ -1,0 +1,183 @@
+{% extends "base_app.html" %}
+{% block title %}Reports{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb"><span>Reports</span></nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Generate Reports</h1>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Recruitment General</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Overall hiring health across business units — pipeline adequacy, bottlenecks, and recommendations.</p>
+    <form hx-post="/reports/general"
+          hx-target="#result-general"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-disinherit="*"
+          hx-on::before-request="reportStart(this)"
+          hx-on::after-request="reportEnd(this)">
+        <div class="form-row form-row--3col">
+            <div class="form-field">
+                <label class="form-label">Business Unit</label>
+                <select name="bu_ids" class="form-input">
+                    <option value="">All BUs</option>
+                    {% for bu in bus %}
+                    <option value="{{ bu.id }}">{{ bu.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Level</label>
+                <select name="level" class="form-input">
+                    <option value="">All Levels</option>
+                    {% for l in levels %}
+                    <option value="{{ l.label }}">{{ l.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Period</label>
+                <select name="period" class="form-input">
+                    <option value="">All time</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="90d">Last 90 days</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 0.5rem;" data-label="Generate Report">Generate Report</button>
+    </form>
+    <div id="result-general" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Pipeline Report</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Deep candidate assessment — interview synthesis, scores, and hiring recommendation.</p>
+    <form hx-post="/reports/pipeline/0"
+          hx-target="#result-pipeline"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-disinherit="*"
+          hx-on::before-request="reportStart(this)"
+          hx-on::after-request="reportEnd(this)"
+          onsubmit="this.setAttribute('hx-post','/reports/pipeline/'+this.querySelector('[name=pipeline_id]').value); htmx.process(this); return true;">
+        <div class="form-row">
+            <div class="form-field" style="flex: 1;">
+                <label class="form-label">Pipeline</label>
+                <select name="pipeline_id" class="form-input" required
+                        onchange="var f=this.closest('form'); f.setAttribute('hx-post','/reports/pipeline/'+this.value); htmx.process(f);">
+                    <option value="">— Select pipeline —</option>
+                    {% for p in pipeline_options %}
+                    <option value="{{ p.id }}">{{ p.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 0.5rem;" data-label="Generate Report">Generate Report</button>
+    </form>
+    <div id="result-pipeline" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Job Report</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Role health — candidate comparison, bottleneck analysis, and sourcing adequacy.</p>
+    <form hx-post="/reports/job/0"
+          hx-target="#result-job"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-disinherit="*"
+          hx-on::before-request="reportStart(this)"
+          hx-on::after-request="reportEnd(this)"
+          onsubmit="this.setAttribute('hx-post','/reports/job/'+this.querySelector('[name=job_id]').value); htmx.process(this); return true;">
+        <div class="form-row form-row--3col">
+            <div class="form-field" style="flex: 2;">
+                <label class="form-label">Job</label>
+                <select name="job_id" class="form-input" required
+                        onchange="var f=this.closest('form'); f.setAttribute('hx-post','/reports/job/'+this.value); htmx.process(f);">
+                    <option value="">— Select job —</option>
+                    {% for j in jobs %}
+                    <option value="{{ j.id }}">{{ j.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Period</label>
+                <select name="period" class="form-input">
+                    <option value="">All time</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="90d">Last 90 days</option>
+                </select>
+            </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 0.5rem;" data-label="Generate Report">Generate Report</button>
+    </form>
+    <div id="result-job" style="margin-top: 1rem;"></div>
+</div>
+
+<script>
+var _reportTimers = {};
+
+function reportStart(form) {
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.textContent = 'Analyzing...';
+    btn.classList.add('btn--loading');
+    var targetId = form.getAttribute('hx-target').replace('#','');
+    var target = document.getElementById(targetId);
+    if (target) {
+        target.innerHTML = '<div class="report-progress"><div class="report-progress-bar"><div class="report-progress-fill" id="prog-'+targetId+'"></div></div><span class="report-progress-label" id="prog-label-'+targetId+'">Gathering data...</span></div>';
+    }
+    startProgress(targetId);
+}
+
+function startProgress(id) {
+    var fill = document.getElementById('prog-' + id);
+    var label = document.getElementById('prog-label-' + id);
+    if (!fill) return;
+    var pct = 0;
+    var steps = [
+        {at: 0, to: 25, dur: 400, text: 'Gathering data...'},
+        {at: 25, to: 45, dur: 2000, text: 'Building context...'},
+        {at: 45, to: 65, dur: 4000, text: 'LLM generating report...'},
+        {at: 65, to: 80, dur: 5000, text: 'LLM generating report...'},
+        {at: 80, to: 90, dur: 6000, text: 'Finalizing...'},
+    ];
+    var step = 0;
+    var start = Date.now();
+
+    function tick() {
+        if (step >= steps.length) return;
+        var s = steps[step];
+        var elapsed = Date.now() - start;
+        var progress = Math.min(elapsed / s.dur, 1);
+        var eased = 1 - Math.pow(1 - progress, 3);
+        pct = s.at + (s.to - s.at) * eased;
+        fill.style.width = pct + '%';
+        if (label) label.textContent = s.text;
+        if (progress >= 1) {
+            step++;
+            start = Date.now();
+        }
+        _reportTimers[id] = requestAnimationFrame(tick);
+    }
+    _reportTimers[id] = requestAnimationFrame(tick);
+}
+
+function reportEnd(form) {
+    var btn = form.querySelector('button[type="submit"]');
+    btn.disabled = false;
+    btn.textContent = btn.dataset.label || 'Generate Report';
+    btn.classList.remove('btn--loading');
+    var targetId = form.getAttribute('hx-target').replace('#','');
+    if (_reportTimers[targetId]) {
+        cancelAnimationFrame(_reportTimers[targetId]);
+        delete _reportTimers[targetId];
+    }
+    var fill = document.getElementById('prog-' + targetId);
+    if (fill) fill.style.width = '100%';
+}
+</script>
+{% endblock %}

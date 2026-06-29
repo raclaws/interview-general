@@ -126,3 +126,81 @@ Dimensions assessed:
         max_tokens=max_tokens,
     )
     return response.choices[0].message.content or ""
+
+
+REPORT_GENERAL_PROMPT = """You are a senior recruitment analyst writing an executive hiring report. You interpret data — you do not restate it.
+
+You will receive aggregate recruitment metrics: open jobs, pipeline stage distribution, hire rates, business unit breakdowns, and activity stats.
+
+Your task:
+1. Open with a 2-3 sentence executive summary of overall hiring health
+2. Assess each business unit's pipeline adequacy (enough candidates per open role?)
+3. Identify bottlenecks: which stages are accumulating, which are stale
+4. Flag risks: jobs with thin pipelines, roles with no recent activity, overdue actions
+5. Close with 2-3 concrete recommended actions
+
+Rules:
+- Write in markdown with headers (##) for sections
+- Be direct and interpretive — a senior colleague briefing leadership
+- If data shows everything is healthy, say so briefly rather than manufacturing concerns
+- Use numbers to support claims but don't dump raw data"""
+
+REPORT_PIPELINE_PROMPT = """You are a senior talent advisor writing a candidate assessment brief for a hiring decision.
+
+You will receive: candidate profile, interview session details with scores and evaluator feedback, test results, scorecard totals, and a timeline of pipeline activity.
+
+Your task:
+1. Open with a 2-sentence verdict: what kind of professional this person is and their fit signal
+2. Synthesize across interview sessions — identify patterns, contradictions, or standout signals
+3. Note any evaluator disagreement and what it might indicate
+4. Assess test performance if data is present
+5. Close with a clear recommendation: proceed / hold / pass, with reasoning
+
+Rules:
+- Write in markdown with headers (##) for sections
+- Interpret scores — don't restate them. "3/4 across all dimensions" means something different than "4/4 on execution, 2/4 on collaboration"
+- If existing session summaries are provided, synthesize across them rather than repeating
+- Be actionable — the reader will make a hire/no-hire decision based on this"""
+
+REPORT_JOB_PROMPT = """You are a hiring strategist assessing the state of a specific role's recruitment funnel.
+
+You will receive: job metadata, all candidates with their pipeline stage, days in process, and scorecard totals.
+
+Your task:
+1. Open with role health: is this hire on track? Pipeline adequate for headcount?
+2. Compare candidates: who is furthest along, who scores highest, who is stale
+3. Identify bottlenecks: are candidates stuck? Is sourcing thin?
+4. Flag risks: approaching target date with insufficient pipeline, all candidates in early stages, score disparities
+5. Close with a recommendation: who to prioritize, what action to take next
+
+Rules:
+- Write in markdown with headers (##) for sections
+- If only one candidate, focus on their trajectory rather than comparison
+- Be honest about thin pipelines — "1 candidate for 2 headcount" is a sourcing risk
+- Reference days-in-pipeline to identify velocity problems"""
+
+
+async def generate_report(report_type: str, data: dict) -> str:
+    prompts = {
+        "general": REPORT_GENERAL_PROMPT,
+        "pipeline": REPORT_PIPELINE_PROMPT,
+        "job": REPORT_JOB_PROMPT,
+    }
+    system_prompt = prompts.get(report_type, REPORT_GENERAL_PROMPT)
+    base_url, api_key, model, _ = get_llm_config()
+    temperature, max_tokens = get_llm_params()
+    client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+
+    import json as json_mod
+    user_msg = json_mod.dumps(data, indent=2, default=str)
+
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_msg},
+        ],
+        temperature=temperature,
+        max_tokens=min(max_tokens * 2, 2000),
+    )
+    return response.choices[0].message.content or ""

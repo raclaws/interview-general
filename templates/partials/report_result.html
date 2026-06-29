@@ -1,0 +1,9 @@
+<div class="detail-section report-result" data-md="{{ raw_markdown | e }}">
+    <div class="detail-section-label" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>Report</span>
+        <button type="button" class="btn-ghost" style="font-size: 0.75rem;" onclick="navigator.clipboard.writeText(this.closest('.report-result').dataset.md); toast('Copied as Markdown')">⎘ Copy Markdown</button>
+    </div>
+    <div class="report-body">
+        {{ markdown | safe }}
+    </div>
+</div>

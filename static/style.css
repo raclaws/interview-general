@@ -2189,3 +2189,39 @@ mark.search-hl {
     color: var(--accent);
     cursor: pointer;
 }
+
+/* Report result */
+.report-result { position: relative; }
+.report-result .detail-section-label { margin-bottom: 0.5rem; }
+.report-body { font-size: var(--text-sm); line-height: 1.7; color: var(--text-primary); }
+.report-body h2 { font-size: var(--text-lg); font-weight: 600; margin: 1.25rem 0 0.5rem; }
+.report-body h3 { font-size: var(--text-base); font-weight: 600; margin: 1rem 0 0.25rem; }
+.report-body p { margin: 0.4rem 0; }
+.report-body ul, .report-body ol { margin: 0.4rem 0; padding-left: 1.25rem; }
+.report-body li { margin: 0.2rem 0; }
+.report-body table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: var(--text-sm); }
+.report-body th, .report-body td { padding: 0.4rem 0.6rem; text-align: left; border-bottom: 1px solid var(--border); }
+.report-body th { font-weight: 600; color: var(--text-secondary); }
+.report-body strong { font-weight: 600; }
+
+/* Report progress bar */
+.report-progress { padding: 1.5rem 0; }
+.report-progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-muted);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+.report-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s ease-out;
+}
+.report-progress-label {
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+}
