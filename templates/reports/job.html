@@ -120,7 +120,7 @@
 
   <div class="section-head"><h2>Candidates</h2></div>
   {% for c in data.candidates %}
-  {% set narr = llm.candidate_narratives.get(c.pipeline_id | string, {}) if llm.candidate_narratives else {} %}
+  {% set narr = llm.get('candidate_narratives', {}).get(c.pipeline_id | string, {}) if llm.get('candidate_narratives') else {} %}
   <div class="card"{% if c.stage in ["rejected", "withdrawn"] %} style="opacity:.6;"{% endif %}>
     <div class="card-top">
       <div>

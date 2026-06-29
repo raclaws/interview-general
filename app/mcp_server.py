@@ -141,8 +141,9 @@ async def generate_recruitment_report(bu_name: str | None = None, level: str | N
         bu_ids = None
         if bu_name:
             bu = db.exec(select(BusinessUnit).where(BusinessUnit.name == bu_name)).first()
-            if bu:
-                bu_ids = [bu.id]
+            if not bu:
+                return f"Error: Business unit '{bu_name}' not found"
+            bu_ids = [bu.id]
 
         since = None
         if period_days:

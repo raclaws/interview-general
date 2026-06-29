@@ -105,6 +105,8 @@ def collect_pipeline_data(db: Session, pipeline_id: int) -> dict:
         return {"error": "Pipeline not found"}
 
     candidate = db.get(Candidate, pipeline.candidate_id)
+    if not candidate:
+        return {"error": "Candidate not found"}
     job = db.get(Job, pipeline.job_id) if pipeline.job_id else None
     bu = db.get(BusinessUnit, job.business_unit_id) if job else None
 
@@ -186,7 +188,7 @@ def collect_job_data(db: Session, job_id: int, since: datetime | None = None) ->
         pipelines = [p for p in pipelines if p.created_at >= since]
 
     now = datetime.utcnow()
-    scores = compute_pipeline_scores(db, [p.id for p in pipelines])
+    scores = compute_pipeline_scores(db, [p.id for p in pipelines]) if pipelines else {}
 
     candidate_ids = [p.candidate_id for p in pipelines]
     candidates = {c.id: c for c in db.exec(select(Candidate).where(col(Candidate.id).in_(candidate_ids))).all()} if candidate_ids else {}

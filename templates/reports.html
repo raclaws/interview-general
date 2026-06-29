@@ -78,8 +78,7 @@
           hx-push-url="false"
           hx-disinherit="*"
           hx-on::before-request="reportStart(this)"
-          hx-on::after-request="reportEnd(this)"
-          onsubmit="this.setAttribute('hx-post','/reports/pipeline/'+this.querySelector('[name=pipeline_id]').value); htmx.process(this); return true;">
+          hx-on::after-request="reportEnd(this)">
         <div class="form-row">
             <div class="form-field" style="flex: 1;">
                 <label class="form-label">Pipeline</label>
@@ -107,8 +106,7 @@
           hx-push-url="false"
           hx-disinherit="*"
           hx-on::before-request="reportStart(this)"
-          hx-on::after-request="reportEnd(this)"
-          onsubmit="this.setAttribute('hx-post','/reports/job/'+this.querySelector('[name=job_id]').value); htmx.process(this); return true;">
+          hx-on::after-request="reportEnd(this)">
         <div class="form-row form-row--3col">
             <div class="form-field" style="flex: 2;">
                 <label class="form-label">Job</label>
