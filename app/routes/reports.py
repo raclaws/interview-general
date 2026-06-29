@@ -64,13 +64,6 @@ def _purge_expired_history(db: Session):
         db.commit()
 
 
-@router.get("/general")
-@router.get("/pipeline/{pipeline_id}")
-@router.get("/job/{job_id}")
-async def report_post_only_redirect(request: Request, pipeline_id: int = 0, job_id: int = 0):
-    return RedirectResponse("/reports", status_code=303)
-
-
 @router.get("/history", response_class=HTMLResponse)
 async def report_history(
     request: Request,
@@ -80,6 +73,13 @@ async def report_history(
     _purge_expired_history(db)
     entries = db.exec(select(ReportHistory).order_by(ReportHistory.created_at.desc()).limit(50)).all()
     return _render(request, "partials/report_history.html", {"entries": entries})
+
+
+@router.get("/general")
+@router.get("/pipeline/{pipeline_id}")
+@router.get("/job/{job_id}")
+async def report_post_only_redirect(request: Request, pipeline_id: int = 0, job_id: int = 0):
+    return RedirectResponse("/reports", status_code=303)
 
 
 @router.get("", response_class=HTMLResponse)
