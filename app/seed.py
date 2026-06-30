@@ -102,37 +102,52 @@ def seed_templates(engine):
             TemplateSection(
                 template_id=t2.id, order=8, title="Execution Excellence",
                 description="Punya standar 'done' yang jelas? Konsisten walau di bawah tekanan?",
+                example_questions="Sebelum kamu serahin hasil kerja ke orang lain, apa yang biasanya jadi tolok ukur kamu kalau itu udah 'Beres'? Coba ceritain satu momen di mana standar itu sempat goyah, misalnya pas waktu mepet",
+                good_answer="Punya checklist atau proses pengecekan konkret sebelum menyerahkan pekerjaan. / Ketika deadline mepet, komunikasikan tradeoff lebih dulu sebelum mengambil keputusan. / Bisa mendeskripsikan kebiasaan kerja yang konsisten dan bisa direplikasi.",
+                red_flags="'Standar' sekadar mereka adalah sudah dikerjakan, bukan sudah dicek. / Di bawah tekanan, langsung turunkan kualitas tanpa komunikasi. / Tidak bisa mendeskripsikan satu pun kebiasaan kerja yang konsisten.",
                 measurement_type="rating_1_4",
                 anchor_low="No Evidence", anchor_high="Exceed",
             ),
             TemplateSection(
                 template_id=t2.id, order=9, title="Learn Fast, Adapt Faster",
                 description="Ada bukti belajar mandiri dan diterapkan? Cepat pivot saat kondisi berubah?",
+                example_questions="Ada nggak momen kamu tiba-tiba harus 'kebut belajar' sesuatu yang sama sekali baru gara-gara kerjaan? Misalnya tools yang belum pernah dipegang, atau cara kerja yang asing banget. Gimana ceritanya, dan habis itu ada yang berubah nggak dari cara kamu kerja?",
+                good_answer="Bisa menyebut proses belajar yang konkret dan terstruktur. / Ilmu baru langsung diterapkan ke pekerjaan dan dibagikan ke tim. / Ketika arah berubah, reaksinya adalah klarifikasi lalu bergerak — bukan mengeluh.",
+                red_flags="Semua pembelajaran terjadi karena diwajibkan atau diminta atasan. / Tidak bisa menyebut proses belajarnya — hanya bilang 'saya baca-baca'. / Ilmu baru disimpan sendiri, tidak mengalir ke tim.",
                 measurement_type="rating_1_4",
                 anchor_low="No Evidence", anchor_high="Exceed",
             ),
             TemplateSection(
                 template_id=t2.id, order=10, title="Impact Over Activity",
                 description="Berpikir dari outcome? Bisa bedakan yang berdampak dari yang hanya sibuk?",
+                example_questions="Dari semua yang pernah kamu kerjain, mana yang menurut kamu paling kerasa dampaknya? Terus ada nggak yang pas dipikir-pikir lagi, ternyata buang-buang waktu doang? Gimana kamu bisa tau bedanya?",
+                good_answer="Menyebut dampak yang spesifik dan terukur — ada angka, ada cerita sebelum-sesudah. / Pernah menghentikan atau merevisi arah kerja karena sadar dampaknya kecil. / Menjawab 'apa yang dicapai' dalam bahasa outcome, bukan aktivitas.",
+                red_flags="Semua cerita pencapaian soal berapa banyak yang dikerjakan, bukan apa yang dihasilkan. / Tidak pernah menghentikan pekerjaan hanya karena sudah terlanjur dimulai. / Mengukur kontribusi dari jam kerja atau jumlah task, bukan dampak nyata.",
                 measurement_type="rating_1_4",
                 anchor_low="No Evidence", anchor_high="Exceed",
             ),
             TemplateSection(
                 template_id=t2.id, order=11, title="Clarity & Structured Thinking",
                 description="Komunikasinya terstruktur? Kesimpulan dulu? Berani seek clarity saat bingung?",
+                example_questions="Cerita dong satu momen kamu harus jelasin hal yang kompleks ke orang yang nggak punya background sama. Gimana cara kamu mempersiapkan dan menyampaikannya? (atau tanyakan juga POV sebaliknya)",
+                good_answer="Penjelasannya terstruktur: ada konteks, inti pesan, dan kesimpulan yang jelas. / Ketika dapat instruksi ambigu, langsung bertanya — bukan menebak. / Jawaban soal cara menjelaskan punya beberapa lapis yang bisa direplikasi.",
+                red_flags="Penjelasannya melompat-lompat, penuh jargon, tidak ada kesimpulan yang jelas. / Ketika dapat instruksi ambigu, diam dan mengerjakan berdasarkan asumsi. / Tidak bisa mendeskripsikan bagaimana mereka memastikan orang lain paham.",
                 measurement_type="rating_1_4",
                 anchor_low="No Evidence", anchor_high="Exceed",
             ),
             TemplateSection(
                 template_id=t2.id, order=12, title="Drive & Dream",
-                description="Kombinasi: Pilih 2",
+                description=None,
+                example_questions="Kalau 5 tahun lagi, versi terbaik kamu itu lagi ngapain dan di posisi apa? Apa yang bikin kamu semangat nggjar itu?",
+                good_answer="Gambaran masa depan konkret — ada detail spesifik, bukan hanya 'ingin sukses'. / Bisa menyebut aktivitas atau momen yang membuat benar-benar energized. / Ada lapisan makna di balik ambisi: keluarga, impact, identitas — bukan hanya uang.",
+                red_flags="Tidak bisa membayangkan 1-2 tahun ke depan. / Tidak ada satu pun momen 'in the zone' yang bisa diceritakan. / Semua motivasi eksternal saja: gaji, atasan, lingkungan — tidak ada satu pun dari dalam.",
                 measurement_type="multi_select",
                 max_selections=2,
                 options=json.dumps([
-                    "Survival - Visi masa depan sangat samar atau tidak ada. Semua motivasi ekstrinsik.",
-                    "Growth - Excited cerita hal baru yang dipelajari mandiri. Punya roadmap pengembangan diri.",
-                    "Impact - Jawaban pencapaian selalu dalam bahasa dampak, ada angka atau before-after.",
-                    "Ambition - Visi masa depan sangat spesifik soal posisi dan title. Excited cerita pencapaian yang diakui orang lain.",
+                    "Survival - Visi masa depan sangat samar atau tidak ada. Semua motivasi ekstrinsik — gaji, atasan, lingkungan. Tidak bisa menyebut satu momen 'in the zone'.",
+                    "Growth - Excited cerita hal baru yang dipelajari mandiri. Punya roadmap pengembangan diri. 'In the zone' saat belajar atau solve masalah baru.",
+                    "Impact - Jawaban pencapaian selalu dalam bahasa dampak, ada angka atau before-after. 'In the zone' saat melihat hasil kerja dipakai dan berdampak nyata.",
+                    "Ambition - Visi masa depan sangat spesifik soal posisi dan title. Excited cerita pencapaian yang diakui orang lain. 'In the zone' saat jadi yang terdepan atau diper-caya lead sesuatu.",
                 ]),
             ),
             TemplateSection(
@@ -205,7 +220,7 @@ def seed_templates(engine):
             ),
             TemplateSection(
                 template_id=t3.id, order=5, title="Drive & Dream",
-                description="Kombinasi: Pilih 2",
+                description=None,
                 measurement_type="multi_select",
                 max_selections=2,
                 options=json.dumps([
@@ -462,4 +477,65 @@ def migrate_legacy_job_ids(engine):
                 db.add(ManagedPosition(title=pos, order=max_order))
                 max_order += 1
 
+        db.commit()
+
+
+def backfill_section_guidance(engine):
+    """One-time backfill: populate example_questions/good_answer/red_flags on culture sections.
+    Runs once — sets a flag in Settings to prevent re-running on subsequent startups."""
+    from app.models import Setting, Template
+
+    GUIDANCE = {
+        "Execution Excellence": {
+            "example_questions": "Sebelum kamu serahin hasil kerja ke orang lain, apa yang biasanya jadi tolok ukur kamu kalau itu udah 'Beres'? Coba ceritain satu momen di mana standar itu sempat goyah, misalnya pas waktu mepet",
+            "good_answer": "Punya checklist atau proses pengecekan konkret sebelum menyerahkan pekerjaan. / Ketika deadline mepet, komunikasikan tradeoff lebih dulu sebelum mengambil keputusan. / Bisa mendeskripsikan kebiasaan kerja yang konsisten dan bisa direplikasi.",
+            "red_flags": "'Standar' sekadar mereka adalah sudah dikerjakan, bukan sudah dicek. / Di bawah tekanan, langsung turunkan kualitas tanpa komunikasi. / Tidak bisa mendeskripsikan satu pun kebiasaan kerja yang konsisten.",
+        },
+        "Learn Fast, Adapt Faster": {
+            "example_questions": "Ada nggak momen kamu tiba-tiba harus 'kebut belajar' sesuatu yang sama sekali baru gara-gara kerjaan? Misalnya tools yang belum pernah dipegang, atau cara kerja yang asing banget. Gimana ceritanya, dan habis itu ada yang berubah nggak dari cara kamu kerja?",
+            "good_answer": "Bisa menyebut proses belajar yang konkret dan terstruktur. / Ilmu baru langsung diterapkan ke pekerjaan dan dibagikan ke tim. / Ketika arah berubah, reaksinya adalah klarifikasi lalu bergerak — bukan mengeluh.",
+            "red_flags": "Semua pembelajaran terjadi karena diwajibkan atau diminta atasan. / Tidak bisa menyebut proses belajarnya — hanya bilang 'saya baca-baca'. / Ilmu baru disimpan sendiri, tidak mengalir ke tim.",
+        },
+        "Impact Over Activity": {
+            "example_questions": "Dari semua yang pernah kamu kerjain, mana yang menurut kamu paling kerasa dampaknya? Terus ada nggak yang pas dipikir-pikir lagi, ternyata buang-buang waktu doang? Gimana kamu bisa tau bedanya?",
+            "good_answer": "Menyebut dampak yang spesifik dan terukur — ada angka, ada cerita sebelum-sesudah. / Pernah menghentikan atau merevisi arah kerja karena sadar dampaknya kecil. / Menjawab 'apa yang dicapai' dalam bahasa outcome, bukan aktivitas.",
+            "red_flags": "Semua cerita pencapaian soal berapa banyak yang dikerjakan, bukan apa yang dihasilkan. / Tidak pernah menghentikan pekerjaan hanya karena sudah terlanjur dimulai. / Mengukur kontribusi dari jam kerja atau jumlah task, bukan dampak nyata.",
+        },
+        "Clarity & Structured Thinking": {
+            "example_questions": "Cerita dong satu momen kamu harus jelasin hal yang kompleks ke orang yang nggak punya background sama. Gimana cara kamu mempersiapkan dan menyampaikannya? (atau tanyakan juga POV sebaliknya)",
+            "good_answer": "Penjelasannya terstruktur: ada konteks, inti pesan, dan kesimpulan yang jelas. / Ketika dapat instruksi ambigu, langsung bertanya — bukan menebak. / Jawaban soal cara menjelaskan punya beberapa lapis yang bisa direplikasi.",
+            "red_flags": "Penjelasannya melompat-lompat, penuh jargon, tidak ada kesimpulan yang jelas. / Ketika dapat instruksi ambigu, diam dan mengerjakan berdasarkan asumsi. / Tidak bisa mendeskripsikan bagaimana mereka memastikan orang lain paham.",
+        },
+        "Drive & Dream": {
+            "example_questions": "Kalau 5 tahun lagi, versi terbaik kamu itu lagi ngapain dan di posisi apa? Apa yang bikin kamu semangat nggjar itu?",
+            "good_answer": "Gambaran masa depan konkret — ada detail spesifik, bukan hanya 'ingin sukses'. / Bisa menyebut aktivitas atau momen yang membuat benar-benar energized. / Ada lapisan makna di balik ambisi: keluarga, impact, identitas — bukan hanya uang.",
+            "red_flags": "Tidak bisa membayangkan 1-2 tahun ke depan. / Tidak ada satu pun momen 'in the zone' yang bisa diceritakan. / Semua motivasi eksternal saja: gaji, atasan, lingkungan — tidak ada satu pun dari dalam.",
+        },
+    }
+
+    with Session(engine) as db:
+        flag = db.exec(select(Setting).where(Setting.key == "backfill_guidance_done")).first()
+        if flag:
+            return
+
+        culture_template = db.exec(select(Template).where(Template.name == "Culture Alignment")).first()
+        if not culture_template:
+            return
+
+        for title, guidance in GUIDANCE.items():
+            sections = db.exec(
+                select(TemplateSection).where(
+                    TemplateSection.title == title,
+                    TemplateSection.template_id == culture_template.id,
+                )
+            ).all()
+            for s in sections:
+                if s.example_questions:
+                    continue
+                s.example_questions = guidance["example_questions"]
+                s.good_answer = guidance["good_answer"]
+                s.red_flags = guidance["red_flags"]
+                db.add(s)
+
+        db.add(Setting(key="backfill_guidance_done", value="1"))
         db.commit()

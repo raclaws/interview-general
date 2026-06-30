@@ -25,6 +25,9 @@ def _migrate():
         ("candidate_pipelines", "deleted_at", "TIMESTAMP"),
         ("jobs", "deleted_at", "TIMESTAMP"),
         ("test_assignments", "deleted_at", "TIMESTAMP"),
+        ("template_sections", "example_questions", "TEXT"),
+        ("template_sections", "good_answer", "TEXT"),
+        ("template_sections", "red_flags", "TEXT"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -59,6 +62,8 @@ def create_tables():
     seed_managed_data(engine)
     from app.seed import migrate_legacy_job_ids
     migrate_legacy_job_ids(engine)
+    from app.seed import backfill_section_guidance
+    backfill_section_guidance(engine)
 
 
 def _purge_soft_deleted():

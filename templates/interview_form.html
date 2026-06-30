@@ -56,6 +56,21 @@
             {% if section.description %}
             <p class="example">{{ section.description }}</p>
             {% endif %}
+            {% if section.example_questions %}
+            <div class="interviewer-guide">
+                <strong>Contoh Pertanyaan:</strong> {{ section.example_questions }}
+            </div>
+            {% endif %}
+            {% if section.good_answer %}
+            <div class="interviewer-guide">
+                <strong>Jawaban baik (lanjutkan proses):</strong><br>{{ section.good_answer }}
+            </div>
+            {% endif %}
+            {% if section.red_flags %}
+            <div class="interviewer-guide">
+                <strong>Perlu dipertimbangkan:</strong><br>{{ section.red_flags }}
+            </div>
+            {% endif %}
 
             {% if section.measurement_type == "rating_1_4" %}
             <div class="rating-group">
@@ -83,7 +98,7 @@
 
             {% elif section.measurement_type == "multi_select" %}
             {% if section.max_selections %}
-            <p class="hint">Select at most {{ section.max_selections }} options.</p>
+            <p class="hint">Pilih maksimal {{ section.max_selections }} opsi.</p>
             {% endif %}
             <div class="select-group">
                 {% for opt in section.options_list %}

@@ -26,6 +26,7 @@
             <td>
                 {{ s.title }}
                 {% if s.description %}<br><small class="hint">{{ s.description }}</small>{% endif %}
+                {% if s.example_questions %}<br><small class="hint"><strong>Contoh:</strong> {{ s.example_questions | truncate(80) }}</small>{% endif %}
             </td>
             <td>{{ s.measurement_type }}</td>
             <td>

@@ -1224,6 +1224,8 @@ textarea { resize: vertical; min-height: 80px; }
 }
 .question-block:last-of-type { border-bottom: none; }
 .question-block .example { font-style: italic; color: var(--text-muted); font-size: var(--text-base); margin-bottom: 0.75rem; }
+.interviewer-guide { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.5; padding: 0.4rem 0.6rem; background: var(--bg-muted); border-radius: 4px; }
+.interviewer-guide strong { color: var(--text-primary); font-size: 0.78rem; }
 
 /* Rating group */
 .rating-group { display: flex; gap: 0.6rem; margin-bottom: 0.3rem; flex-wrap: wrap; }

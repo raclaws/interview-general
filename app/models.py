@@ -175,6 +175,9 @@ class TemplateSection(SQLModel, table=True):
     order: int
     title: str
     description: Optional[str] = None
+    example_questions: Optional[str] = None
+    good_answer: Optional[str] = None
+    red_flags: Optional[str] = None
     measurement_type: str
     options: Optional[str] = None
     anchor_low: Optional[str] = None
