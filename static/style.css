@@ -2250,3 +2250,8 @@ mark.search-hl {
     font-size: var(--text-sm);
     color: var(--text-secondary);
 }
+
+@keyframes skeleton-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 0.6; } }
+.skeleton-row td { padding: 0.6rem 1rem; vertical-align: middle; }
+.sk-line { height: 0.7rem; border-radius: 4px; background: var(--bg-muted); animation: skeleton-pulse 1.2s ease-in-out infinite; }
+.sk-sub { margin-top: 0.35rem; height: 0.55rem; opacity: 0.6; }

@@ -9,6 +9,7 @@
 <div data-sync-table="candidates"
      data-sync-search-fields="name,email"
      data-sync-default-sort="updatedAt:desc"
+     data-sync-render-limit="100"
      data-sync-filter-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"currentPosition","label":"Position","type":"text"},{"key":"name","label":"Name","type":"text"},{"key":"email","label":"Email","type":"text"}]'
      data-sync-display-options='{"sort":[{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"name:asc","label":"Name A-Z"},{"value":"name:desc","label":"Name Z-A"}],"group":[{"value":"stages","label":"Stage"}]}'>
     <div class="table-controls">
@@ -54,5 +55,5 @@ window.__syncConfig = {
     }
 };
 </script>
-<script src="/static/sync-list.js?v=2"></script>
+<script src="/static/sync-list.js?v=3"></script>
 {% endblock %}

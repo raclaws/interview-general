@@ -43,7 +43,7 @@ def _base_url() -> str:
 
 
 def _records_url() -> str:
-    return f"{_base_url()}/api/v1/db/data/noco/{NOCODB_BASE_ID}/{NOCODB_TABLE_ID}"
+    return f"{_base_url()}/api/v2/tables/{NOCODB_TABLE_ID}/records"
 
 
 NOCODB_TIMEOUT = 10.0
@@ -187,3 +187,71 @@ def search_local_candidates(query: str) -> list[dict]:
             }
             for c in candidates
         ]
+
+
+async def bulk_import_candidates() -> dict:
+    """Paginate all NocoDB records and upsert into local Candidate table."""
+    if not NOCODB_API_KEY or not NOCODB_TABLE_ID:
+        return {"error": "NocoDB not configured"}
+
+    created = 0
+    updated = 0
+    skipped = 0
+    offset = 0
+    limit = 100
+
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            while True:
+                resp = await client.get(
+                    _records_url(),
+                    headers=_headers(),
+                    params={"limit": limit, "offset": offset},
+                )
+                if resp.status_code != 200:
+                    return {"error": f"NocoDB returned {resp.status_code}", "created": created, "updated": updated, "skipped": skipped}
+
+                data = resp.json()
+                records = data.get("list", [])
+                if not records:
+                    break
+
+                for record in records:
+                    nocodb_id = record.get("Id")
+                    if not nocodb_id:
+                        skipped += 1
+                        continue
+
+                    snapshot = {}
+                    for noco_field, key in FIELD_MAPPING.items():
+                        snapshot[key] = record.get(noco_field, "")
+
+                    email = (snapshot.get("email") or "").strip()
+                    if not email:
+                        skipped += 1
+                        continue
+
+                    with Session(engine) as db:
+                        existing = db.exec(select(Candidate).where(Candidate.email == email)).first()
+                    if existing:
+                        updated += 1
+                    else:
+                        created += 1
+
+                    upsert_candidate_from_nocodb(snapshot, nocodb_id)
+
+                page_info = data.get("pageInfo", {})
+                total_rows = page_info.get("totalRows", 0)
+                offset += len(records)
+
+                if offset >= total_rows:
+                    break
+
+    except httpx.TimeoutException:
+        return {"error": "NocoDB request timed out", "created": created, "updated": updated, "skipped": skipped}
+    except httpx.ConnectError:
+        return {"error": "Cannot connect to NocoDB", "created": created, "updated": updated, "skipped": skipped}
+    except Exception as e:
+        return {"error": f"Import error: {str(e)[:200]}", "created": created, "updated": updated, "skipped": skipped}
+
+    return {"created": created, "updated": updated, "skipped": skipped, "total": created + updated}

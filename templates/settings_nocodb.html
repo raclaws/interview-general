@@ -1,0 +1,63 @@
+<div class="detail-section">
+    <div class="detail-section-label">NocoDB Connection</div>
+    <div class="form-row">
+        <div class="form-field" style="flex:1;">
+            <label class="form-label">Status</label>
+            <div style="font-size: 0.85rem;">
+                {% if nocodb_configured %}
+                <span style="color: var(--green);">Connected</span> — {{ nocodb_url }}
+                {% else %}
+                <span style="color: var(--text-muted);">Not configured</span> — Set NOCODB_BASE_URL + NOCODB_API_KEY in .env
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Bulk Import</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Pull all candidates from NocoDB into the local database. Matches by email — existing candidates get updated, new ones are created.</p>
+    {% if last_sync %}
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Last sync: <strong>{{ last_sync }}</strong></p>
+    {% endif %}
+    <form hx-post="/settings/nocodb/import"
+          hx-target="#import-result"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-push-url="false"
+          hx-disinherit="*"
+          hx-on::before-request="this.querySelector('button').disabled=true; this.querySelector('button').textContent='Importing...'"
+          hx-on::after-request="this.querySelector('button').disabled=false; this.querySelector('button').textContent='Import All Candidates'">
+        <button type="submit" class="btn" {% if not nocodb_configured %}disabled{% endif %}>Import All Candidates</button>
+    </form>
+    <div id="import-result" style="margin-top: 0.75rem;"></div>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Webhook (Real-time Sync)</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Configure this URL in NocoDB → Webhooks to receive create/update/delete events automatically.</p>
+    <div class="form-row">
+        <div class="form-field" style="flex:1;">
+            <label class="form-label">Webhook URL</label>
+            <div class="form-input" style="background: var(--bg-muted); user-select: all; cursor: text;">{{ webhook_url }}</div>
+        </div>
+    </div>
+    <form hx-post="/settings/nocodb/secret"
+          hx-target="#secret-result"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-push-url="false"
+          hx-disinherit="*"
+          style="margin-top: 0.75rem;">
+        <div class="form-row">
+            <div class="form-field" style="flex:1;">
+                <label class="form-label">Webhook Secret</label>
+                <input type="text" name="secret" class="form-input" value="{{ webhook_secret }}" placeholder="Leave empty to disable auth">
+            </div>
+            <div class="form-field" style="align-self: flex-end;">
+                <button type="submit" class="btn">Save</button>
+            </div>
+        </div>
+    </form>
+    <div id="secret-result" style="margin-top: 0.5rem;"></div>
+</div>

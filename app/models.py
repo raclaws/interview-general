@@ -107,6 +107,7 @@ class Candidate(SQLModel, table=True):
     expected_salary: Optional[str] = None
     notice_period: Optional[str] = None
     cv_link: Optional[str] = None
+    nocodb_deleted: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

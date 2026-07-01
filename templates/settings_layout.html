@@ -18,6 +18,8 @@
         <a href="/settings/job-types" class="settings-tab {% if active_tab == 'job-types' %}active{% endif %}"
            hx-get="/settings/job-types" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Job Types</a>
         <a href="/templates" class="settings-tab {% if active_tab == 'templates' %}active{% endif %}" hx-boost="false">Templates</a>
+        <a href="/settings/nocodb" class="settings-tab {% if active_tab == 'nocodb' %}active{% endif %}"
+           hx-get="/settings/nocodb" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">NocoDB Sync</a>
     </nav>
     <div class="settings-content" hx-disinherit="*">
         {% if tab_content %}

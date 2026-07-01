@@ -8,7 +8,7 @@ import json
 import time
 from datetime import datetime
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query, Request
 from sqlmodel import Session, select
 
 from app.database import get_session
@@ -183,13 +183,33 @@ def _hydrate_jobs(db: Session, since: int | None):
     return results
 
 
-def _hydrate_candidates(db: Session, since: int | None):
+def _hydrate_candidates(db: Session, since: int | None, filters: dict | None = None):
     from sqlalchemy import func
 
-    query = select(Candidate)
+    query = select(Candidate).where(Candidate.nocodb_deleted == False)
     if since:
         since_dt = datetime.utcfromtimestamp(since / 1000)
         query = query.where(Candidate.updated_at > since_dt)
+
+    if filters:
+        if filters.get("q"):
+            q = filters["q"]
+            query = query.where(Candidate.name.ilike(f"%{q}%") | Candidate.email.ilike(f"%{q}%"))
+        if filters.get("lang"):
+            query = query.where(Candidate.languages.ilike(f"%{filters['lang']}%"))
+        if filters.get("cloud"):
+            query = query.where(Candidate.cloud.ilike(f"%{filters['cloud']}%"))
+        if filters.get("tools"):
+            query = query.where(Candidate.tools.ilike(f"%{filters['tools']}%"))
+        if filters.get("position"):
+            query = query.where(Candidate.current_position.ilike(f"%{filters['position']}%"))
+        if filters.get("arrangement"):
+            query = query.where(Candidate.working_arrangement.ilike(f"%{filters['arrangement']}%"))
+        if filters.get("notice"):
+            query = query.where(Candidate.notice_period.ilike(f"%{filters['notice']}%"))
+
+    query = query.order_by(Candidate.updated_at.desc())
+
     query = query.order_by(Candidate.updated_at.desc())
 
     candidates = db.exec(query).all()
@@ -416,6 +436,7 @@ _HYDRATE_DISPATCH = {
 
 @router.get("/hydrate")
 async def hydrate(
+    request: Request,
     table: str = Query("sessions"),
     since: int | None = Query(None),
     admin: AdminUser = Depends(get_current_admin),
@@ -424,6 +445,8 @@ async def hydrate(
     handler = _HYDRATE_DISPATCH.get(table)
     if not handler:
         return []
+    if table == "candidates":
+        return handler(db, since, filters=dict(request.query_params))
     return handler(db, since)
 
 

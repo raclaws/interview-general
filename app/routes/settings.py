@@ -5,7 +5,7 @@ from sqlmodel import Session, select, col, func
 from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
-    AdminUser, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType, Job, not_deleted,
+    AdminUser, BusinessUnit, ManagedPosition, ManagedLevel, ManagedJobType, Job, Setting, not_deleted,
 )
 
 router = APIRouter(prefix="/settings")
@@ -358,3 +358,84 @@ async def settings_job_types_edit(
         db.add(item)
         db.commit()
     return _render_list(request, db, admin, "job-types")
+
+
+# --- NocoDB Sync ---
+
+
+@router.get("/nocodb", response_class=HTMLResponse)
+async def settings_nocodb(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.nocodb import NOCODB_BASE_URL, NOCODB_API_KEY
+
+    nocodb_configured = bool(NOCODB_BASE_URL and NOCODB_API_KEY)
+    nocodb_url = NOCODB_BASE_URL or "—"
+
+    last_sync_setting = db.exec(select(Setting).where(Setting.key == "nocodb_last_sync")).first()
+    last_sync = last_sync_setting.value if last_sync_setting else None
+
+    secret_setting = db.exec(select(Setting).where(Setting.key == "nocodb_webhook_secret")).first()
+    webhook_secret = secret_setting.value if secret_setting else ""
+
+    host = request.headers.get("host", "localhost:8000")
+    scheme = "https" if "localhost" not in host else "http"
+    webhook_url = f"{scheme}://{host}/api/webhooks/nocodb"
+
+    ctx = {
+        "admin": admin,
+        "active_tab": "nocodb",
+        "nocodb_configured": nocodb_configured,
+        "nocodb_url": nocodb_url,
+        "last_sync": last_sync,
+        "webhook_url": webhook_url,
+        "webhook_secret": webhook_secret,
+    }
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return _render(request, "settings_nocodb.html", ctx)
+    return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_nocodb.html"})
+
+
+@router.post("/nocodb/import", response_class=HTMLResponse)
+async def settings_nocodb_import(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.nocodb import bulk_import_candidates
+    from datetime import datetime
+
+    result = await bulk_import_candidates()
+
+    if not result.get("error"):
+        setting = db.exec(select(Setting).where(Setting.key == "nocodb_last_sync")).first()
+        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+        if setting:
+            setting.value = now_str
+        else:
+            db.add(Setting(key="nocodb_last_sync", value=now_str))
+        db.commit()
+
+    if result.get("error"):
+        html = f'<div class="row-meta" style="color:var(--danger);">Error: {result["error"]}<br>Partial: {result.get("created",0)} created, {result.get("updated",0)} updated, {result.get("skipped",0)} skipped</div>'
+    else:
+        html = f'<div class="row-meta" style="color:var(--green);">Done — {result["created"]} created, {result["updated"]} updated, {result["skipped"]} skipped ({result["total"]} total)</div>'
+    return HTMLResponse(html)
+
+
+@router.post("/nocodb/secret", response_class=HTMLResponse)
+async def settings_nocodb_secret(
+    request: Request,
+    secret: str = Form(""),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    setting = db.exec(select(Setting).where(Setting.key == "nocodb_webhook_secret")).first()
+    if setting:
+        setting.value = secret.strip()
+    else:
+        db.add(Setting(key="nocodb_webhook_secret", value=secret.strip()))
+    db.commit()
+    return HTMLResponse('<div class="row-meta" style="color:var(--green);">Secret saved.</div>')

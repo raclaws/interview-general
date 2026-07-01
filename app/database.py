@@ -28,6 +28,7 @@ def _migrate():
         ("template_sections", "example_questions", "TEXT"),
         ("template_sections", "good_answer", "TEXT"),
         ("template_sections", "red_flags", "TEXT"),
+        ("candidates", "nocodb_deleted", "BOOLEAN DEFAULT 0"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
