@@ -1,0 +1,57 @@
+<div class="detail-section">
+    <div class="detail-section-label">Generated Offer</div>
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <a href="/offers/{{ offer.id }}/preview" target="_blank" class="btn-ghost" hx-boost="false">Open in new tab</a>
+        {% if offer.filename_pdf %}
+        <a href="/offers/{{ offer.id }}/pdf" class="btn-ghost" hx-boost="false">Download PDF</a>
+        {% endif %}
+    </div>
+    <iframe src="/offers/{{ offer.id }}/preview" style="width: 100%; max-width: 900px; border: 1px solid var(--border); border-radius: var(--radius-md); background: #fff;" onload="this.style.height=(this.contentDocument.body.scrollHeight+40)+'px'"></iframe>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Email Draft</div>
+    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+        <button type="button" class="btn-ghost" onclick="copyEmailRichText()">Copy as Rich Text</button>
+    </div>
+    <div id="email-preview" style="background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; max-width: 900px; font-family: 'Fira Code', 'Courier New', monospace; font-size: 13px; color: #4c4f69;">
+        <p style="margin: 0 0 25px 0; color: #8839ef; font-size: 18px;">// INVITATION: FORMAL_OFFERING</p>
+        <p style="font-size: 15px; line-height: 1.6;">Hi {{ offer.candidate_name }},</p>
+        <p style="font-size: 15px; line-height: 1.6;">Following our recent conversations, the final evaluation has been cleared. We are thrilled to formally invite you to join us at INSIGNIA.</p>
+        <p style="font-size: 15px; line-height: 1.6; margin-top: 25px; background-color: #eef3fc; border-left: 4px solid #40a02b; padding: 20px; border-radius: 4px;">
+            The details for your offer are detailed in <a href="#" style="color: #1e66f5; text-decoration: underline;">[Offer Letter PDF Link]</a>
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; margin-top: 25px;">Please review at your convenience. If the parameters are acceptable, follow the instructions below:</p>
+        <ol style="padding-left: 20px; font-size: 14px; line-height: 1.8;">
+            <li><strong>Sign</strong> the offer by applying your signature (digital or physical scan).</li>
+            <li><strong>Commit</strong> your acceptance by replying to this email with the signed document.</li>
+        </ol>
+        <p style="font-size: 14px; margin-top: 20px; color: #fe640b;">
+            [!] This offer is time-sensitive and will expire after <strong>2 business days</strong> from receipt.
+        </p>
+        <p style="font-size: 15px; line-height: 1.6; margin-top: 30px;">We await your response.</p>
+        <p style="font-size: 15px; line-height: 1.6; margin-top: 25px;">Insignia</p>
+    </div>
+</div>
+
+<script>
+function copyEmailRichText() {
+    var el = document.getElementById('email-preview');
+    var blob = new Blob([el.innerHTML], {type: 'text/html'});
+    var plainBlob = new Blob([el.innerText], {type: 'text/plain'});
+    navigator.clipboard.write([
+        new ClipboardItem({'text/html': blob, 'text/plain': plainBlob})
+    ]).then(function() {
+        if (window.toast) window.toast('Email copied as rich text');
+    }).catch(function() {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        var sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        document.execCommand('copy');
+        sel.removeAllRanges();
+        if (window.toast) window.toast('Email copied');
+    });
+}
+</script>

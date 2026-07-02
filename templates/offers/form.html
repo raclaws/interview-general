@@ -1,0 +1,111 @@
+{% extends "base_app.html" %}
+{% block title %}Generate Offer — {{ candidate.name }}{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <a href="/candidates">Candidates</a> / <a href="/candidate/{{ candidate.id }}">{{ candidate.name }}</a> / <a href="/pipeline/{{ pipeline.id }}">Pipeline</a> / <span>Offer</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Generate Offer Letter</h1>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Context</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.85rem;">
+        <div><span class="row-meta">Candidate</span><br><strong>{{ candidate.name }}</strong></div>
+        <div><span class="row-meta">Position</span><br><strong>{{ job.position if job else "—" }}</strong></div>
+        <div><span class="row-meta">Business Unit</span><br><strong>{{ bu.name if bu else "—" }}</strong></div>
+    </div>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Offer Parameters</div>
+    <form hx-post="/offers/generate/{{ pipeline.id }}"
+          hx-target="#offer-result"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-push-url="false"
+          hx-disinherit="*"
+          hx-on::before-request="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').textContent='Generating...'"
+          hx-on::after-request="this.querySelector('button[type=submit]').disabled=false; this.querySelector('button[type=submit]').textContent='Generate Offer'">
+        <div class="form-row form-row--3col">
+            <div class="form-field">
+                <label class="form-label">Offering Amount (Net/month IDR)</label>
+                <input type="number" name="offering_amount" class="form-input" required min="1000000" step="100000" placeholder="15000000">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Start Date</label>
+                <input type="text" name="start_date" class="form-input" value="tbc" placeholder="tbc or YYYY-MM-DD">
+            </div>
+            <div class="form-field">
+                <label class="form-label">Metode Kerja</label>
+                <select name="metode_kerja" class="form-input">
+                    <option value="Hybrid – Jakarta (3 hari WFO, 2 hari WFH)">Hybrid (3 WFO / 2 WFH)</option>
+                    <option value="Full Remote">Full Remote</option>
+                    <option value="Full On-Site – Jakarta">Full On-Site</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row" style="margin-top: 0.75rem;">
+            <div class="form-field">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="bpjs_tk" value="true"> Include Tunjangan BPJS TK (3%)
+                </label>
+            </div>
+            <div class="form-field">
+                <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="probation_change" value="true" onchange="document.getElementById('post-probation-field').style.display = this.checked ? '' : 'none'"> Salary change after probation
+                </label>
+            </div>
+        </div>
+        <div class="form-row" id="post-probation-field" style="display: none; margin-top: 0.5rem;">
+            <div class="form-field">
+                <label class="form-label">Post-Probation Amount (Net/month IDR)</label>
+                <input type="number" name="post_probation_amount" class="form-input" min="1000000" step="100000" placeholder="18000000">
+            </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 1rem;">Generate Offer</button>
+    </form>
+</div>
+
+<div id="offer-result" style="margin-top: 1rem;"></div>
+
+{% if existing_offers %}
+<div class="detail-section" style="margin-top: 2rem;">
+    <div class="detail-section-label">Previous Offers</div>
+    <table class="table-clean">
+        <tbody>
+            {% for o in existing_offers %}
+            <tr{% if o.status == 'deleted' %} style="opacity: 0.4;"{% endif %}>
+                <td>
+                    <div class="col-primary">
+                        Rp {{ "{:,.0f}".format(o.offering_amount).replace(",", ".") }}
+                        {% if o.status == 'deleted' %}<span class="badge" style="margin-left: 0.4rem; font-size: 0.65rem; background: var(--bg-muted); color: var(--text-muted);">deleted</span>{% endif %}
+                    </div>
+                    <div class="row-meta">{{ o.created_at.strftime("%d %b %Y, %H:%M") }}{% if o.bpjs_tk %} · BPJS{% endif %}{% if o.probation_change %} · Probation change{% endif %}{% if o.start_date and o.start_date != 'tbc' %} · Start: {{ o.start_date }}{% endif %}</div>
+                </td>
+                <td style="text-align: right; white-space: nowrap;">
+                    {% if o.status != 'deleted' %}
+                    {% if o.filename_pdf %}<a href="/offers/{{ o.id }}/pdf" hx-boost="false" style="margin-right: 0.5rem;">PDF</a>{% endif %}
+                    <a href="/offers/{{ o.id }}/preview" target="_blank" hx-boost="false" style="margin-right: 0.5rem;">Preview</a>
+                    <form method="post" action="/offers/{{ o.id }}/delete"
+                          hx-post="/offers/{{ o.id }}/delete"
+                          hx-target="closest tr"
+                          hx-swap="outerHTML"
+                          hx-select="unset"
+                          hx-push-url="false"
+                          hx-disinherit="*"
+                          hx-confirm="Mark this offer as deleted?"
+                          style="display:inline;">
+                        <button type="submit" class="btn-icon" title="Delete">✕</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

@@ -382,3 +382,23 @@ class ReportHistory(SQLModel, table=True):
     filename: str
     filters: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class OfferLetter(SQLModel, table=True):
+    __tablename__ = "offer_letters"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    pipeline_id: int = Field(foreign_key="candidate_pipelines.id", index=True)
+    candidate_name: str
+    job_title: str
+    business_unit: str
+    offering_amount: int
+    post_probation_amount: Optional[int] = None
+    bpjs_tk: bool = Field(default=False)
+    probation_change: bool = Field(default=False)
+    start_date: Optional[str] = None
+    metode_kerja: str = Field(default="Hybrid – Jakarta (3 hari WFO, 2 hari WFH)")
+    filename_html: str = ""
+    filename_pdf: str = ""
+    status: str = Field(default="draft")
+    created_at: datetime = Field(default_factory=datetime.utcnow)

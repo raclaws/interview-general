@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Offer Letter — {{ candidate_name }}</title>
+    <style>
+        body { background: transparent; font-family: "Fira Code", "Courier New", monospace; font-size: 13px; line-height: 1.6; color: #4c4f69; }
+        @page { margin: 25mm 20mm; }
+        .container { max-width: 800px; margin: auto; }
+        h1 { font-size: 22px; font-weight: 600; margin: 0 0 30px; color: #8839ef; }
+        h3 { font-size: 16px; font-weight: 600; margin: 30px 0 15px; color: #1e66f5; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 10px; border: 1px solid #dce0e8; vertical-align: top; }
+        .no-border-table td { border: none; padding: 2px 0; }
+        strong { font-weight: 600; }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 5px; }
+        .highlight { color: #40a02b; }
+        .comment { color: #7c7f93; }
+        .signature-block { width: 100%; margin-top: 60px; }
+        .signature-col { width: 50%; vertical-align: top; }
+        @media print { .pagebreak { page-break-before: always; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p class="comment" style="text-align:right; font-size:12px; font-weight:600; margin-bottom: 20px;">// CONFIDENTIAL</p>
+        <h1>OFFER_LETTER</h1>
+
+        <p>Kepada Yth.<br/>Sdr/i. <strong>{{ candidate_name }}</strong><br/>Di tempat</p>
+        <br/>
+        <p>Dengan hormat,<br/>Melalui surat ini kami sampaikan detail untuk posisi berikut:</p>
+
+        <h3>1.0 :: ROLE_DETAILS</h3>
+        <table>
+            <tr><td style="width: 35%;"><strong>Jabatan</strong></td><td><span class="highlight">{{ job_title }}</span></td></tr>
+            <tr><td><strong>Business Unit</strong></td><td>{{ business_unit }}</td></tr>
+            <tr><td><strong>Status</strong></td><td>Full-time, masa percobaan 3 bulan</td></tr>
+            <tr><td><strong>Metode Kerja</strong></td><td>{{ metode_kerja }}</td></tr>
+            <tr><td><strong>Gaji per Bulan (Net)</strong></td><td>Rp {{ offering_amount }},- net (pph 21)</td></tr>
+            <tr><td><strong>Detail Gaji</strong></td><td>
+                <table class="no-border-table">
+                    <tr><td style="width:180px;">Gaji Pokok</td><td>Rp {{ gapok }},-</td></tr>
+                    <tr><td>Tunjangan Jabatan</td><td>Rp {{ tunjangan_jabatan }},-</td></tr>
+                    {% if bpjs_tk %}
+                    <tr><td>Tunjangan BPJS-TK*</td><td>Rp {{ bpjs_amount }},-</td></tr>
+                    {% endif %}
+                </table>
+            </td></tr>
+            <tr><td><strong>Kenaikan Gaji</strong></td><td>Evaluasi tahunan berdasarkan KPI, kontribusi, & kebijakan sistem.</td></tr>
+            <tr><td><strong>Tanggal Mulai</strong></td><td>{{ start_date }}</td></tr>
+            <tr><td><strong>Jam Kerja</strong></td><td>Senin–Jumat, 09:00–18:00 WIB</td></tr>
+        </table>
+        {% if bpjs_tk %}
+        <p style="font-size: 11px; color: #7c7f93; margin-top: 4px;">*tunjangan BPJS TK berlaku setelah Probation dan hanya berlaku jika mengikuti iuran BPJS TK</p>
+        {% endif %}
+
+        {% if probation_change and post_probation %}
+        <h3>1.1 :: POST_PROBATION_ADJUSTMENT</h3>
+        <p>Setelah lolos masa percobaan (3 bulan), kompensasi disesuaikan menjadi:</p>
+        <table>
+            <tr><td style="width: 35%;"><strong>Gaji per Bulan (Net)</strong></td><td>Rp {{ post_probation.amount }},- net (pph 21)</td></tr>
+            <tr><td><strong>Detail Gaji</strong></td><td>
+                <table class="no-border-table">
+                    <tr><td style="width:180px;">Gaji Pokok</td><td>Rp {{ post_probation.gapok }},-</td></tr>
+                    <tr><td>Tunjangan Jabatan</td><td>Rp {{ post_probation.tunjangan_jabatan }},-</td></tr>
+                    {% if bpjs_tk %}
+                    <tr><td>Tunjangan BPJS-TK</td><td>Rp {{ post_probation.bpjs_amount }},-</td></tr>
+                    {% endif %}
+                </table>
+            </td></tr>
+        </table>
+        {% endif %}
+
+        <h3>2.0 :: BENEFITS</h3>
+        <p><strong>Fasilitas & Tunjangan:</strong></p>
+        <ul>
+            <li>Makan siang & malam pada hari WFO</li>
+            <li>Peralatan kerja selama masa kerja</li>
+            <li>BPJS Ketenagakerjaan (setelah lolos probation) – iuran perusahaan 6,24%, karyawan 3% dari gaji pokok</li>
+            <li>Cuti Tahunan 12 hari (setelah 12 bulan kerja berturut-turut)</li>
+            <li>Tunjangan Hari Raya (prorate)</li>
+            <li>Training & Certification (setelah lolos probation)</li>
+        </ul>
+
+        <p style="margin-top: 20px;"><strong>Benefit Tambahan Setelah Lolos Sertifikasi:</strong></p>
+        <ul>
+            <li>Bonus Sertifikasi: 50% dari harga sertifikasi</li>
+            <li>Tunjangan Sertifikasi: Rp 250.000,- per bulan selama masa ikatan dinas</li>
+        </ul>
+
+        <p style="margin-top: 20px;"><strong>Tunjangan Kesehatan (setelah permanen):</strong></p>
+        <ul>
+            <li>Rawat Jalan maks. Rp {{ tunjangan_rj }},- per tahun, termasuk:
+                <ul style="padding-left: 20px; margin-top: 5px;">
+                    <li>Kacamata maks. Rp 2.000.000,- per tahun</li>
+                    <li>Pengobatan Gigi maks. Rp 2.000.000,- per tahun (Jika karyawan, juga: 1 istri sah, 2 anak kandung)</li>
+                </ul>
+            </li>
+            <li>Asuransi Rawat Inap sesuai ketentuan perusahaan (keluarga yang sama)</li>
+        </ul>
+
+        <h3>3.0 :: ACCEPTANCE_PROTOCOL</h3>
+        <p>Penawaran ini berlaku hingga <strong style="color: #fe640b;">2 hari kalender setelah surat ini dikirimkan</strong>. Untuk menerima, mohon tandatangani dan kirimkan kembali salinan dokumen ini ke HR.</p>
+    </div>
+
+    <div class="pagebreak"></div>
+
+    <div class="container">
+        <h3 style="margin-top:0;">4.0 :: ACCEPTANCE_SLIP</h3>
+        <p>Saya yang bertanda tangan di bawah ini:</p>
+        <table style="margin: 20px 0;">
+            <tr><td style="width: 35%;"><strong>Nama</strong></td><td>: {{ candidate_name }}</td></tr>
+            <tr><td><strong>Posisi yang Ditawarkan</strong></td><td>: {{ job_title }}</td></tr>
+        </table>
+        <p>Dengan ini menyatakan <strong>setuju / tidak setuju*</strong> terhadap parameter kerja yang tertulis dalam surat ini.</p>
+        <p class="comment" style="font-size: 11px;">*coret yang tidak perlu</p>
+
+        <table class="signature-block no-border-table">
+            <tr>
+                <td class="signature-col">
+                    <p>Hormat kami,</p>
+                    <p style="margin-top: 80px;"><strong>—</strong><br>HR Dept<br>Insignia</p>
+                </td>
+                <td class="signature-col">
+                    <p>Jakarta, ____________________</p>
+                    <p style="margin-top: 80px;">_________________________</p>
+                    <p><strong>{{ candidate_name }}</strong></p>
+                </td>
+            </tr>
+        </table>
+
+        <p class="comment" style="margin-top: 80px; text-align: center;">// EOF</p>
+    </div>
+</body>
+</html>

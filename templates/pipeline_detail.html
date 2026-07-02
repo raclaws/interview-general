@@ -24,6 +24,9 @@
         <a href="/candidate/{{ candidate.id }}/pipeline/{{ pipeline.id }}/score" hx-boost="false">Scorecard</a>
         <a href="/session/new?candidate_id={{ candidate.id }}&pipeline_id={{ pipeline.id }}" hx-boost="false">+ Interview</a>
         <a href="/pipeline/{{ pipeline.id }}/assign-test" hx-boost="false">+ Test</a>
+        {% if pipeline.stage == "offer" %}
+        <a href="/offers/new/{{ pipeline.id }}" hx-boost="false">Generate Offer</a>
+        {% endif %}
     </div>
     <div class="detail-actions-destruct">
         <form method="post" action="/pipeline/{{ pipeline.id }}/delete"

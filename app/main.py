@@ -20,6 +20,7 @@ from app.routes.jobs import router as jobs_router
 from app.routes.settings import router as settings_router
 from app.routes.reports import router as reports_router
 from app.routes.webhooks import router as webhooks_router
+from app.routes.offers import router as offers_router
 
 app = FastAPI(title="Interview Form Summarizer")
 
@@ -51,6 +52,7 @@ app.include_router(jobs_router)
 app.include_router(settings_router)
 app.include_router(reports_router)
 app.include_router(webhooks_router)
+app.include_router(offers_router)
 
 
 @app.on_event("startup")
