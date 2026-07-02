@@ -439,3 +439,45 @@ async def settings_nocodb_secret(
         db.add(Setting(key="nocodb_webhook_secret", value=secret.strip()))
     db.commit()
     return HTMLResponse('<div class="row-meta" style="color:var(--green);">Secret saved.</div>')
+
+
+# --- Offer Config ---
+
+
+@router.get("/offer-config", response_class=HTMLResponse)
+async def settings_offer_config(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.offers import get_offer_config
+    config = get_offer_config()
+    ctx = {"admin": admin, "active_tab": "offer-config", "config": config}
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return _render(request, "settings_offer_config.html", ctx)
+    return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_offer_config.html"})
+
+
+@router.post("/offer-config", response_class=HTMLResponse)
+async def settings_offer_config_save(
+    request: Request,
+    gapok_max_pct: float = Form(...),
+    gapok_floor: int = Form(...),
+    gapok_floor_threshold: int = Form(...),
+    tunjangan_rj_tier3: int = Form(...),
+    tunjangan_rj_tier2: int = Form(...),
+    bpjs_tk_pct: float = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.offers import save_offer_config
+    config = {
+        "gapok_max_pct": gapok_max_pct,
+        "gapok_floor": gapok_floor,
+        "gapok_floor_threshold": gapok_floor_threshold,
+        "tunjangan_rj_tier3": tunjangan_rj_tier3,
+        "tunjangan_rj_tier2": tunjangan_rj_tier2,
+        "bpjs_tk_pct": bpjs_tk_pct,
+    }
+    save_offer_config(config)
+    return HTMLResponse('<div class="row-meta" style="color:var(--green);">Offer config saved.</div>')

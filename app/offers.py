@@ -1,7 +1,12 @@
 """Offer letter salary calculations and generation helpers."""
+import json
 from pathlib import Path
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader
+from sqlmodel import Session, select
+
+from app.database import engine
+from app.models import Setting
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 OFFERS_DIR = BASE_DIR / "static" / "offers"
@@ -9,33 +14,77 @@ OFFERS_DIR.mkdir(parents=True, exist_ok=True)
 
 _offer_env = Environment(loader=FileSystemLoader(str(BASE_DIR / "templates" / "offers")), autoescape=True)
 
+DEFAULT_OFFER_CONFIG = {
+    "gapok_max_pct": 0.75,
+    "gapok_floor": 10_000_000,
+    "gapok_floor_threshold": 13_400_000,
+    "tunjangan_rj_tier3": 20_000_000,
+    "tunjangan_rj_tier2": 12_000_000,
+    "bpjs_tk_pct": 0.03,
+}
 
-def calc_salary(amount: int) -> dict:
+
+def get_offer_config() -> dict:
+    """Load offer calc config from Settings, fallback to defaults."""
+    with Session(engine) as db:
+        setting = db.exec(select(Setting).where(Setting.key == "offer_config")).first()
+        if setting and setting.value:
+            try:
+                stored = json.loads(setting.value)
+                return {**DEFAULT_OFFER_CONFIG, **stored}
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return DEFAULT_OFFER_CONFIG.copy()
+
+
+def save_offer_config(config: dict):
+    """Save offer calc config to Settings."""
+    with Session(engine) as db:
+        setting = db.exec(select(Setting).where(Setting.key == "offer_config")).first()
+        if setting:
+            setting.value = json.dumps(config)
+        else:
+            db.add(Setting(key="offer_config", value=json.dumps(config)))
+        db.commit()
+
+
+def calc_salary(amount: int, config: dict = None) -> dict:
     """Calculate salary breakdown from net offering amount."""
-    if amount > 13_400_000:
-        gapok = int(amount * 0.75)
+    cfg = config or get_offer_config()
+    threshold = int(cfg["gapok_floor_threshold"])
+    floor = int(cfg["gapok_floor"])
+    max_pct = float(cfg["gapok_max_pct"])
+
+    if amount > threshold:
+        gapok = int(amount * max_pct)
         tunjangan_jabatan = amount - gapok
-    elif amount < 10_000_000:
+    elif amount < floor:
         gapok = amount
         tunjangan_jabatan = 0
     else:
-        gapok = 10_000_000
-        tunjangan_jabatan = amount - 10_000_000
+        gapok = floor
+        tunjangan_jabatan = amount - floor
     return {"gapok": gapok, "tunjangan_jabatan": tunjangan_jabatan}
 
 
-def calc_tunjangan_rj(amount: int) -> int:
+def calc_tunjangan_rj(amount: int, config: dict = None) -> int:
     """Calculate tunjangan rawat jalan tier."""
-    if amount >= 20_000_000:
-        return 20_000_000
-    elif amount >= 12_000_000:
-        return 12_000_000
+    cfg = config or get_offer_config()
+    tier3 = int(cfg["tunjangan_rj_tier3"])
+    tier2 = int(cfg["tunjangan_rj_tier2"])
+
+    if amount >= tier3:
+        return tier3
+    elif amount >= tier2:
+        return tier2
     return amount
 
 
-def calc_bpjs_tk(gapok: int) -> int:
-    """Calculate BPJS TK employee contribution (3% of gapok)."""
-    return int(gapok * 0.03)
+def calc_bpjs_tk(gapok: int, config: dict = None) -> int:
+    """Calculate BPJS TK employee contribution."""
+    cfg = config or get_offer_config()
+    pct = float(cfg["bpjs_tk_pct"])
+    return int(gapok * pct)
 
 
 def format_idr(amount: int) -> str:
@@ -80,9 +129,10 @@ def build_offer_data(
     metode_kerja: str = "Hybrid – Jakarta (3 hari WFO, 2 hari WFH)",
 ) -> dict:
     """Build the full data dict for template rendering."""
-    salary = calc_salary(offering_amount)
-    tunjangan_rj = calc_tunjangan_rj(offering_amount)
-    bpjs_amount = calc_bpjs_tk(salary["gapok"]) if bpjs_tk else 0
+    cfg = get_offer_config()
+    salary = calc_salary(offering_amount, cfg)
+    tunjangan_rj = calc_tunjangan_rj(offering_amount, cfg)
+    bpjs_amount = calc_bpjs_tk(salary["gapok"], cfg) if bpjs_tk else 0
 
     data = {
         "candidate_name": candidate_name,
@@ -101,8 +151,8 @@ def build_offer_data(
     }
 
     if probation_change and post_probation_amount:
-        post_salary = calc_salary(post_probation_amount)
-        post_bpjs = calc_bpjs_tk(post_salary["gapok"]) if bpjs_tk else 0
+        post_salary = calc_salary(post_probation_amount, cfg)
+        post_bpjs = calc_bpjs_tk(post_salary["gapok"], cfg) if bpjs_tk else 0
         data["post_probation"] = {
             "amount": format_idr(post_probation_amount),
             "gapok": format_idr(post_salary["gapok"]),

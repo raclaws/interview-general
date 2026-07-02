@@ -1,0 +1,47 @@
+<div class="detail-section">
+    <div class="detail-section-label">Salary Calculation Factors</div>
+    <p class="row-meta" style="margin-bottom: 1rem;">These values are used to compute the salary breakdown in offer letters. Changes apply to new offers only.</p>
+    <form hx-post="/settings/offer-config"
+          hx-target="#offer-config-result"
+          hx-swap="innerHTML"
+          hx-select="unset"
+          hx-push-url="false"
+          hx-disinherit="*">
+        <div class="form-row form-row--3col">
+            <div class="form-field">
+                <label class="form-label">Gapok Max % (of net salary)</label>
+                <input type="number" name="gapok_max_pct" class="form-input" value="{{ config.gapok_max_pct }}" step="0.01" min="0.01" max="1.0">
+                <span class="row-meta">e.g. 0.75 = 75%</span>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Gapok Floor (IDR)</label>
+                <input type="number" name="gapok_floor" class="form-input" value="{{ config.gapok_floor }}" step="100000">
+                <span class="row-meta">Below this → gapok = amount</span>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Gapok Floor Threshold (IDR)</label>
+                <input type="number" name="gapok_floor_threshold" class="form-input" value="{{ config.gapok_floor_threshold }}" step="100000">
+                <span class="row-meta">Above this → use max %</span>
+            </div>
+        </div>
+        <div class="form-row form-row--3col" style="margin-top: 0.75rem;">
+            <div class="form-field">
+                <label class="form-label">Tunjangan RJ Tier 3 (IDR)</label>
+                <input type="number" name="tunjangan_rj_tier3" class="form-input" value="{{ config.tunjangan_rj_tier3 }}" step="1000000">
+                <span class="row-meta">Salary ≥ this → cap at this</span>
+            </div>
+            <div class="form-field">
+                <label class="form-label">Tunjangan RJ Tier 2 (IDR)</label>
+                <input type="number" name="tunjangan_rj_tier2" class="form-input" value="{{ config.tunjangan_rj_tier2 }}" step="1000000">
+                <span class="row-meta">Salary ≥ this → cap at this</span>
+            </div>
+            <div class="form-field">
+                <label class="form-label">BPJS TK %</label>
+                <input type="number" name="bpjs_tk_pct" class="form-input" value="{{ config.bpjs_tk_pct }}" step="0.001" min="0" max="1.0">
+                <span class="row-meta">e.g. 0.03 = 3%</span>
+            </div>
+        </div>
+        <button type="submit" class="btn" style="margin-top: 1rem;">Save</button>
+    </form>
+    <div id="offer-config-result" style="margin-top: 0.5rem;"></div>
+</div>
