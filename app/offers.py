@@ -15,12 +15,12 @@ OFFERS_DIR.mkdir(parents=True, exist_ok=True)
 _offer_env = Environment(loader=FileSystemLoader(str(BASE_DIR / "templates" / "offers")), autoescape=True)
 
 DEFAULT_OFFER_CONFIG = {
-    "gapok_max_pct": 0.75,
-    "gapok_floor": 10_000_000,
-    "gapok_floor_threshold": 13_400_000,
-    "tunjangan_rj_tier3": 20_000_000,
-    "tunjangan_rj_tier2": 12_000_000,
-    "bpjs_tk_pct": 0.03,
+    "gapok": {"method": "pct", "value": 0.75, "of": "offering"},
+    "gapok_floor": {"method": "fixed", "value": 10_000_000},
+    "gapok_floor_threshold": {"method": "fixed", "value": 13_400_000},
+    "tunjangan_rj_tier3": {"method": "fixed", "value": 20_000_000},
+    "tunjangan_rj_tier2": {"method": "fixed", "value": 12_000_000},
+    "bpjs_tk": {"method": "pct", "value": 0.03, "of": "gapok"},
 }
 
 
@@ -31,10 +31,19 @@ def get_offer_config() -> dict:
         if setting and setting.value:
             try:
                 stored = json.loads(setting.value)
-                return {**DEFAULT_OFFER_CONFIG, **stored}
+                merged = {}
+                for key, default in DEFAULT_OFFER_CONFIG.items():
+                    if key in stored:
+                        if isinstance(stored[key], dict):
+                            merged[key] = {**default, **stored[key]}
+                        else:
+                            merged[key] = {**default, "value": stored[key]}
+                    else:
+                        merged[key] = default
+                return merged
             except (json.JSONDecodeError, TypeError):
                 pass
-    return DEFAULT_OFFER_CONFIG.copy()
+    return {k: v.copy() for k, v in DEFAULT_OFFER_CONFIG.items()}
 
 
 def save_offer_config(config: dict):
@@ -48,15 +57,22 @@ def save_offer_config(config: dict):
         db.commit()
 
 
+def _resolve_factor(cfg_entry: dict, reference: int) -> int:
+    """Resolve a config factor to an absolute value given a reference amount."""
+    if cfg_entry["method"] == "pct":
+        return int(reference * float(cfg_entry["value"]))
+    return int(cfg_entry["value"])
+
+
 def calc_salary(amount: int, config: dict = None) -> dict:
     """Calculate salary breakdown from net offering amount."""
     cfg = config or get_offer_config()
-    threshold = int(cfg["gapok_floor_threshold"])
-    floor = int(cfg["gapok_floor"])
-    max_pct = float(cfg["gapok_max_pct"])
+    threshold = _resolve_factor(cfg["gapok_floor_threshold"], amount)
+    floor = _resolve_factor(cfg["gapok_floor"], amount)
+    gapok_resolved = _resolve_factor(cfg["gapok"], amount)
 
     if amount > threshold:
-        gapok = int(amount * max_pct)
+        gapok = gapok_resolved
         tunjangan_jabatan = amount - gapok
     elif amount < floor:
         gapok = amount
@@ -70,8 +86,8 @@ def calc_salary(amount: int, config: dict = None) -> dict:
 def calc_tunjangan_rj(amount: int, config: dict = None) -> int:
     """Calculate tunjangan rawat jalan tier."""
     cfg = config or get_offer_config()
-    tier3 = int(cfg["tunjangan_rj_tier3"])
-    tier2 = int(cfg["tunjangan_rj_tier2"])
+    tier3 = _resolve_factor(cfg["tunjangan_rj_tier3"], amount)
+    tier2 = _resolve_factor(cfg["tunjangan_rj_tier2"], amount)
 
     if amount >= tier3:
         return tier3
@@ -83,8 +99,8 @@ def calc_tunjangan_rj(amount: int, config: dict = None) -> int:
 def calc_bpjs_tk(gapok: int, config: dict = None) -> int:
     """Calculate BPJS TK employee contribution."""
     cfg = config or get_offer_config()
-    pct = float(cfg["bpjs_tk_pct"])
-    return int(gapok * pct)
+    bpjs_entry = cfg["bpjs_tk"]
+    return _resolve_factor(bpjs_entry, gapok)
 
 
 def format_idr(amount: int) -> str:

@@ -1,47 +1,159 @@
 <div class="detail-section">
     <div class="detail-section-label">Salary Calculation Factors</div>
-    <p class="row-meta" style="margin-bottom: 1rem;">These values are used to compute the salary breakdown in offer letters. Changes apply to new offers only.</p>
+    <p class="row-meta" style="margin-bottom: 1rem;">Each factor can be a fixed amount (Rp) or a percentage (%) of a reference value. Changes apply to new offers only.</p>
     <form hx-post="/settings/offer-config"
           hx-target="#offer-config-result"
           hx-swap="innerHTML"
           hx-select="unset"
           hx-push-url="false"
           hx-disinherit="*">
-        <div class="form-row form-row--3col">
-            <div class="form-field">
-                <label class="form-label">Gapok Max % (of net salary)</label>
-                <input type="number" name="gapok_max_pct" class="form-input" value="{{ config.gapok_max_pct }}" step="0.01" min="0.01" max="1.0">
-                <span class="row-meta">e.g. 0.75 = 75%</span>
+
+        {% set factors = [
+            ("gapok", "Gapok (base salary)", "of offering amount"),
+            ("gapok_floor", "Gapok Floor", ""),
+            ("gapok_floor_threshold", "Gapok Floor Threshold", ""),
+            ("tunjangan_rj_tier3", "Tunjangan RJ Tier 3", ""),
+            ("tunjangan_rj_tier2", "Tunjangan RJ Tier 2", ""),
+            ("bpjs_tk", "BPJS TK", "of gapok"),
+        ] %}
+
+        <div class="offer-factors">
+            {% for key, label, ref_label in factors %}
+            {% set entry = config[key] %}
+            <div class="offer-factor-row">
+                <div class="offer-factor-label">
+                    <span>{{ label }}</span>
+                    {% if ref_label %}
+                    <span class="row-meta offer-factor-ref" data-factor="{{ key }}">{{ ref_label }}</span>
+                    {% endif %}
+                </div>
+                <div class="offer-factor-input">
+                    <div class="method-toggle" data-factor="{{ key }}">
+                        <button type="button" class="method-btn {% if entry.method == 'fixed' %}active{% endif %}" data-method="fixed">Rp</button>
+                        <button type="button" class="method-btn {% if entry.method == 'pct' %}active{% endif %}" data-method="pct">%</button>
+                    </div>
+                    <input type="hidden" name="{{ key }}_method" value="{{ entry.method }}">
+                    <input type="number"
+                           name="{{ key }}_value"
+                           class="form-input offer-factor-value"
+                           value="{{ entry.value }}"
+                           step="{{ '0.01' if entry.method == 'pct' else '100000' }}"
+                           {% if entry.method == 'pct' %}min="0" max="1"{% endif %}>
+                    <span class="offer-factor-hint" data-factor="{{ key }}">
+                        {% if entry.method == 'pct' %}{{ (entry.value * 100)|round(1) }}%{% endif %}
+                    </span>
+                </div>
             </div>
-            <div class="form-field">
-                <label class="form-label">Gapok Floor (IDR)</label>
-                <input type="number" name="gapok_floor" class="form-input" value="{{ config.gapok_floor }}" step="100000">
-                <span class="row-meta">Below this → gapok = amount</span>
-            </div>
-            <div class="form-field">
-                <label class="form-label">Gapok Floor Threshold (IDR)</label>
-                <input type="number" name="gapok_floor_threshold" class="form-input" value="{{ config.gapok_floor_threshold }}" step="100000">
-                <span class="row-meta">Above this → use max %</span>
-            </div>
+            {% endfor %}
         </div>
-        <div class="form-row form-row--3col" style="margin-top: 0.75rem;">
-            <div class="form-field">
-                <label class="form-label">Tunjangan RJ Tier 3 (IDR)</label>
-                <input type="number" name="tunjangan_rj_tier3" class="form-input" value="{{ config.tunjangan_rj_tier3 }}" step="1000000">
-                <span class="row-meta">Salary ≥ this → cap at this</span>
-            </div>
-            <div class="form-field">
-                <label class="form-label">Tunjangan RJ Tier 2 (IDR)</label>
-                <input type="number" name="tunjangan_rj_tier2" class="form-input" value="{{ config.tunjangan_rj_tier2 }}" step="1000000">
-                <span class="row-meta">Salary ≥ this → cap at this</span>
-            </div>
-            <div class="form-field">
-                <label class="form-label">BPJS TK %</label>
-                <input type="number" name="bpjs_tk_pct" class="form-input" value="{{ config.bpjs_tk_pct }}" step="0.001" min="0" max="1.0">
-                <span class="row-meta">e.g. 0.03 = 3%</span>
-            </div>
-        </div>
+
         <button type="submit" class="btn" style="margin-top: 1rem;">Save</button>
     </form>
     <div id="offer-config-result" style="margin-top: 0.5rem;"></div>
 </div>
+
+<style>
+.offer-factors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.offer-factor-row {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    align-items: center;
+    gap: 1rem;
+}
+.offer-factor-label {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+.offer-factor-ref {
+    font-size: 0.75rem;
+    margin-top: 0.125rem;
+}
+.offer-factor-input {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.method-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.method-btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+.method-btn.active {
+    background: var(--surface-active);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.offer-factor-value {
+    width: 160px;
+}
+.offer-factor-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    min-width: 4rem;
+}
+</style>
+
+<script>
+document.querySelectorAll('.method-toggle').forEach(toggle => {
+    const factor = toggle.dataset.factor;
+    const hiddenInput = toggle.closest('.offer-factor-input').querySelector(`input[name="${factor}_method"]`);
+    const valueInput = toggle.closest('.offer-factor-input').querySelector(`input[name="${factor}_value"]`);
+    const hint = toggle.closest('.offer-factor-input').querySelector(`.offer-factor-hint[data-factor="${factor}"]`);
+
+    toggle.querySelectorAll('.method-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            toggle.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const method = btn.dataset.method;
+            hiddenInput.value = method;
+
+            if (method === 'pct') {
+                const current = parseFloat(valueInput.value);
+                if (current > 1) {
+                    valueInput.value = '0.75';
+                }
+                valueInput.step = '0.01';
+                valueInput.min = '0';
+                valueInput.max = '1';
+                updateHint();
+            } else {
+                valueInput.step = '100000';
+                valueInput.removeAttribute('min');
+                valueInput.removeAttribute('max');
+                if (hint) hint.textContent = '';
+            }
+        });
+    });
+
+    function updateHint() {
+        if (!hint) return;
+        if (hiddenInput.value === 'pct') {
+            const val = parseFloat(valueInput.value) || 0;
+            hint.textContent = (val * 100).toFixed(1) + '%';
+        } else {
+            hint.textContent = '';
+        }
+    }
+
+    if (valueInput) {
+        valueInput.addEventListener('input', updateHint);
+    }
+});
+</script>

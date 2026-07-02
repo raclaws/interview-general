@@ -461,23 +461,24 @@ async def settings_offer_config(
 @router.post("/offer-config", response_class=HTMLResponse)
 async def settings_offer_config_save(
     request: Request,
-    gapok_max_pct: float = Form(...),
-    gapok_floor: int = Form(...),
-    gapok_floor_threshold: int = Form(...),
-    tunjangan_rj_tier3: int = Form(...),
-    tunjangan_rj_tier2: int = Form(...),
-    bpjs_tk_pct: float = Form(...),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    from app.offers import save_offer_config
-    config = {
-        "gapok_max_pct": gapok_max_pct,
-        "gapok_floor": gapok_floor,
-        "gapok_floor_threshold": gapok_floor_threshold,
-        "tunjangan_rj_tier3": tunjangan_rj_tier3,
-        "tunjangan_rj_tier2": tunjangan_rj_tier2,
-        "bpjs_tk_pct": bpjs_tk_pct,
-    }
+    from app.offers import save_offer_config, DEFAULT_OFFER_CONFIG
+    form = await request.form()
+
+    config = {}
+    for key, default in DEFAULT_OFFER_CONFIG.items():
+        method = form.get(f"{key}_method", default["method"])
+        value = form.get(f"{key}_value", default["value"])
+        try:
+            value = float(value)
+        except (ValueError, TypeError):
+            value = default["value"]
+        entry = {"method": method, "value": value}
+        if "of" in default:
+            entry["of"] = default["of"]
+        config[key] = entry
+
     save_offer_config(config)
     return HTMLResponse('<div class="row-meta" style="color:var(--green);">Offer config saved.</div>')
