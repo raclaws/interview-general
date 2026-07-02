@@ -2,7 +2,7 @@
 
 A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pipelines, and generating AI-powered assessment summaries. Admin creates jobs, adds candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Current version: v0.4**
+**Current version: v1.1**
 
 ## Features
 
@@ -17,6 +17,8 @@ A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pi
 ### AI
 - **Lazy LLM summaries** — generated on admin demand, not on submission (saves tokens)
 - **Cross-evaluator analysis** — auto-switches to multi-evaluator prompt for 2+ interviewers
+- **Structured editorial reports** — General, Pipeline, Job reports with fixed HTML templates + LLM JSON output
+- **Report history** — slide-in peek panel with filter context, guard for LLM config + empty data
 - **Provider-agnostic** — any OpenAI-compatible endpoint (base URL + key + model)
 - **Dashboard-editable** — LLM settings configurable from `/settings` without restart
 
@@ -45,10 +47,16 @@ A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pi
 - **Salary toggle** — hidden by default, admin toggles per session
 - **Consent prompt** — data + AI disclosure required before submission
 - **Dashboard** — attention surface (overdue interviews, expired tests, stale pipelines) + activity feed
+- **Interviewer guidance** — example questions, good answers, red flags per template section
+- **Offer letter module** — generate from pipeline detail, configurable salary calc (Rp/% per factor), preview + PDF download + email draft copy
+- **NocoDB bulk sync** — one-click import all candidates + webhook for real-time create/update/delete
+- **Render-limit tables** — load all data, render 100 rows + "Show more", viewport-filling skeleton
 
 ### Integrations
-- **NocoDB** — candidate search/import (optional, manual entry supported)
+- **NocoDB** — bulk import + real-time webhook sync (optional, manual entry supported)
 - **MCP server** — agent access for session management
+- **Offer letter generation** — salary calc, 4-variant template (BPJS × probation), HTML + PDF via weasyprint
+- **Webhook receiver** — `/api/webhooks/nocodb` with HMAC secret auth, handles insert/update/delete
 
 ## Quick Start
 
@@ -268,6 +276,23 @@ LLM settings (base URL, API key, model, system prompt) can be changed from `/set
 - **Python ≥3.12** required. FastAPI ≥0.115, SQLModel 0.0.22.
 
 ## Changelog
+
+### v1.1 (2026-07-02)
+- Offer letter generation module — salary calc, 4-variant Jinja2 template (BPJS × probation change), HTML + PDF via weasyprint
+- Typed offer calc config — each factor toggleable between fixed (Rp) and percentage (%), configurable from Settings
+- NocoDB bulk sync — paginated import of all candidates, webhook receiver for real-time create/update/delete
+- Render-limit for large tables — load all data into IDB, render 100 rows + "Show more", viewport-filling skeleton
+- Interviewer guidance — example questions, good answers, red flags on template sections (Culture Alignment backfill)
+- Email draft copy — rich text clipboard (HTML) for offer emails
+- Offer soft-delete — muted row with "deleted" badge, no hard delete
+
+### v1.0 (2026-06-27)
+- Full lifecycle complete — no workarounds needed for any hiring flow
+- Soft delete + undo (Ctrl+Z stack, Recently Deleted page, 30-day purge)
+- Structured editorial reports (General, Pipeline, Job) with fixed HTML templates + LLM JSON output
+- Report history with slide-in peek panel, filter context, LLM config + empty data guards
+- Auth on WebSocket + API endpoints, cookie hardening
+- Security fixes (purge null deref, cascade, dedup)
 
 ### v0.4 (2026-06-26)
 - Monochrome theme "Whiter Shade of Pale" — grey-scale, color only for semantic meaning
