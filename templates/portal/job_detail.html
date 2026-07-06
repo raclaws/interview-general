@@ -1,0 +1,71 @@
+{% extends "portal/layout.html" %}
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="/portal/{{ token }}/jobs" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&larr; Back to jobs</a>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">{{ job.position }} — {{ job.level }}</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.75rem;">
+        <div>
+            <div class="row-meta">Job Type</div>
+            <div>{{ job.job_type }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Headcount</div>
+            <div>{{ job.headcount }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Priority</div>
+            <div>{{ job.priority }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Recruiter</div>
+            <div>{{ job.recruiter or "—" }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Target Date</div>
+            <div>{{ job.target_date or "—" }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Status</div>
+            <div>{{ job.status }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-section" style="margin-top: 1.5rem;">
+    <div class="detail-section-label">Pipeline ({{ pipelines|length }} candidate{{ 's' if pipelines|length != 1 else '' }})</div>
+
+    {% if pipelines %}
+    <table class="table-clean" style="margin-top: 0.75rem;">
+        <tbody>
+            {% for p in pipelines %}
+            {% set candidate = candidates.get(p.id) %}
+            <tr class="clickable-row" data-href="/portal/{{ token }}/pipeline/{{ p.id }}" style="cursor: pointer;">
+                <td>
+                    <div class="col-primary">{{ candidate.name if candidate else "—" }}</div>
+                    <div class="row-meta">
+                        {% if candidate and candidate.current_position %}{{ candidate.current_position }} · {% endif %}
+                        {% if candidate and candidate.yoe %}{{ candidate.yoe }} YoE{% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <span class="badge badge--stage">{{ p.stage.replace('_', ' ') }}</span>
+                    <div class="row-meta">{{ p.updated_at.strftime("%d %b %Y") }}</div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="portal-empty" style="padding: 2rem;">
+        <p>No candidates in pipeline yet.</p>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge--stage { background: var(--bg-muted); color: var(--text-secondary); text-transform: capitalize; }
+</style>
+{% endblock %}

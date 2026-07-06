@@ -2,7 +2,7 @@
 <table class="table-clean">
     <tbody>
         {% for job in jobs %}
-        <tr>
+        <tr class="clickable-row" data-href="/portal/{{ token }}/job/{{ job.id }}" style="cursor: pointer;">
             <td>
                 <div class="col-primary">{{ job.position }} — {{ job.level }}</div>
                 <div class="row-meta">

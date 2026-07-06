@@ -6,8 +6,8 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import (
-    BusinessUnit, ManpowerRequest, Job, CandidatePipeline,
-    ManagedPosition, ManagedLevel, ManagedJobType, not_deleted,
+    BusinessUnit, ManpowerRequest, Job, CandidatePipeline, Candidate,
+    ManagedPosition, ManagedLevel, ManagedJobType, Comment, not_deleted,
 )
 
 router = APIRouter(prefix="/portal")
@@ -184,3 +184,90 @@ async def portal_request_detail(request: Request, token: str, request_id: int, d
     return _render(request, "portal/detail.html", {
         "bu": bu, "token": token, "mp_request": mp_request, "linked_job": linked_job,
     })
+
+
+@router.get("/{token}/job/{job_id}", response_class=HTMLResponse)
+async def portal_job_detail(request: Request, token: str, job_id: int, db: Session = Depends(get_session)):
+    bu = _get_bu(token, db)
+    if not bu:
+        return HTMLResponse("Invalid or expired portal link.", status_code=404)
+
+    job = db.get(Job, job_id)
+    if not job or job.business_unit_id != bu.id:
+        return HTMLResponse("Not found.", status_code=404)
+
+    pipelines = db.exec(
+        select(CandidatePipeline)
+        .where(CandidatePipeline.job_id == job.id, not_deleted(CandidatePipeline))
+        .order_by(CandidatePipeline.updated_at.desc())
+    ).all()
+
+    candidates = {}
+    for p in pipelines:
+        candidates[p.id] = db.get(Candidate, p.candidate_id)
+
+    return _render(request, "portal/job_detail.html", {
+        "bu": bu, "token": token, "job": job, "pipelines": pipelines, "candidates": candidates,
+    })
+
+
+@router.get("/{token}/pipeline/{pipeline_id}", response_class=HTMLResponse)
+async def portal_pipeline_detail(request: Request, token: str, pipeline_id: int, db: Session = Depends(get_session)):
+    bu = _get_bu(token, db)
+    if not bu:
+        return HTMLResponse("Invalid or expired portal link.", status_code=404)
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline or pipeline.deleted_at:
+        return HTMLResponse("Not found.", status_code=404)
+
+    job = db.get(Job, pipeline.job_id) if pipeline.job_id else None
+    if not job or job.business_unit_id != bu.id:
+        return HTMLResponse("Not found.", status_code=404)
+
+    candidate = db.get(Candidate, pipeline.candidate_id)
+
+    comments = db.exec(
+        select(Comment)
+        .where(Comment.entity_type == "pipeline", Comment.entity_id == pipeline_id)
+        .order_by(Comment.created_at.asc())
+    ).all()
+
+    return _render(request, "portal/pipeline_detail.html", {
+        "bu": bu, "token": token, "pipeline": pipeline,
+        "job": job, "candidate": candidate, "comments": comments,
+    })
+
+
+@router.post("/{token}/pipeline/{pipeline_id}/comment", response_class=HTMLResponse)
+async def portal_pipeline_comment(
+    request: Request,
+    token: str,
+    pipeline_id: int,
+    body: str = Form(...),
+    db: Session = Depends(get_session),
+):
+    bu = _get_bu(token, db)
+    if not bu:
+        return HTMLResponse("Invalid or expired portal link.", status_code=404)
+
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline or pipeline.deleted_at:
+        return HTMLResponse("Not found.", status_code=404)
+
+    job = db.get(Job, pipeline.job_id) if pipeline.job_id else None
+    if not job or job.business_unit_id != bu.id:
+        return HTMLResponse("Not found.", status_code=404)
+
+    if body.strip():
+        comment = Comment(
+            entity_type="pipeline",
+            entity_id=pipeline_id,
+            kind="comment",
+            body=body.strip(),
+            author=f"Portal — {bu.name}",
+        )
+        db.add(comment)
+        db.commit()
+
+    return RedirectResponse(f"/portal/{token}/pipeline/{pipeline_id}", status_code=303)

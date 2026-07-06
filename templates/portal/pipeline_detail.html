@@ -1,0 +1,81 @@
+{% extends "portal/layout.html" %}
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="/portal/{{ token }}/job/{{ job.id }}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&larr; Back to {{ job.position }}</a>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">{{ candidate.name if candidate else "—" }}</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 0.75rem;">
+        <div>
+            <div class="row-meta">Position</div>
+            <div>{{ candidate.current_position or "—" }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Experience</div>
+            <div>{{ candidate.yoe or "—" }} YoE</div>
+        </div>
+        <div>
+            <div class="row-meta">Stage</div>
+            <span class="badge badge--stage">{{ pipeline.stage.replace('_', ' ') }}</span>
+        </div>
+        {% if candidate.languages %}
+        <div>
+            <div class="row-meta">Languages</div>
+            <div>{{ candidate.languages }}</div>
+        </div>
+        {% endif %}
+        {% if candidate.tools %}
+        <div>
+            <div class="row-meta">Tools</div>
+            <div>{{ candidate.tools }}</div>
+        </div>
+        {% endif %}
+        {% if candidate.cloud %}
+        <div>
+            <div class="row-meta">Cloud</div>
+            <div>{{ candidate.cloud }}</div>
+        </div>
+        {% endif %}
+    </div>
+    <div class="row-meta" style="margin-top: 0.75rem;">
+        Added {{ pipeline.created_at.strftime("%d %b %Y") }} · Last updated {{ pipeline.updated_at.strftime("%d %b %Y") }}
+    </div>
+</div>
+
+<div class="detail-section" style="margin-top: 1.5rem;">
+    <div class="detail-section-label">Activity</div>
+
+    {% if comments %}
+    <div class="portal-activity" style="margin-top: 0.75rem;">
+        {% for c in comments %}
+        <div class="portal-activity-item">
+            <div class="portal-activity-meta">
+                <span class="portal-activity-author {% if c.kind == 'activity' %}portal-activity-author--system{% endif %}">{{ c.author or "system" }}</span>
+                <span class="row-meta">{{ c.created_at.strftime("%d %b %Y, %H:%M") }}</span>
+            </div>
+            <div class="portal-activity-body">{{ c.body }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row-meta" style="margin-top: 0.5rem;">No activity yet.</div>
+    {% endif %}
+
+    <form method="post" action="/portal/{{ token }}/pipeline/{{ pipeline.id }}/comment" style="margin-top: 1rem;">
+        <textarea name="body" required class="form-input" rows="2" placeholder="Add a comment..." style="resize: vertical;"></textarea>
+        <button type="submit" class="btn" style="margin-top: 0.5rem; font-size: 0.8rem;">Post Comment</button>
+    </form>
+</div>
+
+<style>
+.badge--stage { background: var(--bg-muted); color: var(--text-secondary); text-transform: capitalize; }
+.portal-activity { display: flex; flex-direction: column; gap: 0.75rem; }
+.portal-activity-item { padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.portal-activity-item:last-child { border-bottom: none; }
+.portal-activity-meta { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.25rem; }
+.portal-activity-author { font-size: 0.8rem; font-weight: 500; color: var(--text-primary); }
+.portal-activity-author--system { color: var(--text-muted); font-weight: 400; }
+.portal-activity-body { font-size: 0.875rem; white-space: pre-wrap; }
+</style>
+{% endblock %}
