@@ -17,8 +17,12 @@
                 </div>
                 <div class="row-meta" style="margin-top: 0.25rem;">
                     {% if bu.portal_token %}
+                    {% set portal_url = request.base_url|string ~ 'portal/' ~ bu.portal_token %}
                     <span style="color: var(--green);">Portal active</span> ·
-                    <code style="font-size: 0.7rem; user-select: all;">/portal/{{ bu.portal_token }}</code>
+                    <a href="{{ portal_url }}" target="_blank" style="font-size: 0.7rem; word-break: break-all;">{{ portal_url }}</a>
+                    <button type="button" class="btn-icon" title="Copy link" style="margin-left: 0.25rem;" onclick="navigator.clipboard.writeText('{{ portal_url }}')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
                     <form style="display: inline;" hx-post="/settings/business-units/{{ bu.id }}/revoke-token"
                           hx-target="closest .settings-content" hx-swap="innerHTML"
                           hx-confirm="Revoke portal link for '{{ bu.name }}'? Anyone with the current link will lose access.">
