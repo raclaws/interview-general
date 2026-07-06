@@ -1,0 +1,88 @@
+{% extends "portal/layout.html" %}
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="/portal/{{ token }}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&larr; Back to portal</a>
+</div>
+
+<h2 style="margin-bottom: 1.5rem;">New Manpower Request</h2>
+
+{% if error %}
+<div class="portal-msg portal-msg--error">{{ error }}</div>
+{% endif %}
+
+<form method="post" action="/portal/{{ token }}/request" class="form-card">
+    <div class="form-row">
+        <div class="form-field">
+            <label class="form-label">Requested by *</label>
+            <input type="text" name="requested_by" required class="form-input" placeholder="Your name">
+        </div>
+    </div>
+
+    <div class="form-row form-row--3col">
+        <div class="form-field">
+            <label class="form-label">Position *</label>
+            <select name="position" required class="form-input">
+                <option value="">Select position</option>
+                {% for p in positions %}
+                <option value="{{ p.title }}">{{ p.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-field">
+            <label class="form-label">Level *</label>
+            <select name="level" required class="form-input">
+                <option value="">Select level</option>
+                {% for l in levels %}
+                <option value="{{ l.label }}">{{ l.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-field">
+            <label class="form-label">Job Type</label>
+            <select name="job_type" class="form-input">
+                {% for jt in job_types %}
+                <option value="{{ jt.label }}">{{ jt.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row form-row--3col">
+        <div class="form-field">
+            <label class="form-label">Headcount</label>
+            <input type="number" name="headcount" value="1" min="1" max="99" class="form-input">
+        </div>
+        <div class="form-field">
+            <label class="form-label">Priority</label>
+            <select name="priority" class="form-input">
+                <option value="normal">Normal</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+            </select>
+        </div>
+        <div class="form-field">
+            <label class="form-label">Target Date</label>
+            <input type="date" name="target_date" class="form-input">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-field">
+            <label class="form-label">Role Description</label>
+            <textarea name="description" class="form-input" rows="3" placeholder="Brief description of the role, responsibilities, requirements..."></textarea>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-field">
+            <label class="form-label">Justification *</label>
+            <textarea name="justification" required class="form-input" rows="3" placeholder="Why is this hire needed? Business impact, workload, growth..."></textarea>
+        </div>
+    </div>
+
+    <div class="form-footer">
+        <button type="submit" class="btn">Submit Request</button>
+        <a href="/portal/{{ token }}" class="btn-ghost">Cancel</a>
+    </div>
+</form>
+{% endblock %}

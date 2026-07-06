@@ -1,0 +1,34 @@
+{% if requests %}
+<table class="table-clean">
+    <tbody>
+        {% for req in requests %}
+        <tr class="clickable-row" data-href="/portal/{{ token }}/request/{{ req.id }}" style="cursor: pointer;">
+            <td>
+                <div class="col-primary">{{ req.position }} — {{ req.level }}</div>
+                <div class="row-meta">
+                    {{ req.headcount }} headcount · {{ req.priority }}
+                    {% if req.target_date %} · Target: {{ req.target_date }}{% endif %}
+                    · by {{ req.requested_by }}
+                </div>
+            </td>
+            <td style="text-align: right;">
+                <span class="badge badge--{{ req.status }}">{{ req.status }}</span>
+                <div class="row-meta">{{ req.created_at.strftime("%d %b %Y") }}</div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="portal-empty">
+    <p>No requests yet.</p>
+    <a href="/portal/{{ token }}/request" class="btn" style="margin-top: 1rem;" hx-boost="false">Submit your first request</a>
+</div>
+{% endif %}
+
+<style>
+.badge--pending { background: var(--bg-muted); color: var(--text-secondary); }
+.badge--approved { background: rgba(64,160,43,0.15); color: var(--green); }
+.badge--rejected { background: rgba(210,50,50,0.15); color: var(--danger); }
+.badge--cancelled { background: var(--bg-muted); color: var(--text-muted); }
+</style>

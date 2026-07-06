@@ -143,6 +143,43 @@ async def settings_bu_deactivate(
     return _render(request, "settings_bu.html", {"admin": admin, "business_units": bus, "active_tab": "business-units"})
 
 
+@router.post("/business-units/{bu_id}/generate-token", response_class=HTMLResponse)
+async def settings_bu_generate_token(
+    request: Request,
+    bu_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import secrets
+    bu = db.get(BusinessUnit, bu_id)
+    if not bu:
+        return HTMLResponse("Not found", status_code=404)
+    if not bu.is_active:
+        return _toast_error("Cannot generate portal link for an inactive BU")
+    bu.portal_token = secrets.token_urlsafe(16)
+    db.add(bu)
+    db.commit()
+    bus = db.exec(select(BusinessUnit).order_by(BusinessUnit.name)).all()
+    return _render(request, "settings_bu.html", {"admin": admin, "business_units": bus, "active_tab": "business-units"})
+
+
+@router.post("/business-units/{bu_id}/revoke-token", response_class=HTMLResponse)
+async def settings_bu_revoke_token(
+    request: Request,
+    bu_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    bu = db.get(BusinessUnit, bu_id)
+    if not bu:
+        return HTMLResponse("Not found", status_code=404)
+    bu.portal_token = None
+    db.add(bu)
+    db.commit()
+    bus = db.exec(select(BusinessUnit).order_by(BusinessUnit.name)).all()
+    return _render(request, "settings_bu.html", {"admin": admin, "business_units": bus, "active_tab": "business-units"})
+
+
 # --- Managed Positions ---
 
 

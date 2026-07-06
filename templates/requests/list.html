@@ -1,0 +1,41 @@
+{% extends "base_app.html" %}
+{% block title %}Manpower Requests{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Manpower Requests</h1>
+</div>
+
+{% if requests %}
+<table class="table-clean">
+    <tbody>
+        {% for req in requests %}
+        <tr class="clickable-row" data-href="/requests/{{ req.id }}">
+            <td>
+                <div class="col-primary">{{ req.position }} — {{ req.level }}</div>
+                <div class="row-meta">
+                    {{ bus.get(req.business_unit_id, {}).name if bus.get(req.business_unit_id) else "—" }}
+                    · {{ req.headcount }} headcount · {{ req.priority }}
+                    · by {{ req.requested_by }}
+                </div>
+            </td>
+            <td style="text-align: right;">
+                <span class="badge badge--{{ req.status }}">{{ req.status }}</span>
+                <div class="row-meta">{{ req.created_at.strftime("%d %b %Y") }}</div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="empty-state">
+    <p>No manpower requests yet.</p>
+</div>
+{% endif %}
+
+<style>
+.badge--pending { background: var(--bg-muted); color: var(--text-secondary); }
+.badge--approved { background: rgba(64,160,43,0.15); color: var(--green); }
+.badge--rejected { background: rgba(210,50,50,0.15); color: var(--danger); }
+.badge--cancelled { background: var(--bg-muted); color: var(--text-muted); }
+</style>
+{% endblock %}

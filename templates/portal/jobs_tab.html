@@ -1,0 +1,26 @@
+{% if jobs %}
+<table class="table-clean">
+    <tbody>
+        {% for job in jobs %}
+        <tr>
+            <td>
+                <div class="col-primary">{{ job.position }} — {{ job.level }}</div>
+                <div class="row-meta">
+                    {{ job.job_type }} · {{ job.headcount }} headcount
+                    {% if job.recruiter %} · Recruiter: {{ job.recruiter }}{% endif %}
+                    {% if job.target_date %} · Target: {{ job.target_date }}{% endif %}
+                </div>
+            </td>
+            <td style="text-align: right;">
+                <span class="badge">{{ job.status }}</span>
+                <div class="row-meta">{{ pipeline_counts.get(job.id, 0) }} candidate{{ 's' if pipeline_counts.get(job.id, 0) != 1 else '' }}</div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="portal-empty">
+    <p>No open jobs for this business unit.</p>
+</div>
+{% endif %}

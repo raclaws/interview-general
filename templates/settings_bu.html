@@ -15,6 +15,22 @@
                     {% if bu.default_recruiter %}Recruiter: {{ bu.default_recruiter }}{% endif %}
                     {% if not bu.head and not bu.default_recruiter %}No head or recruiter assigned{% endif %}
                 </div>
+                <div class="row-meta" style="margin-top: 0.25rem;">
+                    {% if bu.portal_token %}
+                    <span style="color: var(--green);">Portal active</span> ·
+                    <code style="font-size: 0.7rem; user-select: all;">/portal/{{ bu.portal_token }}</code>
+                    <form style="display: inline;" hx-post="/settings/business-units/{{ bu.id }}/revoke-token"
+                          hx-target="closest .settings-content" hx-swap="innerHTML"
+                          hx-confirm="Revoke portal link for '{{ bu.name }}'? Anyone with the current link will lose access.">
+                        <button type="submit" class="btn-ghost" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">Revoke</button>
+                    </form>
+                    {% else %}
+                    <form style="display: inline;" hx-post="/settings/business-units/{{ bu.id }}/generate-token"
+                          hx-target="closest .settings-content" hx-swap="innerHTML">
+                        <button type="submit" class="btn-ghost" style="font-size: 0.7rem; padding: 0.1rem 0.3rem;">Generate Portal Link</button>
+                    </form>
+                    {% endif %}
+                </div>
             </td>
             <td style="text-align: right; white-space: nowrap;">
                 <button class="btn-icon" title="Edit" onclick="var f=document.getElementById('bu-edit-{{ bu.id }}'); f.hidden=!f.hidden;">

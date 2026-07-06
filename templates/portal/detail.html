@@ -1,0 +1,74 @@
+{% extends "portal/layout.html" %}
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="/portal/{{ token }}" style="color: var(--text-secondary); text-decoration: none; font-size: 0.875rem;">&larr; Back to portal</a>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">
+        {{ mp_request.position }} — {{ mp_request.level }}
+        <span class="badge badge--{{ mp_request.status }}" style="margin-left: 0.5rem;">{{ mp_request.status }}</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+        <div>
+            <div class="row-meta">Requested by</div>
+            <div>{{ mp_request.requested_by }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Submitted</div>
+            <div>{{ mp_request.created_at.strftime("%d %b %Y, %H:%M") }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Job Type</div>
+            <div>{{ mp_request.job_type }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Headcount</div>
+            <div>{{ mp_request.headcount }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Priority</div>
+            <div>{{ mp_request.priority }}</div>
+        </div>
+        <div>
+            <div class="row-meta">Target Date</div>
+            <div>{{ mp_request.target_date or "—" }}</div>
+        </div>
+    </div>
+
+    {% if mp_request.description %}
+    <div style="margin-top: 1.5rem;">
+        <div class="row-meta">Description</div>
+        <div style="margin-top: 0.25rem; white-space: pre-wrap;">{{ mp_request.description }}</div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 1rem;">
+        <div class="row-meta">Justification</div>
+        <div style="margin-top: 0.25rem; white-space: pre-wrap;">{{ mp_request.justification }}</div>
+    </div>
+
+    {% if mp_request.status == 'approved' and linked_job %}
+    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(64,160,43,0.08); border-radius: var(--radius-md);">
+        <div class="row-meta" style="color: var(--green);">Approved — Job created</div>
+        <div style="margin-top: 0.25rem;">{{ linked_job.position }} — {{ linked_job.level }} ({{ linked_job.job_type }})</div>
+        {% if linked_job.recruiter %}<div class="row-meta">Recruiter: {{ linked_job.recruiter }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if mp_request.status == 'rejected' and mp_request.admin_notes %}
+    <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(210,50,50,0.08); border-radius: var(--radius-md);">
+        <div class="row-meta" style="color: var(--danger);">Rejected</div>
+        <div style="margin-top: 0.25rem; white-space: pre-wrap;">{{ mp_request.admin_notes }}</div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+.badge--pending { background: var(--bg-muted); color: var(--text-secondary); }
+.badge--approved { background: rgba(64,160,43,0.15); color: var(--green); }
+.badge--rejected { background: rgba(210,50,50,0.15); color: var(--danger); }
+.badge--cancelled { background: var(--bg-muted); color: var(--text-muted); }
+</style>
+{% endblock %}

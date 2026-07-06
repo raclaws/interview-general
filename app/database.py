@@ -29,6 +29,7 @@ def _migrate():
         ("template_sections", "good_answer", "TEXT"),
         ("template_sections", "red_flags", "TEXT"),
         ("candidates", "nocodb_deleted", "BOOLEAN DEFAULT 0"),
+        ("business_units", "portal_token", "TEXT"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -53,7 +54,7 @@ def _migrate():
 
 
 def create_tables():
-    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest  # noqa
     SQLModel.metadata.create_all(engine)
     _migrate()
     _purge_soft_deleted()

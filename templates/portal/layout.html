@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ bu.name }} — Manpower Portal</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/style.css?v=13">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script>
+    (function() {
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+        else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+    })();
+    </script>
+</head>
+<body>
+    <div class="portal-shell">
+        <header class="portal-header">
+            <div class="portal-brand">
+                <strong>{{ bu.name }}</strong>
+                <span class="row-meta">Manpower Portal</span>
+            </div>
+        </header>
+        <main class="portal-main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <style>
+    .portal-shell {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+    .portal-header {
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .portal-brand {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        font-size: 1.125rem;
+    }
+    .portal-main {
+        min-height: 400px;
+    }
+    .portal-tabs {
+        display: flex;
+        gap: 0.25rem;
+        margin-bottom: 1.5rem;
+    }
+    .portal-tab {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: background 0.1s;
+    }
+    .portal-tab:hover {
+        background: var(--surface-hover);
+        color: var(--text-primary);
+    }
+    .portal-tab.active {
+        background: var(--surface-active);
+        color: var(--text-primary);
+        font-weight: 500;
+    }
+    .portal-msg {
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-md);
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+    .portal-msg--error {
+        background: var(--danger-bg, rgba(210,50,50,0.1));
+        color: var(--danger);
+    }
+    .portal-msg--success {
+        background: rgba(64,160,43,0.1);
+        color: var(--green);
+    }
+    .portal-empty {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-muted);
+    }
+    </style>
+    <script>
+    document.addEventListener('click', function(e) {
+        var row = e.target.closest('.clickable-row[data-href]');
+        if (row) window.location.href = row.dataset.href;
+    });
+    </script>
+</body>
+</html>

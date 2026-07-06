@@ -25,6 +25,7 @@ class BusinessUnit(SQLModel, table=True):
     head: Optional[str] = None
     default_recruiter: Optional[str] = None
     is_active: bool = Field(default=True)
+    portal_token: Optional[str] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -402,3 +403,25 @@ class OfferLetter(SQLModel, table=True):
     filename_pdf: str = ""
     status: str = Field(default="draft")
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ManpowerRequest(SQLModel, table=True):
+    __tablename__ = "manpower_requests"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    business_unit_id: int = Field(foreign_key="business_units.id", index=True)
+    requested_by: str
+    position: str
+    level: str
+    job_type: str = Field(default="Full-time")
+    headcount: int = Field(default=1)
+    priority: str = Field(default="normal")
+    target_date: Optional[str] = None
+    description: Optional[str] = None
+    justification: Optional[str] = None
+    status: str = Field(default="pending")
+    admin_notes: Optional[str] = None
+    job_id: Optional[int] = Field(default=None, foreign_key="jobs.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: Optional[datetime] = None
+    deleted_at: Optional[datetime] = None

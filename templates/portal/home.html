@@ -1,0 +1,18 @@
+{% extends "portal/layout.html" %}
+{% block content %}
+<nav class="portal-tabs">
+    <a href="/portal/{{ token }}/requests" class="portal-tab {% if active_tab == 'requests' %}active{% endif %}"
+       hx-get="/portal/{{ token }}/requests" hx-target=".portal-content" hx-swap="innerHTML">My Requests</a>
+    <a href="/portal/{{ token }}/jobs" class="portal-tab {% if active_tab == 'jobs' %}active{% endif %}"
+       hx-get="/portal/{{ token }}/jobs" hx-target=".portal-content" hx-swap="innerHTML">Open Jobs</a>
+    <a href="/portal/{{ token }}/request" class="btn" style="margin-left: auto; font-size: 0.8rem;" hx-boost="false">+ New Request</a>
+</nav>
+
+<div class="portal-content">
+    {% if active_tab == 'requests' %}
+        {% include "portal/requests_tab.html" %}
+    {% elif active_tab == 'jobs' %}
+        {% include "portal/jobs_tab.html" %}
+    {% endif %}
+</div>
+{% endblock %}
