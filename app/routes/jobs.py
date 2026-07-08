@@ -547,3 +547,125 @@ async def job_add_candidate(
         )
 
     return RedirectResponse(f"/job/{job.id}", status_code=303)
+
+
+JOB_POST_SYSTEM_PROMPT = """You are a recruiter at Insignia writing a LinkedIn job post. Follow this exact format:
+
+### [Hook Question + Poetic Framing]
+Start with a rhetorical "What does it take to…" question framing the role's core challenge, followed by a short evocative answer defining the ideal candidate.
+
+At **Insignia**, we're looking for a **{job_title}** who [core value prop].
+[1–2 sentences expanding on role purpose with concrete examples.]
+This is a **hybrid role based in West Jakarta**, [brief context on work rhythm].
+
+### What You'll Do:
+✅ [Action verb] + [core responsibility] + [context/outcome]
+(6–8 bullets mixing tactical + strategic + collaboration + ownership)
+
+### Who You Are:
+✅ [X–Y years] of experience in [field], preferably in [environment]
+✅ Strong in [hard skill 1] and [hard skill 2]
+✅ Experience with [tool/platform] is [required/preferred/a plus]
+✅ Bonus: [nice-to-have]
+✅ Fluent in English — written and spoken
+✅ [Soft traits] and passionate about [value/outcome]
+
+### Why Join Us?
+[Poetic, values-driven closing that ties back to the hook]. If you're ready to [action CTA], let's talk. 🚀
+
+📍 Hybrid role – West Jakarta
+🔧 Tech stack / Focus: [tools]
+
+#[Hashtags] #InsigniaTeam
+
+---
+Let me know if you'd like a Bahasa version, contract adjustment, or different focus! 🚀
+
+STYLE RULES:
+- Hook: "What does it take to…" + role challenge + poetic answer
+- Tone: Professional, slightly lyrical, grounded — no fluff, no hype
+- Bullets: Strong action verbs; mix execution + strategy + collaboration
+- Requirements: Separate must-have from bonus; inclusive but precise
+- Closing: Values-driven, echoes the opening hook
+- CTA: Always end with "let's talk" + rocket emoji
+"""
+
+
+@router.get("/job/{job_id}/post", response_class=HTMLResponse)
+async def job_post_form(
+    request: Request,
+    job_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    job = db.get(Job, job_id)
+    if not job:
+        return render_gone(request, "Job not found")
+    bu = db.get(BusinessUnit, job.business_unit_id) if job.business_unit_id else None
+
+    position_tag = job.position.replace(" ", "")
+    suggested_hashtags = f"#{position_tag} #{job.level.replace(' ', '')} #{bu.name if bu else 'Insignia'} #InsigniaTeam"
+
+    return _render(request, "jobs/post_form.html", {
+        "admin": admin, "job": job, "bu": bu, "suggested_hashtags": suggested_hashtags,
+    })
+
+
+@router.post("/job/{job_id}/post", response_class=HTMLResponse)
+async def job_post_generate(
+    request: Request,
+    job_id: int,
+    target_candidate: str = Form(""),
+    tools_stack: str = Form(""),
+    hook_angle: str = Form(""),
+    hashtags: str = Form(""),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.llm import get_setting
+    from openai import AsyncOpenAI
+
+    job = db.get(Job, job_id)
+    if not job:
+        return render_gone(request, "Job not found")
+    bu = db.get(BusinessUnit, job.business_unit_id) if job.business_unit_id else None
+
+    base_url = get_setting("llm_base_url", "https://api.openai.com/v1")
+    api_key = get_setting("llm_api_key", "")
+    model = get_setting("llm_model", "gpt-4o")
+
+    if not api_key:
+        return HTMLResponse('<div class="form-error">LLM not configured. Go to Settings → LLM.</div>', status_code=422)
+
+    user_message = json.dumps({
+        "job_title": f"{job.position} — {job.level}",
+        "position": job.position,
+        "level": job.level,
+        "job_type": job.job_type,
+        "business_unit": bu.name if bu else "Insignia",
+        "headcount": job.headcount,
+        "description": job.description or "",
+        "target_candidate": target_candidate.strip(),
+        "tools_stack": tools_stack.strip(),
+        "hook_angle": hook_angle.strip(),
+        "hashtags": hashtags.strip(),
+    }, ensure_ascii=False)
+
+    client = AsyncOpenAI(base_url=base_url, api_key=api_key)
+    response = await client.chat.completions.create(
+        model=model,
+        messages=[
+            {"role": "system", "content": JOB_POST_SYSTEM_PROMPT},
+            {"role": "user", "content": f"Generate a LinkedIn job post from this data:\n{user_message}"},
+        ],
+        temperature=0.7,
+        max_tokens=1500,
+    )
+
+    generated = response.choices[0].message.content or ""
+
+    return _render(request, "jobs/post_result.html", {
+        "admin": admin, "job": job, "generated": generated,
+        "target_candidate": target_candidate, "tools_stack": tools_stack,
+        "hook_angle": hook_angle, "hashtags": hashtags,
+    })

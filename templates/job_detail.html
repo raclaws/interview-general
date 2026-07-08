@@ -15,6 +15,7 @@
     <div class="detail-actions-nav"></div>
     <div class="detail-actions-export"></div>
     <div class="detail-actions-mutate">
+        <a href="/job/{{ job.id }}/post" hx-boost="false">Generate Post</a>
         <a href="/job/{{ job.id }}/edit" hx-boost="false">Edit</a>
         {% if job.status == "open" %}
         <form method="post" action="/job/{{ job.id }}/close" style="display:contents;" hx-post="/job/{{ job.id }}/close" hx-swap="none" hx-confirm="Close this job?">

@@ -1,0 +1,63 @@
+{% extends "base_app.html" %}
+{% block title %}Job Post — {{ job.position }}{% endblock %}
+{% block breadcrumb %}
+    <a href="/jobs">Jobs</a> / <a href="/job/{{ job.id }}">{{ job.title }}</a> / <span>Post</span>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Generated LinkedIn Post</h1>
+    <div class="detail-actions-mutate">
+        <button type="button" class="btn" onclick="copyPlain()">Copy Plain Text</button>
+        <button type="button" class="btn" onclick="copyRich()">Copy Rich Text</button>
+        <form method="post" action="/job/{{ job.id }}/post" style="display:contents;" hx-boost="false">
+            <input type="hidden" name="target_candidate" value="{{ target_candidate }}">
+            <input type="hidden" name="tools_stack" value="{{ tools_stack }}">
+            <input type="hidden" name="hook_angle" value="{{ hook_angle }}">
+            <input type="hidden" name="hashtags" value="{{ hashtags }}">
+            <button type="submit" class="btn-ghost">Regenerate</button>
+        </form>
+    </div>
+</div>
+
+<div class="detail-section">
+    <div id="post-preview" class="post-preview">{{ generated }}</div>
+</div>
+
+<div id="post-raw" hidden>{{ generated }}</div>
+
+<style>
+.post-preview {
+    white-space: pre-wrap;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    padding: 1.5rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-raised);
+}
+</style>
+
+<script>
+function copyPlain() {
+    var text = document.getElementById('post-raw').textContent;
+    navigator.clipboard.writeText(text).then(function() {
+        document.dispatchEvent(new CustomEvent('toast', {detail: {value: 'Copied as plain text', severity: 'success'}}));
+    });
+}
+
+function copyRich() {
+    var el = document.getElementById('post-preview');
+    var html = el.innerHTML;
+    var text = el.textContent;
+    var blob = new Blob([html], {type: 'text/html'});
+    var textBlob = new Blob([text], {type: 'text/plain'});
+    navigator.clipboard.write([
+        new ClipboardItem({
+            'text/html': blob,
+            'text/plain': textBlob,
+        })
+    ]).then(function() {
+        document.dispatchEvent(new CustomEvent('toast', {detail: {value: 'Copied as rich text', severity: 'success'}}));
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends "base_app.html" %}
+{% block title %}Generate Job Post — {{ job.position }}{% endblock %}
+{% block breadcrumb %}
+    <a href="/jobs">Jobs</a> / <a href="/job/{{ job.id }}">{{ job.title }}</a> / <span>Generate Post</span>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Generate LinkedIn Post</h1>
+    <span class="row-meta">{{ job.position }} — {{ job.level }}</span>
+</div>
+
+<form method="post" action="/job/{{ job.id }}/post" class="form-card" hx-boost="false">
+    <div class="form-row form-row--3col">
+        <div class="form-field">
+            <label class="form-label">Position</label>
+            <input type="text" class="form-input" value="{{ job.position }}" disabled>
+        </div>
+        <div class="form-field">
+            <label class="form-label">Level</label>
+            <input type="text" class="form-input" value="{{ job.level }}" disabled>
+        </div>
+        <div class="form-field">
+            <label class="form-label">Job Type</label>
+            <input type="text" class="form-input" value="{{ job.job_type }}" disabled>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-field">
+            <label class="form-label">Target Candidate Profile *</label>
+            <textarea name="target_candidate" required class="form-input" rows="2" placeholder="e.g. Engineers who own architecture, mentor others, and ship production-grade systems"></textarea>
+        </div>
+    </div>
+
+    <div class="form-row form-row--2col">
+        <div class="form-field">
+            <label class="form-label">Key Tools / Tech Stack</label>
+            <input type="text" name="tools_stack" class="form-input" placeholder="e.g. Python, FastAPI, React, Docker, AWS">
+        </div>
+        <div class="form-field">
+            <label class="form-label">Hook Angle (optional)</label>
+            <input type="text" name="hook_angle" class="form-input" placeholder="e.g. building products that scale, owning the data backbone">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-field">
+            <label class="form-label">Hashtags</label>
+            <input type="text" name="hashtags" class="form-input" value="{{ suggested_hashtags }}">
+        </div>
+    </div>
+
+    <div class="form-footer">
+        <button type="submit" class="btn">Generate Post</button>
+        <a href="/job/{{ job.id }}" class="btn-ghost">Cancel</a>
+    </div>
+</form>
+{% endblock %}
