@@ -436,10 +436,10 @@ async def restore_entity(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    from app.models import Job, TestAssignment
+    from app.models import Job, TestAssignment, Task
     from fastapi.responses import JSONResponse
 
-    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment}
+    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment, "task": Task}
     model = model_map.get(entity_type)
     if not model:
         return JSONResponse({"detail": "Invalid entity type"}, status_code=400)
@@ -452,9 +452,9 @@ async def restore_entity(
     db.add(entity)
     db.commit()
 
-    broadcast_table = {"job": "jobs", "pipeline": "pipelines", "session": "sessions", "test": "tests"}.get(entity_type)
+    broadcast_table = {"job": "jobs", "pipeline": "pipelines", "session": "sessions", "test": "tests", "task": "tasks"}.get(entity_type)
     if broadcast_table:
-        asyncio.create_task(sync_hub.broadcast(broadcast_table, "refresh", str(entity_id), {}))
+        asyncio.create_task(sync_hub.broadcast(broadcast_table, "insert", str(entity_id), None))
 
     return JSONResponse({"restored": True})
 
@@ -467,10 +467,10 @@ async def purge_entity(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    from app.models import Job, TestAssignment
+    from app.models import Job, TestAssignment, Task
     from fastapi.responses import JSONResponse
 
-    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment}
+    model_map = {"job": Job, "pipeline": CandidatePipeline, "session": InterviewSession, "test": TestAssignment, "task": Task}
     model = model_map.get(entity_type)
     if not model:
         return JSONResponse({"detail": "Invalid entity type"}, status_code=400)

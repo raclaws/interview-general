@@ -179,6 +179,19 @@ async def job_detail(
         candidate = db.get(Candidate, p.candidate_id)
         pipeline_data.append({"pipeline": p, "candidate": candidate})
 
+    from app.models import Task
+    tasks = db.exec(
+        select(Task).where(Task.entity_type == "job", Task.entity_id == job_id, not_deleted(Task))
+        .order_by(Task.due_date.asc(), Task.created_at.desc())
+    ).all()
+    assignee_options = set()
+    if job.recruiter:
+        assignee_options.add(job.recruiter)
+    if job.backup_recruiter:
+        assignee_options.add(job.backup_recruiter)
+    if bu and bu.head:
+        assignee_options.add(bu.head)
+
     return _render(request, "job_detail.html", {
         "admin": admin,
         "job": job,
@@ -186,6 +199,10 @@ async def job_detail(
         "pipelines": pipelines,
         "pipeline_data": pipeline_data,
         "filled": filled,
+        "tasks": tasks,
+        "assignee_options": sorted(assignee_options),
+        "entity_type": "job",
+        "entity_id": job.id,
         "trail": db.exec(
             select(Comment).where(Comment.entity_type == "job", Comment.entity_id == job_id).order_by(Comment.created_at)
         ).all(),

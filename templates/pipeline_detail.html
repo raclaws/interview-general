@@ -226,6 +226,8 @@
 </div>
 {% endif %}
 
+{% include "tasks/inline_section.html" %}
+
 <div class="detail-section">
     <div class="detail-section-label">Comments</div>
     <form hx-post="/peek/pipeline/{{ pipeline.id }}/comment" hx-target="#comments-pipeline-{{ pipeline.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">

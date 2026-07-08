@@ -425,3 +425,20 @@ class ManpowerRequest(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: Optional[datetime] = None
     deleted_at: Optional[datetime] = None
+
+
+class Task(SQLModel, table=True):
+    __tablename__ = "tasks"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    description: Optional[str] = None
+    status: str = Field(default="pending")
+    priority: str = Field(default="none")
+    due_date: Optional[str] = None
+    assigned_to: Optional[str] = None
+    entity_type: str = Field(index=True)
+    entity_id: int = Field(index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: Optional[datetime] = None

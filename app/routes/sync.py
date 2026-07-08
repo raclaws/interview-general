@@ -16,7 +16,7 @@ from app.auth import get_current_admin
 from app.models import (
     InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
     Job, BusinessUnit, Candidate, ReviewBatch, ReviewScore, PipelineScore, TestAssignment,
-    Comment, not_deleted,
+    Comment, Task, not_deleted,
 )
 
 
@@ -163,6 +163,24 @@ def _hydrate_jobs(db: Session, since: int | None):
             filled_counts[row[0]] = int(row[2] or 0)
 
     counts = _comment_counts(db, "job", job_ids)
+
+    # Batch: task counts per job
+    task_total_map: dict = {}
+    task_done_map: dict = {}
+    if job_ids:
+        task_rows = db.exec(
+            select(
+                Task.entity_id,
+                func.count(Task.id).label("total"),
+                func.sum(func.iif(Task.status == "done", 1, 0)).label("done"),
+            )
+            .where(Task.entity_type == "job", Task.entity_id.in_(job_ids), not_deleted(Task))
+            .group_by(Task.entity_id)
+        ).all()
+        for row in task_rows:
+            task_total_map[row[0]] = row[1]
+            task_done_map[row[0]] = int(row[2] or 0)
+
     results = []
     for job in jobs:
         bu = db.get(BusinessUnit, job.business_unit_id)
@@ -178,6 +196,8 @@ def _hydrate_jobs(db: Session, since: int | None):
             "filled": filled_counts.get(job.id, 0),
             "pipelineCount": pipeline_counts.get(job.id, 0),
             "commentCount": counts.get(job.id, 0),
+            "tasksDone": task_done_map.get(job.id, 0),
+            "tasksTotal": task_total_map.get(job.id, 0),
             "updatedAt": int(job.updated_at.timestamp() * 1000) if job.updated_at else 0,
         })
     return results
@@ -355,6 +375,24 @@ def _hydrate_pipelines(db: Session, since: int | None):
         jobs_map = {j.id: j.title for j in jobs_list}
 
     comment_counts = _comment_counts(db, "pipeline", pipeline_ids)
+
+    # Batch: task counts per pipeline
+    task_total_map: dict = {}
+    task_done_map: dict = {}
+    if pipeline_ids:
+        task_rows = db.exec(
+            select(
+                Task.entity_id,
+                func.count(Task.id).label("total"),
+                func.sum(func.iif(Task.status == "done", 1, 0)).label("done"),
+            )
+            .where(Task.entity_type == "pipeline", Task.entity_id.in_(pipeline_ids), not_deleted(Task))
+            .group_by(Task.entity_id)
+        ).all()
+        for row in task_rows:
+            task_total_map[row[0]] = row[1]
+            task_done_map[row[0]] = int(row[2] or 0)
+
     results = []
     for pipeline, candidate in rows:
         sc = scores_map.get(pipeline.id)
@@ -379,6 +417,8 @@ def _hydrate_pipelines(db: Session, since: int | None):
             "hrAvg": hr_avg,
             "cultureAvg": culture_avg,
             "commentCount": comment_counts.get(pipeline.id, 0),
+            "tasksDone": task_done_map.get(pipeline.id, 0),
+            "tasksTotal": task_total_map.get(pipeline.id, 0),
             "updatedAt": int(pipeline.updated_at.timestamp() * 1000) if pipeline.updated_at else 0,
         })
     return results
@@ -424,6 +464,62 @@ def _hydrate_tests(db: Session, since: int | None):
     return results
 
 
+def _hydrate_tasks(db: Session, since: int | None):
+    from datetime import date as date_type
+
+    query = select(Task).where(not_deleted(Task))
+    if since:
+        since_dt = datetime.utcfromtimestamp(since / 1000)
+        query = query.where(Task.updated_at > since_dt)
+    query = query.order_by(Task.due_date.asc().nulls_last(), Task.created_at.desc())
+
+    tasks = db.exec(query).all()
+    if not tasks:
+        return []
+
+    today = date_type.today().isoformat()
+    results = []
+    for t in tasks:
+        entity_display = ""
+        bu_name = ""
+        if t.entity_type == "job":
+            job = db.get(Job, t.entity_id)
+            if job:
+                bu = db.get(BusinessUnit, job.business_unit_id)
+                bu_name = bu.name if bu else ""
+                entity_display = f"{job.position} — {job.level}" + (f" — {bu_name}" if bu_name else "")
+        elif t.entity_type == "pipeline":
+            pipeline = db.get(CandidatePipeline, t.entity_id)
+            if pipeline:
+                candidate = db.get(Candidate, pipeline.candidate_id)
+                job = db.get(Job, pipeline.job_id) if pipeline.job_id else None
+                parts = []
+                if candidate:
+                    parts.append(candidate.name)
+                if job:
+                    parts.append(job.position)
+                    bu = db.get(BusinessUnit, job.business_unit_id)
+                    bu_name = bu.name if bu else ""
+                entity_display = " — ".join(parts)
+
+        is_overdue = bool(t.due_date and t.due_date < today and t.status in ("pending", "in_progress"))
+        results.append({
+            "id": str(t.id),
+            "title": t.title,
+            "status": t.status,
+            "priority": t.priority,
+            "dueDate": t.due_date or "",
+            "assignedTo": t.assigned_to or "",
+            "entityType": t.entity_type,
+            "entityId": t.entity_id,
+            "entityDisplay": entity_display,
+            "buName": bu_name,
+            "isOverdue": is_overdue,
+            "updatedAt": int(t.updated_at.timestamp() * 1000) if t.updated_at else 0,
+        })
+    return results
+
+
 _HYDRATE_DISPATCH = {
     "sessions": _hydrate_sessions,
     "jobs": _hydrate_jobs,
@@ -431,6 +527,7 @@ _HYDRATE_DISPATCH = {
     "review_batches": _hydrate_review_batches,
     "pipelines": _hydrate_pipelines,
     "tests": _hydrate_tests,
+    "tasks": _hydrate_tasks,
 }
 
 

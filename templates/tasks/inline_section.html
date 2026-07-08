@@ -1,0 +1,76 @@
+<div class="detail-section">
+    <div class="detail-section-label">Tasks ({{ tasks | length }})</div>
+
+    {% if tasks %}
+    <table class="table-clean">
+        <tbody>
+            {% for task in tasks %}
+            <tr class="clickable-row" data-href="/tasks/{{ task.id }}">
+                <td>
+                    <div class="col-primary{% if task.status in ['done', 'cancelled'] %}" style="opacity: 0.5; text-decoration: line-through;{% endif %}">{{ task.title }}</div>
+                </td>
+                <td style="width: 120px;">
+                    <form method="post" action="/tasks/{{ task.id }}/status" hx-post="/tasks/{{ task.id }}/status" hx-swap="none" hx-select="unset" hx-boost="false" onclick="event.stopPropagation();">
+                        <select name="status" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
+                            <option value="pending" {% if task.status == "pending" %}selected{% endif %}>Pending</option>
+                            <option value="in_progress" {% if task.status == "in_progress" %}selected{% endif %}>In Progress</option>
+                            <option value="done" {% if task.status == "done" %}selected{% endif %}>Done</option>
+                            <option value="cancelled" {% if task.status == "cancelled" %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </form>
+                </td>
+                <td style="width: 80px;">
+                    {% if task.priority != "none" %}
+                    <span class="badge badge-{{ task.priority }}">{{ task.priority | title }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="detail-section-empty">No tasks yet.</p>
+    {% endif %}
+
+    <details class="inline-expand" style="margin-top: 0.5rem;">
+        <summary class="btn-ghost" style="font-size: var(--text-sm);">+ Add Task</summary>
+        <div class="inline-expand-body">
+            <form method="post" action="/tasks/new" hx-post="/tasks/new" hx-swap="none" hx-select="unset" hx-boost="false">
+                <input type="hidden" name="entity_type" value="{{ entity_type }}">
+                <input type="hidden" name="entity_id" value="{{ entity_id }}">
+                <div class="form-row form-row--2col">
+                    <div class="form-field">
+                        <label class="form-label">Title *</label>
+                        <input type="text" name="title" required class="form-input" placeholder="e.g. Review CV">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Priority</label>
+                        <select name="priority" class="form-input">
+                            <option value="none">None</option>
+                            <option value="low">Low</option>
+                            <option value="medium">Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row form-row--2col">
+                    <div class="form-field">
+                        <label class="form-label">Due date</label>
+                        <input type="date" name="due_date" class="form-input">
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">Assigned to</label>
+                        <input type="text" name="assigned_to" class="form-input" list="task-assignee-{{ entity_type }}-{{ entity_id }}" placeholder="Name...">
+                        <datalist id="task-assignee-{{ entity_type }}-{{ entity_id }}">
+                            {% for name in assignee_options %}
+                            <option value="{{ name }}">
+                            {% endfor %}
+                        </datalist>
+                    </div>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 0.5rem;">Add Task</button>
+            </form>
+        </div>
+    </details>
+</div>

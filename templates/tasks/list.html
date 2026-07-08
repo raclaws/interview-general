@@ -1,0 +1,70 @@
+{% extends "base_app.html" %}
+{% block title %}Tasks{% endblock %}
+{% block main_class %}layout-list{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Tasks</h1>
+</div>
+
+<div data-sync-table="tasks"
+     data-sync-search-fields="title,assignedTo,entityDisplay,buName"
+     data-sync-archive-field="status"
+     data-sync-archive-values="done,cancelled"
+     data-sync-default-sort="dueDate:asc"
+     data-sync-filter-fields='[{"key":"status","label":"Status","type":"select","options":["pending","in_progress","done","cancelled"]},{"key":"priority","label":"Priority","type":"select","options":["urgent","high","medium","low","none"]},{"key":"entityType","label":"Type","type":"select","options":["job","pipeline"]},{"key":"buName","label":"Business Unit","type":"text"},{"key":"assignedTo","label":"Assigned","type":"text"},{"key":"isOverdue","label":"Overdue","type":"select","options":["true","false"]}]'
+     data-sync-display-options='{"sort":[{"value":"dueDate:asc","label":"Due soonest","type":"date"},{"value":"dueDate:desc","label":"Due latest","type":"date"},{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"priority:asc","label":"Priority high→low"},{"value":"title:asc","label":"Title A-Z"}],"group":[{"value":"status","label":"Status"},{"value":"priority","label":"Priority"},{"value":"entityType","label":"Entity type"},{"value":"buName","label":"Business Unit"},{"value":"assignedTo","label":"Assigned to"}]}'>
+    <div class="table-controls">
+        <input type="text" data-table-search placeholder="Search tasks..." class="table-search">
+        <a href="/tasks/new" class="btn-icon sync-add-btn" title="New task" hx-boost="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
+    </div>
+    <div class="sync-subcontrols">
+        <button type="button" class="archive-pill">Show completed</button>
+    </div>
+
+    <div class="sync-table-wrap">
+        <table class="table-clean">
+            <tbody></tbody>
+        </table>
+        <span class="table-count"></span>
+    </div>
+</div>
+
+<noscript>
+    <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load tasks.</p>
+</noscript>
+
+<script src="/static/cells.js?v=1"></script>
+<script>
+window.__syncConfig = {
+    renderRow: function(r) {
+        var priorityBadge = '';
+        if (r.priority === 'urgent') priorityBadge = '<span class="badge badge-urgent">Urgent</span>';
+        else if (r.priority === 'high') priorityBadge = '<span class="badge badge-high">High</span>';
+        else if (r.priority === 'medium') priorityBadge = '<span class="badge badge-medium">Medium</span>';
+        else if (r.priority === 'low') priorityBadge = '<span class="badge badge-low">Low</span>';
+
+        var dueMeta = r.dueDate ? r.dueDate.slice(5) : '—';
+        var dueStyle = r.isOverdue ? ' style="color:var(--danger)"' : '';
+
+        var done = r.status === 'done' || r.status === 'cancelled';
+        var titleStyle = done ? ' style="opacity:0.5;text-decoration:line-through"' : '';
+
+        return '<tr class="clickable-row" data-href="/tasks/' + r.id + '">' +
+            C.text(r.title, r.entityDisplay || r.entityType) +
+            C.badge(r.status) +
+            C.raw(priorityBadge ? '<td style="width:90px">' + priorityBadge + '</td>' : '<td style="width:90px"></td>') +
+            C.raw('<td style="width:100px;text-align:right"><span class="row-meta"' + dueStyle + '>' + dueMeta + '</span></td>') +
+            C.raw('<td style="width:120px"><span class="row-meta">' + (r.assignedTo || '—') + '</span></td>') +
+            '</tr>';
+    },
+    contextMenu: function(r) {
+        var items = [];
+        if (r.entityType === 'job') items.push({label: '↗ View job', href: '/job/' + r.entityId});
+        else items.push({label: '↗ View pipeline', href: '/pipeline/' + r.entityId});
+        items.push({label: '✕ Delete', href: '/tasks/' + r.id + '/delete', confirm: 'Delete this task?', 'delete': true});
+        return items;
+    }
+};
+</script>
+<script src="/static/sync-list.js?v=2"></script>
+{% endblock %}

@@ -1002,6 +1002,26 @@ async def pipeline_detail(
     ctx["trail"] = db.exec(
         select(Comment).where(Comment.entity_type == "pipeline", Comment.entity_id == pipeline_id).order_by(Comment.created_at)
     ).all()
+
+    from app.models import Task
+    ctx["tasks"] = db.exec(
+        select(Task).where(Task.entity_type == "pipeline", Task.entity_id == pipeline_id, not_deleted(Task))
+        .order_by(Task.due_date.asc(), Task.created_at.desc())
+    ).all()
+    ctx["entity_type"] = "pipeline"
+    ctx["entity_id"] = pipeline_id
+    assignee_options = set()
+    job = ctx["job"]
+    if job:
+        if job.recruiter:
+            assignee_options.add(job.recruiter)
+        if job.backup_recruiter:
+            assignee_options.add(job.backup_recruiter)
+        bu = db.get(BusinessUnit, job.business_unit_id)
+        if bu and bu.head:
+            assignee_options.add(bu.head)
+    ctx["assignee_options"] = sorted(assignee_options)
+
     return _render(request, "pipeline_detail.html", ctx)
 
 

@@ -54,7 +54,7 @@ def _migrate():
 
 
 def create_tables():
-    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest, Task  # noqa
     SQLModel.metadata.create_all(engine)
     _migrate()
     _purge_soft_deleted()
@@ -71,11 +71,11 @@ def create_tables():
 def _purge_soft_deleted():
     """Hard delete records soft-deleted more than 30 days ago."""
     from datetime import timedelta
-    from app.models import CandidatePipeline, InterviewSession, Job, TestAssignment
+    from app.models import CandidatePipeline, InterviewSession, Job, TestAssignment, Task
     cutoff = datetime.utcnow() - timedelta(days=30)
     with Session(engine) as db:
         deleted_any = False
-        for model in [TestAssignment, InterviewSession, CandidatePipeline, Job]:
+        for model in [TestAssignment, InterviewSession, CandidatePipeline, Job, Task]:
             stale = db.exec(
                 select(model).where(model.deleted_at.isnot(None), model.deleted_at < cutoff)
             ).all()
