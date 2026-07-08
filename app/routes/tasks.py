@@ -25,10 +25,12 @@ def _render(request: Request, name: str, context: dict = None):
 
 
 def _toast_error(request: Request, msg: str):
-    return HTMLResponse(
-        f'<div class="form-error">{msg}</div>',
-        headers={"HX-Trigger": f'{{"toast":{{"value":"{msg}","severity":"error"}}}}'},
-    )
+    if request.headers.get("HX-Request"):
+        return HTMLResponse(
+            f'<div class="form-error">{msg}</div>',
+            headers={"HX-Trigger": f'{{"toast":{{"value":"{msg}","severity":"error"}}}}'},
+        )
+    return RedirectResponse(f"/tasks/new?error={msg}", status_code=303)
 
 
 def _is_sync_list(request: Request) -> bool:

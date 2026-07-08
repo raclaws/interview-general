@@ -11,6 +11,9 @@
 </div>
 
 <form method="post" action="/tasks/new" class="form-card" hx-boost="false">
+    {% if request.query_params.get("error") %}
+    <div class="form-error" style="margin-bottom: 1rem;">{{ request.query_params.get("error") }}</div>
+    {% endif %}
     <div class="form-row">
         <div class="form-field">
             <label class="form-label">Title *</label>
@@ -35,7 +38,7 @@
         <div class="form-field">
             <div id="job-picker" style="{% if prefill_type == 'pipeline' %}display:none{% endif %}">
                 <label class="form-label">Job *</label>
-                <select name="entity_id" class="form-input" id="job-select">
+                <select name="entity_id" class="form-input" id="job-select" required>
                     <option value="">Select a job...</option>
                     {% for job in jobs %}
                     <option value="{{ job.id }}" {% if prefill_type == "job" and prefill_id == job.id %}selected{% endif %}>{{ job.title }}</option>
@@ -44,7 +47,7 @@
             </div>
             <div id="pipeline-picker" style="{% if prefill_type != 'pipeline' %}display:none{% endif %}">
                 <label class="form-label">Pipeline *</label>
-                <select name="entity_id" class="form-input" id="pipeline-select" {% if prefill_type != "pipeline" %}disabled{% endif %}>
+                <select name="entity_id" class="form-input" id="pipeline-select" required {% if prefill_type != "pipeline" %}disabled{% endif %}>
                     <option value="">Select a pipeline...</option>
                     {% for p in pipeline_options %}
                     <option value="{{ p.id }}" {% if prefill_type == "pipeline" and prefill_id == p.id %}selected{% endif %}>{{ p.label }}</option>
