@@ -58,7 +58,7 @@ DYNAMIC_PAGES = [
 
 def capture(page, path, filename, wait_selector, full_page=True):
     url = BASE + path
-    print(f"  → {path} ... ", end="", flush=True)
+    print(f"  > {path} ... ", end="", flush=True)
     try:
         page.goto(url, wait_until="networkidle")
         page.wait_for_selector(wait_selector, timeout=5000)
@@ -126,7 +126,7 @@ def main():
                 path = path_tpl.replace("{id}", str(entity_id))
                 capture(page, path, filename, wait_sel)
             else:
-                print(f"  → {path_tpl} ... SKIP (no {key} found)")
+                print(f"  > {path_tpl} ... SKIP (no {key} found)")
 
         # Job post form (if job exists)
         if job_id:
