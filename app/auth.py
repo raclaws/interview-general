@@ -22,14 +22,14 @@ def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed.encode())
 
 
-def create_session_cookie(username: str) -> str:
-    return serializer.dumps({"username": username})
+def create_session_cookie(username: str, session_version: int = 1) -> str:
+    return serializer.dumps({"username": username, "v": session_version})
 
 
-def get_username_from_cookie(cookie: str) -> str | None:
+def get_username_from_cookie(cookie: str) -> dict | None:
     try:
         data = serializer.loads(cookie)
-        return data.get("username")
+        return data
     except BadSignature:
         return None
 
@@ -38,10 +38,14 @@ def get_current_admin(request: Request, db: Session = Depends(get_session)) -> A
     cookie = request.cookies.get(COOKIE_NAME)
     if not cookie:
         raise HTTPException(status_code=401, detail="Not authenticated")
-    username = get_username_from_cookie(cookie)
-    if not username:
+    data = get_username_from_cookie(cookie)
+    if not data:
         raise HTTPException(status_code=401, detail="Invalid session")
+    username = data.get("username") if isinstance(data, dict) else data
     admin = db.exec(select(AdminUser).where(AdminUser.username == username)).first()
     if not admin:
         raise HTTPException(status_code=401, detail="User not found")
+    cookie_version = data.get("v", 1) if isinstance(data, dict) else 1
+    if cookie_version != (admin.session_version or 1):
+        raise HTTPException(status_code=401, detail="Session expired")
     return admin

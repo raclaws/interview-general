@@ -1169,7 +1169,7 @@ async def login_submit(
     if not admin or not verify_password(password, admin.hashed_password):
         return _render(request, "login.html", {"error": "Invalid credentials"})
     response = RedirectResponse("/", status_code=303)
-    response.set_cookie(COOKIE_NAME, create_session_cookie(username), httponly=True, secure=True, samesite="Lax")
+    response.set_cookie(COOKIE_NAME, create_session_cookie(username, admin.session_version or 1), httponly=True, secure=True, samesite="Lax")
     return response
 
 

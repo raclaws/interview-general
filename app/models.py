@@ -15,6 +15,7 @@ class AdminUser(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)
     hashed_password: str
+    session_version: int = Field(default=1)
 
 
 class BusinessUnit(SQLModel, table=True):

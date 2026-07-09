@@ -545,7 +545,7 @@ async def settings_account_password(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    from app.auth import verify_password, hash_password
+    from app.auth import verify_password, hash_password, create_session_cookie, COOKIE_NAME
 
     if not verify_password(current_password, admin.hashed_password):
         return _toast_error("Current password is incorrect")
@@ -557,12 +557,15 @@ async def settings_account_password(
         return _toast_error("Passwords do not match")
 
     admin.hashed_password = hash_password(new_password)
+    admin.session_version = (admin.session_version or 1) + 1
     db.add(admin)
     db.commit()
 
     import json
     trigger = json.dumps({"toast": {"value": "Password updated", "severity": "success"}})
-    return HTMLResponse(
+    response = HTMLResponse(
         '<p class="row-meta" style="color:var(--success);">Password changed successfully.</p>',
         headers={"HX-Trigger": trigger},
     )
+    response.set_cookie(COOKIE_NAME, create_session_cookie(admin.username, admin.session_version), httponly=True, secure=True, samesite="Lax")
+    return response

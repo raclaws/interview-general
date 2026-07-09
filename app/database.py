@@ -30,6 +30,7 @@ def _migrate():
         ("template_sections", "red_flags", "TEXT"),
         ("candidates", "nocodb_deleted", "BOOLEAN DEFAULT 0"),
         ("business_units", "portal_token", "TEXT"),
+        ("admin_users", "session_version", "INTEGER DEFAULT 1"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
