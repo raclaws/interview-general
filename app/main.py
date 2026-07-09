@@ -67,3 +67,17 @@ app.include_router(docs_router)
 @app.on_event("startup")
 def on_startup():
     create_tables()
+    # Auto-create admin from env vars if not exists
+    import os
+    username = os.getenv("ADMIN_USERNAME")
+    password = os.getenv("ADMIN_PASSWORD")
+    if username and password:
+        from sqlmodel import Session, select
+        from app.models import AdminUser
+        from app.auth import hash_password
+        from app.database import engine as db_engine
+        with Session(db_engine) as db:
+            existing = db.exec(select(AdminUser).where(AdminUser.username == username)).first()
+            if not existing:
+                db.add(AdminUser(username=username, hashed_password=hash_password(password)))
+                db.commit()
