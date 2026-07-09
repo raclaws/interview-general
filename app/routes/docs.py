@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-router = APIRouter(prefix="/docs")
+router = APIRouter(prefix="/guide")
 
 
 def _render(request: Request, name: str, context: dict = None):
