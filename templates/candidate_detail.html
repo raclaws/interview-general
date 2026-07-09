@@ -58,6 +58,66 @@
     </div>
 </div>
 
+{% if signal %}
+<div class="detail-section">
+    <div class="detail-section-label">Signal Analysis</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 2rem; font-size: var(--text-sm);">
+        <div>
+            <span class="row-meta">Salary Band:</span>
+            <span class="band-pill band-{{ signal.salary_label.lower().replace('_', '-') or 'none' }}">
+                {{ signal.salary_label.replace('_', ' ') }}{% if signal.percentile is not none %} P{{ signal.percentile | int }}{% endif %}
+            </span>
+        </div>
+        <div><span class="row-meta">Comparison:</span> {{ signal.comparison_source or '—' }}{% if signal.bucket_size %} (n={{ signal.bucket_size }}){% endif %}</div>
+        <div><span class="row-meta">Role Bucket:</span> {{ signal.role_bucket.replace('_', ' ') if signal.role_bucket else '—' }}</div>
+        <div><span class="row-meta">Gate:</span> {{ signal.gate_status or '—' }}</div>
+        <div><span class="row-meta">Total Years:</span> {{ signal.total_years | int if signal.total_years else '—' }}</div>
+        <div><span class="row-meta">Trajectory:</span> {{ signal.trajectory or '—' }}</div>
+        <div><span class="row-meta">Company Type:</span> {{ signal.company_category.replace('_', ' ') if signal.company_category else '—' }}</div>
+        <div><span class="row-meta">Employment:</span> {{ signal.employment_status.replace('_', ' ') if signal.employment_status else '—' }}</div>
+    </div>
+
+    {% if signal.skills_explicit %}
+    <div style="margin-top: 0.75rem; font-size: var(--text-sm);">
+        <span class="row-meta">Skills (explicit):</span>
+        {% for skill in signal.skills_explicit.split(',') if skill %}
+        <span class="badge badge-muted">{{ skill }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if signal.skills_contextual %}
+    <div style="margin-top: 0.4rem; font-size: var(--text-sm);">
+        <span class="row-meta">Skills (contextual):</span>
+        {% for skill in signal.skills_contextual.split(',') if skill %}
+        <span class="badge badge-muted" style="opacity:0.6">{{ skill }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% if signal.domains %}
+    <div style="margin-top: 0.4rem; font-size: var(--text-sm);">
+        <span class="row-meta">Domains:</span>
+        {% for d in signal.domains.split(',') if d %}
+        <span class="badge badge-muted">{{ d.replace('_', ' ') }}</span>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% set flags = signal.flags_json | from_json if signal.flags_json and signal.flags_json != '[]' else [] %}
+    {% if flags %}
+    <div style="margin-top: 0.75rem; font-size: var(--text-sm);">
+        <span class="row-meta">Flags ({{ flags | length }}):</span>
+        {% for f in flags %}
+        <div style="margin: 0.4rem 0 0 1rem; padding: 0.4rem 0.6rem; background: var(--bg-muted); border-radius: var(--radius-sm);">
+            <strong style="font-size: var(--text-xs);">{{ f.pattern.replace('_', ' ') }}</strong>
+            <div class="row-meta" style="margin-top: 2px;">A: {{ f.a }}</div>
+            <div class="row-meta">B: {{ f.b }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="detail-section">
     <div class="detail-section-label">Pipelines</div>
     <details id="add-to-job" class="inline-expand">

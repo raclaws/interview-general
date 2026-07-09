@@ -15,8 +15,8 @@ from app.database import get_session
 from app.auth import get_current_admin
 from app.models import (
     InterviewSession, SessionInterviewer, Template, CandidatePipeline, AdminUser,
-    Job, BusinessUnit, Candidate, ReviewBatch, ReviewScore, PipelineScore, TestAssignment,
-    Comment, Task, not_deleted,
+    Job, BusinessUnit, Candidate, CandidateSignal, ReviewBatch, ReviewScore, PipelineScore,
+    TestAssignment, Comment, Task, not_deleted,
 )
 
 
@@ -230,8 +230,6 @@ def _hydrate_candidates(db: Session, since: int | None, filters: dict | None = N
 
     query = query.order_by(Candidate.updated_at.desc())
 
-    query = query.order_by(Candidate.updated_at.desc())
-
     candidates = db.exec(query).all()
     if not candidates:
         return []
@@ -263,12 +261,19 @@ def _hydrate_candidates(db: Session, since: int | None, filters: dict | None = N
     ).all()
     session_map = {r[0]: r[1] for r in session_rows}
 
+    # Batch: signal data
+    signal_rows = db.exec(
+        select(CandidateSignal).where(CandidateSignal.candidate_id.in_(candidate_ids))
+    ).all()
+    signal_map = {s.candidate_id: s for s in signal_rows}
+
     counts = _comment_counts(db, "candidate", candidate_ids)
     results = []
     for c in candidates:
         p_info = pipeline_map.get(c.id, {"count": 0, "stages": ""})
         stages = list(set(s for s in p_info["stages"].split(",") if s))
-        results.append({
+        sig = signal_map.get(c.id)
+        row = {
             "id": str(c.id),
             "name": c.name,
             "email": c.email or "",
@@ -278,7 +283,25 @@ def _hydrate_candidates(db: Session, since: int | None, filters: dict | None = N
             "sessionCount": session_map.get(c.id, 0),
             "commentCount": counts.get(c.id, 0),
             "updatedAt": int(c.updated_at.timestamp() * 1000) if c.updated_at else 0,
-        })
+        }
+        if sig:
+            skills = sig.skills_explicit
+            if sig.skills_contextual:
+                skills = skills + "," + sig.skills_contextual if skills else sig.skills_contextual
+            row.update({
+                "salaryLabel": sig.salary_label,
+                "percentile": sig.percentile,
+                "comparisonSource": sig.comparison_source,
+                "flagCount": sig.flag_count,
+                "roleBucket": sig.role_bucket,
+                "skills": skills,
+                "domains": sig.domains,
+                "companyCategory": sig.company_category,
+                "totalYears": sig.total_years,
+                "trajectory": sig.trajectory,
+                "employmentStatus": sig.employment_status,
+            })
+        results.append(row)
     return results
 
 

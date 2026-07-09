@@ -442,3 +442,33 @@ class Task(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = None
+
+
+class CandidateSignal(SQLModel, table=True):
+    __tablename__ = "candidate_signals"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    candidate_id: int = Field(foreign_key="candidates.id", index=True, unique=True)
+    nocodb_id: Optional[int] = Field(default=None, index=True)
+
+    salary_label: str = Field(default="")
+    percentile: Optional[float] = None
+    comparison_source: str = Field(default="")
+    bucket_size: int = Field(default=0)
+    role_bucket: str = Field(default="")
+    gate_status: str = Field(default="")
+    flag_count: int = Field(default=0)
+    flags_json: str = Field(default="[]")
+
+    skills_explicit: str = Field(default="")
+    skills_contextual: str = Field(default="")
+    domains: str = Field(default="")
+    companies: str = Field(default="")
+    company_category: str = Field(default="")
+    credentials: str = Field(default="")
+    latest_role: str = Field(default="")
+    total_years: Optional[float] = None
+    trajectory: str = Field(default="")
+
+    employment_status: str = Field(default="")
+    computed_at: datetime = Field(default_factory=datetime.utcnow)

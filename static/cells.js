@@ -69,6 +69,23 @@ var C = (function() {
         },
 
         /**
+         * Salary band pill with color coding.
+         * @param {string} label - WELL_BELOW/BELOW/MARKET/ABOVE/WELL_ABOVE/NO_INPUT/INSUFFICIENT_DATA
+         * @param {number|null} percentile - P0-P100
+         * @param {string} [source] - Comparison source text
+         */
+        band: function(label, percentile, source) {
+            if (!label || label === 'NO_INPUT' || label === 'INSUFFICIENT_DATA') {
+                return '<td><span class="band-pill band-none">—</span></td>';
+            }
+            var cls = 'band-' + label.toLowerCase().replace(/_/g, '-');
+            var pct = percentile != null ? ' P' + Math.round(percentile) : '';
+            var text = label.replace(/_/g, ' ') + pct;
+            var title = source ? ' title="' + esc(source) + '"' : '';
+            return '<td><span class="band-pill ' + cls + '"' + title + '>' + esc(text) + '</span></td>';
+        },
+
+        /**
          * Mutable inline select (badge-select). Fixed width.
          * Includes hx-disinherit, stopPropagation, and push-url=false.
          * @param {string} value - Current selected value

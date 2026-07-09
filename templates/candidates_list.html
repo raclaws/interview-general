@@ -7,13 +7,13 @@
 </div>
 
 <div data-sync-table="candidates"
-     data-sync-search-fields="name,email"
+     data-sync-search-fields="name,email,skills,domains,companyCategory,roleBucket,currentPosition"
      data-sync-default-sort="updatedAt:desc"
      data-sync-render-limit="100"
-     data-sync-filter-fields='[{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"currentPosition","label":"Position","type":"text"},{"key":"name","label":"Name","type":"text"},{"key":"email","label":"Email","type":"text"}]'
-     data-sync-display-options='{"sort":[{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"name:asc","label":"Name A-Z"},{"value":"name:desc","label":"Name Z-A"}],"group":[{"value":"stages","label":"Stage"}]}'>
+     data-sync-filter-fields='[{"key":"salaryLabel","label":"Salary Band","type":"select","options":["WELL_BELOW","BELOW","MARKET","ABOVE","WELL_ABOVE"]},{"key":"companyCategory","label":"Company Type","type":"select","options":["PRODUCT_TECH","FSI","TELCO","IMPLEMENTOR","CONSULTING","OUTSOURCING","CONGLOMERATE","BUMN"]},{"key":"stages","label":"Stage","type":"select","options":["screening","test","interview","offer","hired","rejected","withdrawn","on_hold"]},{"key":"domains","label":"Domain","type":"text"},{"key":"roleBucket","label":"Role Bucket","type":"text"},{"key":"currentPosition","label":"Position","type":"text"},{"key":"name","label":"Name","type":"text"},{"key":"email","label":"Email","type":"text"}]'
+     data-sync-display-options='{"sort":[{"value":"updatedAt:desc","label":"Newest first","type":"date"},{"value":"updatedAt:asc","label":"Oldest first","type":"date"},{"value":"name:asc","label":"Name A-Z"},{"value":"name:desc","label":"Name Z-A"},{"value":"totalYears:desc","label":"Most experienced","type":"number"},{"value":"percentile:asc","label":"Lowest salary","type":"number"},{"value":"percentile:desc","label":"Highest salary","type":"number"}],"group":[{"value":"salaryLabel","label":"Salary Band"},{"value":"companyCategory","label":"Company Type"},{"value":"stages","label":"Stage"}]}'>
     <div class="table-controls">
-        <input type="text" data-table-search placeholder="Search by name or email..." class="table-search">
+        <input type="text" data-table-search placeholder="Search name, email, skills, domains..." class="table-search">
         <a href="/candidate/new" class="btn-icon sync-add-btn" title="Add candidate" hx-boost="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></a>
     </div>
     <div class="sync-subcontrols"></div>
@@ -30,15 +30,40 @@
     <p class="row-meta" style="padding:2rem; text-align:center;">JavaScript is required to load candidates.</p>
 </noscript>
 
-<script src="/static/cells.js?v=1"></script>
+<script src="/static/cells.js?v=2"></script>
 <script>
 window.__syncConfig = {
+    searchFn: function(r, query) {
+        if (!query) return true;
+        var q = query.trim();
+        var hasOps = /\b(AND|OR|NOT)\b/.test(q);
+        if (!hasOps) return null;
+        var searchable = [r.name, r.email, r.skills, r.domains, r.companyCategory, r.roleBucket, r.currentPosition, r.employmentStatus].filter(Boolean).join(' ').toLowerCase();
+        var tokens = q.split(/\s+(AND|OR|NOT)\s+/);
+        var result = true;
+        var op = 'AND';
+        for (var i = 0; i < tokens.length; i++) {
+            var t = tokens[i].trim();
+            if (t === 'AND' || t === 'OR' || t === 'NOT') { op = t; continue; }
+            if (!t) continue;
+            var match = searchable.indexOf(t.toLowerCase()) >= 0;
+            if (op === 'AND') result = result && match;
+            else if (op === 'OR') result = result || match;
+            else if (op === 'NOT') result = result && !match;
+        }
+        return result;
+    },
     renderRow: function(r) {
-        var stages = (r.stages || '').split(',').filter(Boolean);
+        var skills = (r.skills || '').split(',').filter(Boolean).slice(0, 4);
+        var skillsHtml = skills.length ? skills.map(function(s){ return '<span class="badge badge-muted">' + s + '</span>'; }).join(' ') + (r.skills && r.skills.split(',').filter(Boolean).length > 4 ? ' <span class="badge badge-overflow">+' + (r.skills.split(',').filter(Boolean).length - 4) + '</span>' : '') : '';
+        var meta = r.currentPosition || '';
+        if (r.totalYears) meta += (meta ? ' · ' : '') + r.totalYears + 'yr';
+        if (r.companyCategory) meta += (meta ? ' · ' : '') + r.companyCategory.replace(/_/g, ' ');
         return '<tr class="clickable-row" data-href="/candidate/' + r.id + '">' +
             C.person(r.name, r.email) +
             '<td><div class="col-primary">' + (r.currentPosition || '—') + '</div>' +
-            '<div class="row-meta">' + (stages.length ? C.multiBadge(stages, 3).replace(/<\/?td[^>]*>/g, '') : '—') + '</div></td>' +
+            '<div class="row-meta" style="margin-top:2px">' + (skillsHtml || '—') + '</div></td>' +
+            C.band(r.salaryLabel, r.percentile, r.comparisonSource) +
             C.compound([(r.pipelineCount || 0) + ' pipeline' + (r.pipelineCount !== 1 ? 's' : ''), (r.sessionCount || 0) + ' session' + (r.sessionCount !== 1 ? 's' : '')]) +
             C.action('candidate', r.id, r.commentCount) +
             C.date(r.updatedAt) +
@@ -46,9 +71,7 @@ window.__syncConfig = {
     },
     contextMenu: function(r, baseUrl) {
         var items = [];
-        // Utility
         items.push({label: '⎘ Copy email', copy: r.email});
-        // Mutate
         items.push({label: '✎ Edit candidate', href: '/candidate/' + r.id + '/edit'});
         items.push({label: '+ Add interview', href: '/session/new?candidate_id=' + r.id});
         return items;

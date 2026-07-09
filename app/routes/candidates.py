@@ -13,7 +13,8 @@ from app.models import (
     AdminUser, Candidate, CandidatePipeline, InterviewSession,
     SessionInterviewer, Template, TemplateSection, Response, ResponseScore, PipelineScore,
     PIPELINE_STAGES, HR_DIMENSIONS, CULTURE_DIMENSIONS, DRIVE_DREAM_OPTIONS, TableView,
-    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment, not_deleted,
+    TestAssignment, ReviewBatch, ReviewScore, Job, BusinessUnit, Comment, CandidateSignal,
+    not_deleted,
 )
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
@@ -252,6 +253,10 @@ async def candidate_detail(
 
     templates = db.exec(select(Template).order_by(Template.name)).all()
 
+    signal = db.exec(
+        select(CandidateSignal).where(CandidateSignal.candidate_id == candidate_id)
+    ).first()
+
     return _render(request, "candidate_detail.html", {
         "candidate": candidate,
         "pipelines": pipelines,
@@ -259,6 +264,7 @@ async def candidate_detail(
         "pipeline_sessions": pipeline_sessions,
         "admin": admin,
         "stages": PIPELINE_STAGES,
+        "signal": signal,
         "jobs": db.exec(select(Job).where(Job.status == "open", Job.title != "_Unassigned", not_deleted(Job)).order_by(Job.title)).all(),
         "templates": templates,
         "trail": db.exec(

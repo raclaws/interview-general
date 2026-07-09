@@ -727,6 +727,15 @@ tr:hover td { background: var(--bg-muted); }
 .badge { opacity: 0.85; }
 .badge-overflow { opacity: 0.6; font-size: var(--text-xs); }
 
+/* Band pills — salary positioning indicators */
+.band-pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: var(--radius-sm); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+.band-well-below { background: var(--success-bg); color: var(--success); }
+.band-below { background: var(--success-bg); color: var(--success); opacity: 0.75; }
+.band-market { background: var(--bg-muted); color: var(--text-muted); }
+.band-above { background: var(--warning-bg); color: var(--warning); }
+.band-well-above { background: var(--danger-bg); color: var(--danger); }
+.band-none { background: transparent; border: 1px dashed var(--border); color: var(--text-muted); }
+
 /* Cell type standards — fixed column widths */
 .cell-ratio { width: 60px; text-align: right; white-space: nowrap; }
 .cell-date { width: 90px; text-align: right; white-space: nowrap; }
@@ -997,6 +1006,8 @@ td.col-primary, .col-primary {
     padding: var(--space-md) var(--space-xl);
     border-bottom: none;
 }
+.group-header { cursor: pointer; user-select: none; }
+.group-toggle { display: inline-block; width: 1em; text-align: center; opacity: 0.6; }
 .group-count {
     font-weight: 400;
     color: var(--text-muted);

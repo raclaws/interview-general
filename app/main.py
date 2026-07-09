@@ -43,6 +43,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.filters["from_json"] = lambda s: __import__("json").loads(s) if s else []
 app.state.templates = templates
 
 app.include_router(admin_router)
