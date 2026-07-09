@@ -1,0 +1,56 @@
+{% extends "docs/layout.html" %}
+{% block title %}Portal Business Unit{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Portal Business Unit</h1>
+<p>Portal BU adalah halaman publik (tanpa login admin) yang bisa diakses oleh kepala divisi menggunakan link token. Mereka bisa submit manpower request, melihat lowongan divisinya, dan mengomentari pipeline.</p>
+
+<h2>Mengaktifkan Portal</h2>
+<ol class="docs-steps">
+    <li>Buka <strong>Settings → Business Units</strong>.</li>
+    <li>Klik <strong>Generate Token</strong> pada BU yang diinginkan.</li>
+    <li>Salin link portal yang muncul — kirim ke kepala divisi.</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot settings BU dengan portal token dan link<br><em>[screenshot — /settings business unit tab, token visible]</em></div>
+
+<div class="docs-callout">
+    <strong>Keamanan:</strong> Token = akses. Siapapun yang punya link bisa mengakses portal BU tersebut. Jika link bocor, klik <strong>Revoke</strong> dan generate ulang.
+</div>
+
+<h2>Tampilan Portal</h2>
+<p>Portal memiliki tiga tab:</p>
+
+<h3>Tab: My Requests</h3>
+<p>Daftar semua manpower request yang pernah disubmit oleh BU ini, beserta statusnya (pending, approved, rejected).</p>
+
+<div class="docs-img-placeholder">Screenshot portal tab My Requests<br><em>[screenshot — /portal/{token} requests tab]</em></div>
+
+<h3>Tab: Open Jobs</h3>
+<p>Semua lowongan aktif milik BU ini. Klik job untuk melihat pipeline (nama kandidat + stage). Tidak ada data salary yang ditampilkan.</p>
+
+<div class="docs-img-placeholder">Screenshot portal job detail dengan pipeline list<br><em>[screenshot — /portal/{token}/job/{id} pipeline list]</em></div>
+
+<h3>Submit Manpower Request</h3>
+<p>Kepala divisi bisa mengajukan permintaan headcount baru:</p>
+<ul>
+    <li>Posisi, level, tipe pekerjaan (dari daftar managed)</li>
+    <li>Headcount dan prioritas</li>
+    <li>Target date</li>
+    <li>Justifikasi (wajib — kenapa posisi ini dibutuhkan)</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot form manpower request<br><em>[screenshot — /portal/{token}/request form]</em></div>
+
+<h2>Approval Flow (Admin)</h2>
+<p>Admin melihat request masuk di halaman <strong>Requests</strong> (sidebar). Aksi:</p>
+<ul>
+    <li><strong>Approve</strong> — otomatis membuat Job baru dari data request</li>
+    <li><strong>Reject</strong> — dengan catatan alasan penolakan</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot admin request detail dengan approve/reject<br><em>[screenshot — /requests/{id} admin view]</em></div>
+
+<h2>Komentar dari Portal</h2>
+<p>BU head bisa menambah komentar di pipeline. Komentar muncul di admin dengan author "Portal — {nama BU}".</p>
+{% endblock %}

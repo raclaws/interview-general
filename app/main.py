@@ -24,6 +24,7 @@ from app.routes.offers import router as offers_router
 from app.routes.portal import router as portal_router
 from app.routes.requests import router as requests_router
 from app.routes.tasks import router as tasks_router
+from app.routes.docs import router as docs_router
 
 app = FastAPI(title="Interview Form Summarizer")
 
@@ -59,6 +60,7 @@ app.include_router(offers_router)
 app.include_router(portal_router)
 app.include_router(requests_router)
 app.include_router(tasks_router)
+app.include_router(docs_router)
 
 
 @app.on_event("startup")

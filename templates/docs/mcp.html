@@ -1,0 +1,65 @@
+{% extends "docs/layout.html" %}
+{% block title %}MCP (Agent Tools){% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>MCP (Agent Tools)</h1>
+<p>INS ATS menyediakan server MCP (Model Context Protocol) agar AI agent bisa mengakses data rekrutmen. Berguna untuk automasi, reporting, dan integrasi.</p>
+
+<h2>Menjalankan MCP Server</h2>
+<pre style="background:var(--surface-raised); padding:1rem; border-radius:var(--radius-md); font-size:0.85rem; overflow-x:auto;">python -m app.mcp_server</pre>
+<p>Server berjalan via SSE transport. AI agent (Claude, dll) bisa konek dan memanggil tools.</p>
+
+<h2>Tools Tersedia</h2>
+
+<h3>Sessions</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>create_session</code></td><td>Buat session baru + interviewer links</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>get_session</code></td><td>Detail session (skor, status, summary)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>list_sessions</code></td><td>Daftar session (filter by candidate)</td></tr>
+</table>
+
+<h3>Jobs</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>list_jobs</code></td><td>Daftar lowongan (filter: status, BU)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>get_job</code></td><td>Detail job + pipeline list</td></tr>
+</table>
+
+<h3>Pipelines</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>list_pipelines</code></td><td>Daftar pipeline (filter: job, stage)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>get_pipeline</code></td><td>Detail pipeline + candidate + sessions</td></tr>
+</table>
+
+<h3>Candidates</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>list_candidates</code></td><td>Cari kandidat (nama/email, max 50)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>get_candidate</code></td><td>Detail kandidat + pipeline aktif</td></tr>
+</table>
+
+<h3>Tasks</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>list_tasks</code></td><td>Daftar tugas (filter: entity, status)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>create_task</code></td><td>Buat tugas baru di job/pipeline</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>update_task</code></td><td>Update status/title/priority/due date</td></tr>
+</table>
+
+<h3>Reports</h3>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><code>generate_recruitment_report</code></td><td>General report (filter: BU, level, period)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>generate_pipeline_report</code></td><td>Pipeline assessment report</td></tr>
+    <tr><td style="padding:0.3rem 0;"><code>generate_job_report</code></td><td>Job health report</td></tr>
+</table>
+
+<h2>Contoh Penggunaan</h2>
+<p>AI agent bisa diminta:</p>
+<ul>
+    <li>"Buatkan laporan rekrutmen Engineering bulan ini"</li>
+    <li>"List semua pipeline yang masih di stage interview"</li>
+    <li>"Tambahkan task 'Follow up offering' ke pipeline kandidat X"</li>
+    <li>"Berapa headcount yang sudah terpenuhi untuk job Backend Developer?"</li>
+</ul>
+
+<div class="docs-callout">
+    MCP server menggunakan database yang sama dengan web app — data selalu up to date.
+</div>
+{% endblock %}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panduan{% endblock %} — INS ATS</title>
+    <link rel="stylesheet" href="/static/style.css?v=9">
+    <style>
+        body { margin: 0; background: var(--bg-base); color: var(--text-primary); font-family: var(--font-sans); }
+        .docs-layout { display: flex; min-height: 100vh; }
+        .docs-sidebar { width: 240px; padding: 1.5rem 1rem; border-right: 1px solid var(--border); position: sticky; top: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+        .docs-sidebar-brand { font-weight: 700; font-size: 1.1rem; margin-bottom: 1.5rem; }
+        .docs-sidebar-brand a { color: var(--text-primary); text-decoration: none; }
+        .docs-nav { list-style: none; padding: 0; margin: 0; }
+        .docs-nav li { margin-bottom: 0.25rem; }
+        .docs-nav a { display: block; padding: 0.4rem 0.75rem; border-radius: var(--radius-sm); color: var(--text-secondary); text-decoration: none; font-size: 0.875rem; transition: background 0.1s; }
+        .docs-nav a:hover { background: var(--surface-hover); color: var(--text-primary); }
+        .docs-nav a.active { background: var(--surface-active); color: var(--text-primary); font-weight: 500; }
+        .docs-nav-group { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 1.25rem 0 0.5rem 0.75rem; }
+        .docs-main { flex: 1; padding: 2rem 3rem; max-width: 800px; }
+        .docs-main h1 { font-size: 1.75rem; margin: 0 0 0.5rem; }
+        .docs-main h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+        .docs-main h3 { font-size: 1rem; margin: 1.5rem 0 0.5rem; }
+        .docs-main p, .docs-main li { font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); }
+        .docs-main ul, .docs-main ol { padding-left: 1.25rem; }
+        .docs-main li { margin-bottom: 0.4rem; }
+        .docs-main a { color: var(--accent); }
+        .docs-img-placeholder { background: var(--surface-raised); border: 1px dashed var(--border); border-radius: var(--radius-md); padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; margin: 1rem 0; }
+        .docs-img-placeholder::before { content: "📷"; display: block; font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .docs-callout { background: var(--surface-raised); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; margin: 1rem 0; font-size: 0.85rem; }
+        .docs-steps { counter-reset: step; list-style: none; padding: 0; }
+        .docs-steps li { counter-increment: step; position: relative; padding-left: 2.5rem; margin-bottom: 1.25rem; }
+        .docs-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 1.75rem; height: 1.75rem; background: var(--surface-raised); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; color: var(--accent); }
+        .docs-back { display: inline-block; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-muted); text-decoration: none; }
+        .docs-back:hover { color: var(--text-primary); }
+        @media (max-width: 768px) {
+            .docs-sidebar { display: none; }
+            .docs-main { padding: 1.5rem; }
+        }
+    </style>
+    <script>
+        if (localStorage.getItem('theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
+    </script>
+</head>
+<body>
+<div class="docs-layout">
+    <aside class="docs-sidebar">
+        <div class="docs-sidebar-brand"><a href="/docs">INS ATS Docs</a></div>
+        <nav>
+            <ul class="docs-nav">
+                <li><a href="/docs" class="{% if request.url.path == '/docs' %}active{% endif %}">Beranda</a></li>
+                <li><a href="/docs/mulai" class="{% if request.url.path == '/docs/mulai' %}active{% endif %}">Mulai di Sini</a></li>
+
+                <p class="docs-nav-group">Fitur Utama</p>
+                <li><a href="/docs/jobs" class="{% if request.url.path == '/docs/jobs' %}active{% endif %}">Kelola Lowongan</a></li>
+                <li><a href="/docs/kandidat" class="{% if request.url.path == '/docs/kandidat' %}active{% endif %}">Kelola Kandidat</a></li>
+                <li><a href="/docs/pipeline" class="{% if request.url.path == '/docs/pipeline' %}active{% endif %}">Pipeline Rekrutmen</a></li>
+                <li><a href="/docs/tugas" class="{% if request.url.path == '/docs/tugas' %}active{% endif %}">Tugas & Pengingat</a></li>
+                <li><a href="/docs/wawancara" class="{% if request.url.path == '/docs/wawancara' %}active{% endif %}">Wawancara & Skor</a></li>
+
+                <p class="docs-nav-group">Modul Tambahan</p>
+                <li><a href="/docs/portal" class="{% if request.url.path == '/docs/portal' %}active{% endif %}">Portal Business Unit</a></li>
+                <li><a href="/docs/laporan" class="{% if request.url.path == '/docs/laporan' %}active{% endif %}">Laporan</a></li>
+                <li><a href="/docs/pengaturan" class="{% if request.url.path == '/docs/pengaturan' %}active{% endif %}">Pengaturan</a></li>
+
+                <p class="docs-nav-group">Teknis</p>
+                <li><a href="/docs/mcp" class="{% if request.url.path == '/docs/mcp' %}active{% endif %}">MCP (Agent Tools)</a></li>
+            </ul>
+        </nav>
+    </aside>
+    <main class="docs-main">
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

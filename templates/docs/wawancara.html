@@ -1,0 +1,49 @@
+{% extends "docs/layout.html" %}
+{% block title %}Wawancara & Skor{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Wawancara & Skor</h1>
+<p>Sistem wawancara INS ATS menggunakan token link — admin membuat session, interviewer mengisi form lewat link unik tanpa perlu login.</p>
+
+<h2>Membuat Sesi Wawancara</h2>
+<ol class="docs-steps">
+    <li>Buka halaman detail pipeline kandidat.</li>
+    <li>Di section <strong>Sessions</strong>, klik <strong>+ New Session</strong>.</li>
+    <li>Pilih template wawancara (HR Interview, Culture Alignment, atau custom).</li>
+    <li>Tambahkan nama interviewer (bisa lebih dari satu).</li>
+    <li>Klik <strong>Create</strong>.</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot form buat session baru<br><em>[screenshot — session create form with template + interviewers]</em></div>
+
+<h2>Mengirim Link ke Interviewer</h2>
+<p>Setelah session dibuat, setiap interviewer mendapat link unik. Cara menyalin:</p>
+<ul>
+    <li>Dari halaman <strong>Interview</strong> (sidebar) — klik icon copy di baris session</li>
+    <li>Dari <strong>Session detail</strong> — klik link interviewer</li>
+</ul>
+
+<div class="docs-callout">
+    Link bersifat single-use. Setelah interviewer submit form, link tidak bisa digunakan lagi.
+</div>
+
+<div class="docs-img-placeholder">Screenshot halaman session detail dengan interviewer links<br><em>[screenshot — /session/{id} with token links visible]</em></div>
+
+<h2>Form Interviewer</h2>
+<p>Interviewer membuka link dan melihat form sesuai template — berisi pertanyaan per dimensi dengan skala 1-4 dan kolom free text.</p>
+
+<div class="docs-img-placeholder">Screenshot form wawancara dari sisi interviewer<br><em>[screenshot — /i/{token} interview form]</em></div>
+
+<h2>Scorecard Otomatis</h2>
+<p>Setelah semua interviewer submit, scorecard otomatis ter-generate di pipeline detail:</p>
+<ul>
+    <li><strong>HR Dimensions</strong> (max 12) — Ownership, Maturity, Collaborative</li>
+    <li><strong>Culture Dimensions</strong> (max 16) — Execution, Learn Fast, Impact, Clarity</li>
+    <li><strong>Per-interviewer breakdown</strong> dan rata-rata</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot scorecard dengan breakdown per interviewer<br><em>[screenshot — /pipeline/{id}/scorecard]</em></div>
+
+<h2>LLM Summary</h2>
+<p>Setelah semua response masuk, admin bisa klik <strong>Generate Summary</strong> untuk mendapatkan rangkuman AI dari seluruh jawaban — termasuk cross-evaluator insight jika ada lebih dari satu interviewer.</p>
+{% endblock %}

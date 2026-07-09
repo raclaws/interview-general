@@ -1,0 +1,59 @@
+{% extends "docs/layout.html" %}
+{% block title %}Pengaturan{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Pengaturan</h1>
+<p>Halaman Settings mengatur konfigurasi sistem. Diakses dari sidebar paling bawah. Terdiri dari beberapa tab.</p>
+
+<h2>Tab: LLM</h2>
+<p>Konfigurasi AI model untuk summary, report, dan job post generation:</p>
+<ul>
+    <li><strong>Base URL</strong> — endpoint OpenAI-compatible (misal: OpenRouter, Groq)</li>
+    <li><strong>API Key</strong> — kunci autentikasi</li>
+    <li><strong>Model</strong> — model ID yang digunakan</li>
+    <li><strong>System Prompt</strong> — instruksi dasar untuk AI saat summarize interview</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot LLM settings tab<br><em>[screenshot — /settings LLM tab]</em></div>
+
+<div class="docs-callout">
+    Pengaturan LLM disimpan di database, bukan file. Bisa diubah kapan saja tanpa restart server.
+</div>
+
+<h2>Tab: Business Units</h2>
+<p>Kelola divisi/tim:</p>
+<ul>
+    <li>Tambah, edit, atau nonaktifkan BU</li>
+    <li>Set kepala divisi dan default recruiter</li>
+    <li>Generate/revoke portal token</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot Business Units settings<br><em>[screenshot — /settings BU tab with token]</em></div>
+
+<h2>Tab: Positions, Levels, Job Types</h2>
+<p>Daftar managed — opsi yang muncul di dropdown saat membuat Job:</p>
+<ul>
+    <li><strong>Positions</strong> — Backend Developer, Product Designer, dll</li>
+    <li><strong>Levels</strong> — L1 Junior, L2 Mid, L3 Senior, dll</li>
+    <li><strong>Job Types</strong> — Full-time, Contract, Internship, dll</li>
+</ul>
+<p>Tambah atau atur urutan dari tab masing-masing.</p>
+
+<div class="docs-img-placeholder">Screenshot managed positions tab<br><em>[screenshot — /settings positions tab]</em></div>
+
+<h2>Tab: Templates</h2>
+<p>Template wawancara mendefinisikan dimensi penilaian dan pertanyaan per sesi:</p>
+<ul>
+    <li><strong>HR Interview</strong> — dimensi soft skill (ownership, maturity, collaborative)</li>
+    <li><strong>Culture Alignment</strong> — dimensi culture fit (execution, learn fast, impact, clarity)</li>
+    <li><strong>Custom</strong> — template custom dengan dimensi bebas</li>
+</ul>
+<p>Setiap template punya section (dimensi) dengan contoh pertanyaan, good answer, dan red flags.</p>
+
+<div class="docs-img-placeholder">Screenshot template editor<br><em>[screenshot — /settings templates tab with section visible]</em></div>
+
+<h2>Tab: Offer Config</h2>
+<p>Konfigurasi faktor perhitungan offering (gaji pokok, BPJS, dll). Setiap faktor bisa diset sebagai nilai tetap (Rp) atau persentase (%).</p>
+
+<div class="docs-img-placeholder">Screenshot offer config dengan toggle Rp/%<br><em>[screenshot — /settings offer config tab]</em></div>
+{% endblock %}

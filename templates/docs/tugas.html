@@ -1,0 +1,51 @@
+{% extends "docs/layout.html" %}
+{% block title %}Tugas & Pengingat{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Tugas & Pengingat</h1>
+<p>Task (tugas) adalah to-do ringan yang terikat ke lowongan atau pipeline. Gunakan untuk melacak hal-hal seperti "Review CV", "Jadwalkan interview", atau "Kirim offering".</p>
+
+<h2>Membuat Tugas</h2>
+<p>Ada dua cara:</p>
+
+<h3>Dari Halaman Tasks (sidebar)</h3>
+<ol class="docs-steps">
+    <li>Buka <strong>Tasks</strong> dari sidebar.</li>
+    <li>Klik tombol <strong>+</strong>.</li>
+    <li>Pilih tipe (Job atau Pipeline) dan pilih entitasnya.</li>
+    <li>Isi judul, prioritas, tanggal jatuh tempo, dan assigned to.</li>
+    <li>Klik <strong>Create Task</strong>.</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot form buat task baru<br><em>[screenshot — /tasks/new with job selected]</em></div>
+
+<h3>Dari Detail Job atau Pipeline</h3>
+<p>Di bagian bawah halaman detail job atau pipeline, ada section <strong>Tasks</strong> dengan tombol "+ Add Task" — langsung terikat ke entitas tersebut.</p>
+
+<div class="docs-img-placeholder">Screenshot inline task section di job detail<br><em>[screenshot — /job/{id} tasks section with expand form]</em></div>
+
+<h2>Halaman Daftar Tugas</h2>
+<p>Halaman Tasks menampilkan semua tugas dari semua job dan pipeline dalam satu tabel.</p>
+<ul>
+    <li><strong>Default</strong> — hanya tampilkan yang aktif (pending + in progress)</li>
+    <li><strong>Show completed</strong> — tampilkan juga yang sudah selesai/dibatalkan</li>
+    <li><strong>Filter</strong> — status, prioritas, tipe entitas, business unit, assigned, overdue</li>
+    <li><strong>Group</strong> — kelompokkan berdasarkan status, prioritas, BU, atau assignee</li>
+    <li><strong>Sort</strong> — tanggal jatuh tempo, terbaru, prioritas, alfabet</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot task list dengan filter dan grouping<br><em>[screenshot — /tasks with group by status]</em></div>
+
+<h2>Status Tugas</h2>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><strong>Pending</strong></td><td>Belum dikerjakan</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>In Progress</strong></td><td>Sedang dikerjakan</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Done</strong></td><td>Selesai</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Cancelled</strong></td><td>Dibatalkan (tidak relevan lagi)</td></tr>
+</table>
+
+<p>Status bisa diubah langsung dari tabel (inline select) atau dari halaman detail task.</p>
+
+<h2>Overdue</h2>
+<p>Tugas yang melewati tanggal jatuh tempo dan masih aktif (pending/in progress) akan ditandai merah. Gunakan filter "Overdue" untuk melihat semua tugas yang terlambat.</p>
+{% endblock %}

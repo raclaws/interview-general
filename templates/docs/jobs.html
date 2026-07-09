@@ -1,0 +1,62 @@
+{% extends "docs/layout.html" %}
+{% block title %}Kelola Lowongan{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Kelola Lowongan (Jobs)</h1>
+<p>Lowongan adalah entitas utama di INS ATS. Semua aktivitas rekrutmen — pipeline, wawancara, tugas — terhubung ke sebuah Job.</p>
+
+<h2>Membuat Lowongan Baru</h2>
+<ol class="docs-steps">
+    <li>Buka halaman <strong>Jobs</strong> dari sidebar.</li>
+    <li>Klik tombol <strong>+</strong> di pojok kanan atas.</li>
+    <li>Isi form: posisi, level, tipe pekerjaan, business unit, headcount, recruiter.</li>
+    <li>Klik <strong>Create Job</strong>.</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot form buat lowongan baru<br><em>[screenshot — /job/new form, filled state]</em></div>
+
+<h2>Halaman Daftar Lowongan</h2>
+<p>Semua lowongan ditampilkan dalam tabel yang bisa dicari, difilter, dan di-group.</p>
+<ul>
+    <li><strong>Search</strong> — cari berdasarkan judul, business unit, atau recruiter</li>
+    <li><strong>Filter</strong> — status, prioritas, business unit</li>
+    <li><strong>Group</strong> — kelompokkan berdasarkan status, BU, atau prioritas</li>
+    <li><strong>Show closed</strong> — tampilkan lowongan yang sudah ditutup</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot daftar jobs dengan filter aktif<br><em>[screenshot — /jobs with filter pill visible]</em></div>
+
+<h2>Detail Lowongan</h2>
+<p>Klik lowongan untuk masuk ke halaman detail. Di sini Anda bisa:</p>
+<ul>
+    <li>Melihat info lengkap (posisi, level, BU, recruiter, headcount, salary range)</li>
+    <li>Menambah kandidat ke pipeline</li>
+    <li>Melihat semua pipeline aktif</li>
+    <li>Mengelola tugas terkait</li>
+    <li>Generate LinkedIn post</li>
+    <li>Menutup atau membuka kembali lowongan</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot halaman detail job<br><em>[screenshot — /job/{id} with pipelines visible]</em></div>
+
+<h2>Generate Job Post</h2>
+<p>Untuk membuat posting LinkedIn otomatis:</p>
+<ol class="docs-steps">
+    <li>Dari detail lowongan, klik <strong>Generate Post</strong>.</li>
+    <li>Isi profil target kandidat dan tools/tech stack.</li>
+    <li>Klik <strong>Generate Post</strong> — AI akan membuat posting dalam format Insignia.</li>
+    <li>Gunakan tombol <strong>Copy Plain Text</strong> atau <strong>Copy Rich Text</strong> untuk paste ke LinkedIn.</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot hasil generate job post<br><em>[screenshot — /job/{id}/post result page]</em></div>
+
+<h2>Aksi yang Tersedia</h2>
+<table style="width:100%; font-size:0.85rem;">
+    <tr><td style="padding:0.3rem 0;"><strong>Edit</strong></td><td>Ubah detail lowongan</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Close Job</strong></td><td>Tutup lowongan (tidak menerima kandidat baru)</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Reopen</strong></td><td>Buka kembali lowongan yang sudah ditutup</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>+ Add Candidate</strong></td><td>Tambah kandidat baru ke pipeline</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Generate Post</strong></td><td>Buat posting LinkedIn otomatis</td></tr>
+    <tr><td style="padding:0.3rem 0;"><strong>Delete</strong></td><td>Hapus lowongan (bisa di-undo)</td></tr>
+</table>
+{% endblock %}

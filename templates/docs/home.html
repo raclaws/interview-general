@@ -1,0 +1,62 @@
+{% extends "docs/layout.html" %}
+{% block title %}Panduan{% endblock %}
+{% block content %}
+<h1>Panduan INS ATS</h1>
+<p>Selamat datang di dokumentasi lengkap sistem rekrutmen INS ATS. Panduan ini dibuat untuk membantu Anda memahami dan menggunakan setiap fitur — dari membuat lowongan hingga mengirim offering.</p>
+
+<div class="docs-callout">
+    <strong>Baru pertama kali?</strong> Mulai dari halaman <a href="/docs/mulai">Mulai di Sini</a> untuk alur kerja dasar dari A-Z.
+</div>
+
+<h2>Peta Fitur</h2>
+<p>Pilih sesuai kebutuhan Anda:</p>
+
+<table style="width:100%; font-size:0.85rem; border-collapse:collapse;">
+    <thead>
+        <tr style="border-bottom:1px solid var(--border); text-align:left;">
+            <th style="padding:0.5rem 0;">Saya ingin...</th>
+            <th style="padding:0.5rem 0;">Buka halaman</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td style="padding:0.4rem 0;">Memahami alur kerja secara keseluruhan</td><td><a href="/docs/mulai">Mulai di Sini</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Membuat lowongan baru dan mengatur detail posisi</td><td><a href="/docs/jobs">Kelola Lowongan</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Menambah kandidat, import dari NocoDB, atau entry manual</td><td><a href="/docs/kandidat">Kelola Kandidat</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Memindahkan kandidat antar tahap rekrutmen</td><td><a href="/docs/pipeline">Pipeline Rekrutmen</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Membuat to-do / pengingat per lowongan atau pipeline</td><td><a href="/docs/tugas">Tugas & Pengingat</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Membuat sesi wawancara dan melihat skor</td><td><a href="/docs/wawancara">Wawancara & Skor</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Memberi akses portal ke kepala divisi</td><td><a href="/docs/portal">Portal Business Unit</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Membuat laporan rekrutmen otomatis</td><td><a href="/docs/laporan">Laporan</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Mengubah pengaturan LLM, template, atau unit bisnis</td><td><a href="/docs/pengaturan">Pengaturan</a></td></tr>
+        <tr><td style="padding:0.4rem 0;">Menggunakan MCP tools via AI agent</td><td><a href="/docs/mcp">MCP (Agent Tools)</a></td></tr>
+    </tbody>
+</table>
+
+<h2>Konsep Dasar</h2>
+<p>Sistem INS ATS mengorganisir data rekrutmen dalam hirarki:</p>
+<ol>
+    <li><strong>Business Unit</strong> — divisi atau tim (Engineering, Product, dll)</li>
+    <li><strong>Job (Lowongan)</strong> — posisi yang dibuka (misal: Backend Developer L3)</li>
+    <li><strong>Pipeline</strong> — perjalanan satu kandidat dalam satu lowongan</li>
+    <li><strong>Session (Wawancara)</strong> — satu sesi wawancara oleh 1+ interviewer</li>
+    <li><strong>Task (Tugas)</strong> — to-do yang terikat ke job atau pipeline</li>
+</ol>
+
+<div class="docs-img-placeholder">Diagram hirarki data: BU → Job → Pipeline → Session/Task<br><em>[diagram — akan di-generate via Playwright]</em></div>
+
+<h2>Navigasi Aplikasi</h2>
+<p>Sidebar kiri adalah navigasi utama. Semua halaman bisa diakses dari sini:</p>
+<ul>
+    <li><strong>Dashboard</strong> — ringkasan, overdue tasks, pipeline aktif</li>
+    <li><strong>Jobs</strong> — daftar semua lowongan</li>
+    <li><strong>Requests</strong> — manpower request dari BU</li>
+    <li><strong>Candidates</strong> — database kandidat</li>
+    <li><strong>Pipelines</strong> — semua pipeline aktif</li>
+    <li><strong>Tasks</strong> — semua tugas dari semua entitas</li>
+    <li><strong>Evaluation</strong> — wawancara, test, dan review</li>
+    <li><strong>Reports</strong> — laporan otomatis</li>
+    <li><strong>Settings</strong> — pengaturan sistem</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot sidebar navigasi dengan label<br><em>[screenshot — full sidebar, desktop viewport]</em></div>
+{% endblock %}

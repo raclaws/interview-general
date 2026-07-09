@@ -1,0 +1,53 @@
+{% extends "docs/layout.html" %}
+{% block title %}Pipeline Rekrutmen{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Pipeline Rekrutmen</h1>
+<p>Pipeline adalah perjalanan satu kandidat dalam satu lowongan — dari melamar sampai diterima (atau ditolak). Setiap pipeline punya tahap (stage) yang bisa digeser sesuai proses.</p>
+
+<h2>Tahap Pipeline</h2>
+<p>Urutan tahap default:</p>
+<ol>
+    <li><strong>Applied</strong> — kandidat baru masuk</li>
+    <li><strong>Screening</strong> — review CV dan kualifikasi awal</li>
+    <li><strong>Interview</strong> — proses wawancara berlangsung</li>
+    <li><strong>Assessment</strong> — test teknis atau assessment lanjutan</li>
+    <li><strong>Offered</strong> — offering sudah dikirim</li>
+    <li><strong>Hired</strong> — kandidat diterima</li>
+    <li><strong>Rejected</strong> — kandidat tidak lolos</li>
+    <li><strong>Withdrawn</strong> — kandidat mengundurkan diri</li>
+</ol>
+
+<div class="docs-img-placeholder">Screenshot pipeline detail dengan stage selector<br><em>[screenshot — /pipeline/{id} showing stage dropdown]</em></div>
+
+<h2>Menggeser Tahap</h2>
+<p>Dari halaman pipeline detail, klik dropdown stage dan pilih tahap baru. Perubahan langsung tersimpan dan tercatat di activity trail.</p>
+
+<div class="docs-callout">
+    <strong>Otomatis:</strong> Ketika jumlah "hired" mencapai headcount lowongan, sistem akan menawarkan untuk menutup job secara otomatis.
+</div>
+
+<h2>Halaman Daftar Pipeline</h2>
+<p>Semua pipeline ditampilkan di halaman Pipelines. Bisa difilter berdasarkan:</p>
+<ul>
+    <li>Stage (tahap saat ini)</li>
+    <li>Job title</li>
+    <li>Business unit</li>
+    <li>Candidate name</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot daftar pipeline dengan grouping by stage<br><em>[screenshot — /pipelines grouped by stage]</em></div>
+
+<h2>Fitur di Pipeline Detail</h2>
+<ul>
+    <li><strong>Sesi Wawancara</strong> — buat dan kelola interview sessions</li>
+    <li><strong>Test Assignment</strong> — kirim test ke kandidat</li>
+    <li><strong>Scorecard</strong> — lihat skor otomatis dari wawancara</li>
+    <li><strong>Tasks</strong> — to-do terikat pipeline ini</li>
+    <li><strong>Notes</strong> — catatan internal</li>
+    <li><strong>Comments</strong> — diskusi dengan tim</li>
+    <li><strong>Generate Offer</strong> — buat surat offering</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot pipeline detail lengkap (sections visible)<br><em>[screenshot — /pipeline/{id} full page, scrolled]</em></div>
+{% endblock %}

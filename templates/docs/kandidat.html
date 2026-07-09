@@ -1,0 +1,39 @@
+{% extends "docs/layout.html" %}
+{% block title %}Kelola Kandidat{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Kelola Kandidat</h1>
+<p>Kandidat adalah orang yang melamar atau diprospek untuk posisi di perusahaan. Satu kandidat bisa punya banyak pipeline (melamar ke beberapa posisi sekaligus).</p>
+
+<h2>Sumber Kandidat</h2>
+<p>Ada tiga cara menambah kandidat:</p>
+<ul>
+    <li><strong>Import NocoDB</strong> — tarik data dari database NocoDB yang terhubung</li>
+    <li><strong>Entry Manual</strong> — isi form nama, email, phone, posisi saat ini, CV link</li>
+    <li><strong>Dari Job Detail</strong> — tambah langsung saat membuka pipeline baru</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot form tambah kandidat (3 mode toggle)<br><em>[screenshot — /job/{id} add-candidate section expanded]</em></div>
+
+<h2>Halaman Daftar Kandidat</h2>
+<p>Tabel kandidat mendukung pencarian lanjutan:</p>
+<ul>
+    <li><strong>Search</strong> — nama atau email</li>
+    <li><strong>Filter</strong> — bahasa, cloud, tools, posisi, arrangement, notice period</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot daftar kandidat dengan filter<br><em>[screenshot — /candidates with extended filter]</em></div>
+
+<h2>Profil Kandidat</h2>
+<p>Klik kandidat untuk melihat profil lengkap:</p>
+<ul>
+    <li>Data personal (nama, email, phone, posisi, YOE)</li>
+    <li>Skills (languages, cloud, tools)</li>
+    <li>Preferensi (working arrangement, notice period, salary)</li>
+    <li>CV link</li>
+    <li>Daftar pipeline aktif</li>
+    <li>Riwayat komentar dan aktivitas</li>
+</ul>
+
+<div class="docs-img-placeholder">Screenshot halaman profil kandidat<br><em>[screenshot — /candidate/{id} full page]</em></div>
+{% endblock %}

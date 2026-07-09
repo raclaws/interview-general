@@ -1,0 +1,38 @@
+{% extends "docs/layout.html" %}
+{% block title %}Mulai di Sini{% endblock %}
+{% block content %}
+<a href="/docs" class="docs-back">← Kembali ke Beranda</a>
+<h1>Mulai di Sini</h1>
+<p>Halaman ini menjelaskan alur kerja rekrutmen dari awal sampai akhir menggunakan INS ATS. Ikuti langkah-langkah di bawah ini untuk pertama kali menggunakan sistem.</p>
+
+<h2>Alur Kerja Rekrutmen</h2>
+<ol class="docs-steps">
+    <li><strong>Buat Business Unit</strong> — masuk ke Settings → Business Units, tambahkan divisi (misal: Engineering, Product).</li>
+    <li><strong>Buat Lowongan (Job)</strong> — dari halaman Jobs, klik "+" untuk membuat lowongan baru. Isi posisi, level, recruiter, dan headcount.</li>
+    <li><strong>Tambah Kandidat</strong> — import dari NocoDB, entry manual, atau dari halaman Candidates.</li>
+    <li><strong>Masukkan ke Pipeline</strong> — dari Job detail, tambahkan kandidat ke pipeline. Kandidat akan mulai di tahap "Applied".</li>
+    <li><strong>Buat Sesi Wawancara</strong> — dari Pipeline detail, buat session dan kirim link ke interviewer.</li>
+    <li><strong>Pindahkan Tahap</strong> — setelah wawancara selesai, geser pipeline stage sesuai keputusan (interview → offered → hired).</li>
+    <li><strong>Generate Offer</strong> — jika kandidat lolos, generate surat offering dari Pipeline detail.</li>
+</ol>
+
+<div class="docs-img-placeholder">Diagram alur: BU → Job → Kandidat → Pipeline → Wawancara → Offer<br><em>[flowchart — akan di-generate]</em></div>
+
+<h2>Login Pertama Kali</h2>
+<p>Buka browser dan akses URL aplikasi. Anda akan melihat halaman login.</p>
+<div class="docs-img-placeholder">Screenshot halaman login<br><em>[screenshot — login page, desktop]</em></div>
+
+<div class="docs-callout">
+    <strong>Belum punya akun admin?</strong> Jalankan <code>python -m app.cli create-admin</code> di terminal server untuk membuat akun pertama.
+</div>
+
+<h2>Keyboard Shortcut</h2>
+<p>INS ATS mendukung navigasi keyboard untuk produktivitas:</p>
+<ul>
+    <li><strong>j / k</strong> — navigasi baris atas/bawah di tabel</li>
+    <li><strong>Enter</strong> — buka item yang sedang di-highlight</li>
+    <li><strong>Backspace</strong> — kembali ke halaman sebelumnya</li>
+    <li><strong>/</strong> — fokus ke search bar</li>
+    <li><strong>Ctrl+Z</strong> — undo delete terakhir</li>
+</ul>
+{% endblock %}
