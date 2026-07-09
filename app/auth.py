@@ -1,4 +1,5 @@
 import os
+import time
 import bcrypt
 from fastapi import Request, HTTPException, Depends
 from fastapi.responses import RedirectResponse
@@ -10,8 +11,32 @@ from app.models import AdminUser
 
 SECRET_KEY = os.getenv("ADMIN_SESSION_SECRET", "change-me")
 COOKIE_NAME = "session"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days
 
 serializer = URLSafeSerializer(SECRET_KEY)
+
+# Simple in-memory rate limiter for login
+_login_attempts: dict[str, list[float]] = {}
+LOGIN_WINDOW = 300  # 5 minutes
+LOGIN_MAX_ATTEMPTS = 5
+
+
+def check_rate_limit(ip: str) -> bool:
+    """Returns True if request is allowed, False if rate-limited."""
+    now = time.time()
+    attempts = _login_attempts.get(ip, [])
+    attempts = [t for t in attempts if now - t < LOGIN_WINDOW]
+    _login_attempts[ip] = attempts
+    return len(attempts) < LOGIN_MAX_ATTEMPTS
+
+
+def record_login_attempt(ip: str):
+    now = time.time()
+    _login_attempts.setdefault(ip, []).append(now)
+
+
+def clear_login_attempts(ip: str):
+    _login_attempts.pop(ip, None)
 
 
 def hash_password(password: str) -> str:

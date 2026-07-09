@@ -67,8 +67,15 @@ app.include_router(docs_router)
 @app.on_event("startup")
 def on_startup():
     create_tables()
-    # Auto-create admin from env vars if not exists
+    # Warn if using default session secret
     import os
+    secret = os.getenv("ADMIN_SESSION_SECRET", "change-me")
+    if secret == "change-me":
+        import logging
+        logging.getLogger("uvicorn.error").warning(
+            "SECURITY: ADMIN_SESSION_SECRET is using the default value. Set a strong secret in .env"
+        )
+    # Auto-create admin from env vars if not exists
     username = os.getenv("ADMIN_USERNAME")
     password = os.getenv("ADMIN_PASSWORD")
     if username and password:

@@ -1163,13 +1163,23 @@ async def login_submit(
     password: str = Form(...),
     db: Session = Depends(get_session),
 ):
-    from app.auth import verify_password, create_session_cookie, COOKIE_NAME
+    from app.auth import (
+        verify_password, create_session_cookie, COOKIE_NAME, COOKIE_MAX_AGE,
+        check_rate_limit, record_login_attempt, clear_login_attempts,
+    )
+
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        return _render(request, "login.html", {"error": "Too many attempts. Try again in 5 minutes."})
 
     admin = db.exec(select(AdminUser).where(AdminUser.username == username)).first()
     if not admin or not verify_password(password, admin.hashed_password):
+        record_login_attempt(client_ip)
         return _render(request, "login.html", {"error": "Invalid credentials"})
+
+    clear_login_attempts(client_ip)
     response = RedirectResponse("/", status_code=303)
-    response.set_cookie(COOKIE_NAME, create_session_cookie(username, admin.session_version or 1), httponly=True, secure=True, samesite="Lax")
+    response.set_cookie(COOKIE_NAME, create_session_cookie(username, admin.session_version or 1), httponly=True, secure=True, samesite="Lax", max_age=COOKIE_MAX_AGE)
     return response
 
 
