@@ -7,7 +7,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./interview.db")
-engine = create_engine(DATABASE_URL, echo=False)
+engine = create_engine(DATABASE_URL, echo=False, connect_args={"check_same_thread": False})
+
+
+def _enable_wal():
+    """Enable WAL mode for concurrent read/write access."""
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
+        conn.commit()
 
 
 def _migrate():
@@ -31,6 +38,8 @@ def _migrate():
         ("candidates", "nocodb_deleted", "BOOLEAN DEFAULT 0"),
         ("business_units", "portal_token", "TEXT"),
         ("admin_users", "session_version", "INTEGER DEFAULT 1"),
+        ("candidate_signals", "years_band", "TEXT DEFAULT ''"),
+        ("candidate_signals", "company_confidence", "TEXT DEFAULT ''"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
@@ -57,6 +66,7 @@ def _migrate():
 def create_tables():
     from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest, Task, CandidateSignal  # noqa
     SQLModel.metadata.create_all(engine)
+    _enable_wal()
     _migrate()
     _purge_soft_deleted()
     from app.seed import seed_templates

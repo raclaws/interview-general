@@ -449,8 +449,10 @@ class CandidateSignal(SQLModel, table=True):
     __tablename__ = "candidate_signals"
 
     id: Optional[int] = Field(default=None, primary_key=True)
-    candidate_id: int = Field(foreign_key="candidates.id", index=True, unique=True)
+    candidate_id: int = Field(index=True, unique=True)
     nocodb_id: Optional[int] = Field(default=None, index=True)
+    years_band: str = Field(default="")
+    company_confidence: str = Field(default="")
 
     salary_label: str = Field(default="")
     percentile: Optional[float] = None
