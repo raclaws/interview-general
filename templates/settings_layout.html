@@ -22,6 +22,8 @@
            hx-get="/settings/nocodb" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">NocoDB Sync</a>
         <a href="/settings/offer-config" class="settings-tab {% if active_tab == 'offer-config' %}active{% endif %}"
            hx-get="/settings/offer-config" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Offer Calc</a>
+        <a href="/settings/account" class="settings-tab {% if active_tab == 'account' %}active{% endif %}"
+           hx-get="/settings/account" hx-target=".settings-content" hx-swap="innerHTML" hx-push-url="true">Account</a>
     </nav>
     <div class="settings-content" hx-disinherit="*">
         {% if tab_content %}

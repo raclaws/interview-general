@@ -519,3 +519,50 @@ async def settings_offer_config_save(
 
     save_offer_config(config)
     return HTMLResponse('<div class="row-meta" style="color:var(--green);">Offer config saved.</div>')
+
+
+# --- Account / Password ---
+
+
+@router.get("/account", response_class=HTMLResponse)
+async def settings_account(
+    request: Request,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    ctx = {"admin": admin, "active_tab": "account"}
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return _render(request, "settings_account.html", ctx)
+    return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_account.html"})
+
+
+@router.post("/account/password", response_class=HTMLResponse)
+async def settings_account_password(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.auth import verify_password, hash_password
+
+    if not verify_password(current_password, admin.hashed_password):
+        return _toast_error("Current password is incorrect")
+
+    if len(new_password.strip()) < 6:
+        return _toast_error("New password must be at least 6 characters")
+
+    if new_password != confirm_password:
+        return _toast_error("Passwords do not match")
+
+    admin.hashed_password = hash_password(new_password)
+    db.add(admin)
+    db.commit()
+
+    import json
+    trigger = json.dumps({"toast": {"value": "Password updated", "severity": "success"}})
+    return HTMLResponse(
+        '<p class="row-meta" style="color:var(--success);">Password changed successfully.</p>',
+        headers={"HX-Trigger": trigger},
+    )

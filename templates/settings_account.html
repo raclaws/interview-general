@@ -1,0 +1,26 @@
+<div class="detail-section">
+    <div class="detail-section-label">Change Password</div>
+    <form hx-post="/settings/account/password" hx-target="#pw-result" hx-swap="innerHTML" style="max-width: 360px;">
+        <div class="form-field" style="margin-bottom: 0.75rem;">
+            <label class="form-label">Current Password</label>
+            <input type="password" name="current_password" required class="form-input" autocomplete="current-password">
+        </div>
+        <div class="form-field" style="margin-bottom: 0.75rem;">
+            <label class="form-label">New Password</label>
+            <input type="password" name="new_password" required minlength="6" class="form-input" autocomplete="new-password">
+        </div>
+        <div class="form-field" style="margin-bottom: 0.75rem;">
+            <label class="form-label">Confirm New Password</label>
+            <input type="password" name="confirm_password" required minlength="6" class="form-input" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn">Update Password</button>
+        <div id="pw-result" style="margin-top: 0.5rem;"></div>
+    </form>
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Account Info</div>
+    <div style="font-size: var(--text-sm);">
+        <span class="row-meta">Username:</span> {{ admin.username }}
+    </div>
+</div>
