@@ -26,7 +26,19 @@ from app.routes.requests import router as requests_router
 from app.routes.tasks import router as tasks_router
 from app.routes.docs import router as docs_router
 
-app = FastAPI(title="Interview Form Summarizer")
+app = FastAPI(title="Interview Form Summarizer", docs_url=None, redoc_url=None, openapi_url=None)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    if request.url.scheme == "https" or "localhost" not in request.headers.get("host", ""):
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    return response
 
 
 @app.exception_handler(HTTPException)
