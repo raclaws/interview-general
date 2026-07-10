@@ -46,11 +46,14 @@ def _render_list(request, db, admin, list_type):
     cfg = _LIST_CONFIG[list_type]
     items = db.exec(select(cfg["model"]).order_by(cfg["model"].order)).all()
     usage = _job_usage_counts(db, cfg["job_field"])
-    return _render(request, "settings_list.html", {
+    ctx = {
         "admin": admin, "items": items,
         "active_tab": cfg["tab"], "list_type": list_type,
         "label_field": cfg["label_field"], "usage": usage,
-    })
+    }
+    if request.headers.get("HX-Request") and not request.headers.get("HX-Boosted"):
+        return _render(request, "settings_list.html", ctx)
+    return _render(request, "settings_layout.html", {**ctx, "tab_content": "settings_list.html"})
 
 
 # --- Business Units ---
