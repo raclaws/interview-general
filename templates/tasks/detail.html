@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% from "macros/detail.html" import inline_edit, inline_select, detail_actions %}
 {% block title %}{{ task.title }}{% endblock %}
 {% block breadcrumb %}
 <nav class="breadcrumb">
@@ -10,77 +11,33 @@
     <h1>{{ task.title }}</h1>
 </div>
 
-<div class="detail-actions">
-    <div class="detail-actions-nav">
-        {% if task.entity_type == "job" %}
-        <a href="/job/{{ task.entity_id }}">↗ Job</a>
-        {% elif task.entity_type == "pipeline" %}
-        <a href="/pipeline/{{ task.entity_id }}">↗ Pipeline</a>
-        {% endif %}
-    </div>
-    <div class="detail-actions-export"></div>
-    <div class="detail-actions-mutate"></div>
-    <div class="detail-actions-destruct">
-        <form method="post" action="/tasks/{{ task.id }}/delete" style="display:contents;" hx-post="/tasks/{{ task.id }}/delete" hx-swap="none" hx-select="unset" hx-confirm="Delete this task?" hx-boost="false">
-            <button type="submit" title="Delete task">✕</button>
-        </form>
-    </div>
-</div>
+{% set nav_links = [] %}
+{% if task.entity_type == "job" %}
+{% set nav_links = [{"href": "/job/" ~ task.entity_id, "label": "↗ Job"}] %}
+{% elif task.entity_type == "pipeline" %}
+{% set nav_links = [{"href": "/pipeline/" ~ task.entity_id, "label": "↗ Pipeline"}] %}
+{% endif %}
+{{ detail_actions(nav=nav_links, destruct={"href": "/tasks/" ~ task.id ~ "/delete", "confirm": "Delete this task?", "title": "Delete task"}) }}
 
 <div class="detail-section">
     <div class="detail-section-label">Details</div>
     <div style="display: grid; grid-template-columns: 120px 1fr; gap: 0.75rem; font-size: var(--text-sm);">
-        <span class="row-meta">Title</span>
-        <form method="post" action="/tasks/{{ task.id }}/edit" hx-post="/tasks/{{ task.id }}/edit" hx-swap="none" hx-select="unset" hx-boost="false" style="display: flex; gap: 0.5rem;">
-            <input type="text" name="title" value="{{ task.title }}" class="form-input" style="flex:1;">
-            <button type="submit" class="btn" style="padding: 0.25rem 0.75rem;">Save</button>
-        </form>
-
-        <span class="row-meta">Status</span>
-        <form method="post" action="/tasks/{{ task.id }}/status" hx-post="/tasks/{{ task.id }}/status" hx-swap="none" hx-select="unset" hx-boost="false">
-            <select name="status" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
-                <option value="pending" {% if task.status == "pending" %}selected{% endif %}>Pending</option>
-                <option value="in_progress" {% if task.status == "in_progress" %}selected{% endif %}>In Progress</option>
-                <option value="done" {% if task.status == "done" %}selected{% endif %}>Done</option>
-                <option value="cancelled" {% if task.status == "cancelled" %}selected{% endif %}>Cancelled</option>
-            </select>
-        </form>
-
-        <span class="row-meta">Priority</span>
-        <form method="post" action="/tasks/{{ task.id }}/edit" hx-post="/tasks/{{ task.id }}/edit" hx-swap="none" hx-select="unset" hx-boost="false">
-            <select name="priority" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
-                <option value="none" {% if task.priority == "none" %}selected{% endif %}>None</option>
-                <option value="low" {% if task.priority == "low" %}selected{% endif %}>Low</option>
-                <option value="medium" {% if task.priority == "medium" %}selected{% endif %}>Medium</option>
-                <option value="high" {% if task.priority == "high" %}selected{% endif %}>High</option>
-                <option value="urgent" {% if task.priority == "urgent" %}selected{% endif %}>Urgent</option>
-            </select>
-        </form>
-
-        <span class="row-meta">Due date</span>
-        <form method="post" action="/tasks/{{ task.id }}/edit" hx-post="/tasks/{{ task.id }}/edit" hx-swap="none" hx-select="unset" hx-boost="false">
-            <input type="date" name="due_date" value="{{ task.due_date or '' }}" class="form-input" onchange="this.form.requestSubmit()" style="width: auto;">
-        </form>
-
-        <span class="row-meta">Assigned to</span>
-        <form method="post" action="/tasks/{{ task.id }}/edit" hx-post="/tasks/{{ task.id }}/edit" hx-swap="none" hx-select="unset" hx-boost="false" style="display: flex; gap: 0.5rem;">
-            <input type="text" name="assigned_to" value="{{ task.assigned_to or '' }}" class="form-input" list="assignee-list" style="flex:1;">
-            <button type="submit" class="btn" style="padding: 0.25rem 0.75rem;">Save</button>
-            <datalist id="assignee-list">
-                {% for name in assignee_options %}
-                <option value="{{ name }}">
-                {% endfor %}
-            </datalist>
-        </form>
+        {{ inline_edit("Title", "title", task.title, "/tasks/" ~ task.id ~ "/edit") }}
+        {{ inline_select("Status", "status", task.status, [("pending", "Pending"), ("in_progress", "In Progress"), ("done", "Done"), ("cancelled", "Cancelled")], "/tasks/" ~ task.id ~ "/status") }}
+        {{ inline_select("Priority", "priority", task.priority, [("none", "None"), ("low", "Low"), ("medium", "Medium"), ("high", "High"), ("urgent", "Urgent")], "/tasks/" ~ task.id ~ "/edit") }}
+        {{ inline_edit("Due date", "due_date", task.due_date, "/tasks/" ~ task.id ~ "/edit", type="date") }}
+        {{ inline_edit("Assigned to", "assigned_to", task.assigned_to, "/tasks/" ~ task.id ~ "/edit", datalist="assignee-list") }}
+        <datalist id="assignee-list">
+            {% for name in assignee_options %}
+            <option value="{{ name }}">
+            {% endfor %}
+        </datalist>
     </div>
 </div>
 
 <div class="detail-section">
     <div class="detail-section-label">Description</div>
-    <form method="post" action="/tasks/{{ task.id }}/edit" hx-post="/tasks/{{ task.id }}/edit" hx-swap="none" hx-select="unset" hx-boost="false">
-        <textarea name="description" class="form-input" rows="4" placeholder="Add a description...">{{ task.description or "" }}</textarea>
-        <button type="submit" class="btn" style="margin-top: 0.5rem; padding: 0.25rem 0.75rem;">Save</button>
-    </form>
+    {{ inline_edit("", "description", task.description, "/tasks/" ~ task.id ~ "/edit", type="textarea", placeholder="Add a description...") }}
 </div>
 
 <div class="detail-section">

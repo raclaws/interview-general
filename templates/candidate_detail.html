@@ -1,4 +1,5 @@
 {% extends "base_app.html" %}
+{% from "macros/detail.html" import comment_section %}
 {% block title %}{{ candidate.name }}{% endblock %}
 {% block breadcrumb %}
 <nav class="breadcrumb">
@@ -184,34 +185,6 @@ document.addEventListener('click', function(e) {
 });
 </script>
 
-<div class="detail-section">
-    <div class="detail-section-label">Comments</div>
-    <form hx-post="/peek/candidate/{{ candidate.id }}/comment" hx-target="#comments-candidate-{{ candidate.id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
-        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
-    </form>
-    <div class="trail-list" id="comments-candidate-{{ candidate.id }}">
-        {% for item in trail if item.kind == "comment" %}
-        {% include "partials/trail_item.html" %}
-        {% endfor %}
-    </div>
-    {% if not trail | selectattr("kind", "equalto", "comment") | list %}
-    <p class="detail-section-empty">No comments yet.</p>
-    {% endif %}
-</div>
-
-<div class="detail-section">
-    <div class="detail-section-label">Activity</div>
-    {% set activity_count = trail | rejectattr("kind", "equalto", "comment") | list | length %}
-    <div class="trail-list{% if activity_count > 5 %} trail-list--capped{% endif %}" id="trail-candidate-{{ candidate.id }}">
-        {% for item in trail if item.kind != "comment" %}
-        {% include "partials/trail_item.html" %}
-        {% endfor %}
-    </div>
-    {% if activity_count > 5 %}
-    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ activity_count }})</button>
-    {% elif activity_count == 0 %}
-    <p class="detail-section-empty">No activity yet.</p>
-    {% endif %}
-</div>
+{{ comment_section("candidate", candidate.id, trail) }}
 
 {% endblock %}

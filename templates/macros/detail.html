@@ -1,0 +1,92 @@
+{#
+  Shared macros for detail pages.
+  Import with: {% from "macros/detail.html" import inline_edit, inline_select, comment_section, detail_actions %}
+#}
+
+{% macro inline_edit(label, name, value, endpoint, type="text", placeholder="", datalist=None) %}
+{% if label %}<span class="row-meta">{{ label }}</span>{% endif %}
+{% if type == "date" %}
+<form method="post" action="{{ endpoint }}" hx-post="{{ endpoint }}" hx-swap="none" hx-select="unset" hx-boost="false">
+    <input type="date" name="{{ name }}" value="{{ value or '' }}" class="form-input" onchange="this.form.requestSubmit()" style="width: auto;">
+</form>
+{% elif type == "textarea" %}
+<form method="post" action="{{ endpoint }}" hx-post="{{ endpoint }}" hx-swap="none" hx-select="unset" hx-boost="false">
+    <textarea name="{{ name }}" class="form-input" rows="4" placeholder="{{ placeholder }}">{{ value or "" }}</textarea>
+    <button type="submit" class="btn" style="margin-top: 0.5rem; padding: 0.25rem 0.75rem;">Save</button>
+</form>
+{% else %}
+<form method="post" action="{{ endpoint }}" hx-post="{{ endpoint }}" hx-swap="none" hx-select="unset" hx-boost="false" style="display: flex; gap: 0.5rem;">
+    <input type="{{ type }}" name="{{ name }}" value="{{ value or '' }}" class="form-input" placeholder="{{ placeholder }}" {% if datalist %}list="{{ datalist }}"{% endif %} style="flex:1;">
+    <button type="submit" class="btn" style="padding: 0.25rem 0.75rem;">Save</button>
+</form>
+{% endif %}
+{% endmacro %}
+
+
+{% macro inline_select(label, name, value, options, endpoint) %}
+<span class="row-meta">{{ label }}</span>
+<form method="post" action="{{ endpoint }}" hx-post="{{ endpoint }}" hx-swap="none" hx-select="unset" hx-boost="false">
+    <select name="{{ name }}" onchange="this.form.style.opacity='0.5'; this.form.requestSubmit()" class="inline-select">
+        {% for opt in options %}
+        <option value="{{ opt.0 if opt is iterable and opt is not string else opt }}" {% if (opt.0 if opt is iterable and opt is not string else opt) == value %}selected{% endif %}>{{ opt.1 if opt is iterable and opt is not string else opt | replace("_", " ") | title }}</option>
+        {% endfor %}
+    </select>
+</form>
+{% endmacro %}
+
+
+{% macro detail_actions(nav=[], mutate=[], destruct=None) %}
+<div class="detail-actions">
+    <div class="detail-actions-nav">
+        {% for link in nav %}
+        <a href="{{ link.href }}" {% if link.boost == false %}hx-boost="false"{% endif %}>{{ link.label }}</a>
+        {% endfor %}
+    </div>
+    <div class="detail-actions-export"></div>
+    <div class="detail-actions-mutate">
+        {% for link in mutate %}
+        <a href="{{ link.href }}" hx-boost="false">{{ link.label }}</a>
+        {% endfor %}
+    </div>
+    <div class="detail-actions-destruct">
+        {% if destruct %}
+        <form method="post" action="{{ destruct.href }}" style="display:contents;" hx-post="{{ destruct.href }}" hx-swap="none" hx-select="unset" hx-confirm="{{ destruct.confirm }}" hx-boost="false">
+            <button type="submit" title="{{ destruct.title or 'Delete' }}">✕</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+
+{% macro comment_section(entity_type, entity_id, trail) %}
+<div class="detail-section">
+    <div class="detail-section-label">Comments</div>
+    <form hx-post="/peek/{{ entity_type }}/{{ entity_id }}/comment" hx-target="#comments-{{ entity_type }}-{{ entity_id }}" hx-swap="afterbegin" hx-select="unset" hx-push-url="false" hx-on::after-request="this.reset()" style="margin-bottom: 0.75rem;">
+        <input type="text" name="body" placeholder="Add a comment..." class="form-input" autocomplete="off">
+    </form>
+    <div class="trail-list" id="comments-{{ entity_type }}-{{ entity_id }}">
+        {% for item in trail if item.kind == "comment" %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    {% if not trail | selectattr("kind", "equalto", "comment") | list %}
+    <p class="detail-section-empty">No comments yet.</p>
+    {% endif %}
+</div>
+
+<div class="detail-section">
+    <div class="detail-section-label">Activity</div>
+    {% set activity_items = trail | rejectattr("kind", "equalto", "comment") | list %}
+    <div class="trail-list{% if activity_items | length > 5 %} trail-list--capped{% endif %}" id="trail-{{ entity_type }}-{{ entity_id }}">
+        {% for item in trail if item.kind != "comment" %}
+        {% include "partials/trail_item.html" %}
+        {% endfor %}
+    </div>
+    {% if activity_items | length > 5 %}
+    <button type="button" class="btn-ghost trail-show-more" onclick="this.previousElementSibling.classList.remove('trail-list--capped'); this.remove();">Show all ({{ activity_items | length }})</button>
+    {% elif activity_items | length == 0 %}
+    <p class="detail-section-empty">No activity yet.</p>
+    {% endif %}
+</div>
+{% endmacro %}
