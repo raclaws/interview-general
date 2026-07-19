@@ -20,7 +20,7 @@
     --accent-light: #f2f2f2;
     --text-primary: #1a1a1a;
     --text-secondary: #555555;
-    --text-muted: #999999;
+    --text-muted: #767676;
     --bg-page: #f8f8f8;
     --bg-card: #ffffff;
     --bg-muted: #f0f0f0;
@@ -48,7 +48,7 @@
         --accent-light: #2a2a2a;
         --text-primary: #e8e8e8;
         --text-secondary: #aaaaaa;
-        --text-muted: #666666;
+        --text-muted: #8a8a8a;
         --bg-page: #161616;
         --bg-card: #1c1c1c;
         --bg-muted: #262626;
@@ -92,6 +92,14 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
+:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: none;
+}
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
@@ -758,6 +766,37 @@ tr:hover td { background: var(--bg-muted); }
     letter-spacing: 0.02em;
 }
 
+/* Searchable picker (combobox) */
+[data-picker-name] { position: relative; }
+.picker-search { width: 100%; }
+.picker-list {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    z-index: 50;
+    box-shadow: var(--shadow-md);
+}
+.picker-option {
+    padding: var(--space-md) var(--space-xl);
+    cursor: pointer;
+    font-size: var(--text-base);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.picker-option:hover, .picker-option--active { background: var(--bg-muted); }
+.picker-option--selected { font-weight: 600; }
+.picker-option-meta { font-size: var(--text-sm); color: var(--text-muted); }
+.picker-empty { padding: var(--space-xl); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
+
 /* Cell type — link (truncated URL with icon) */
 .cell-link a, .cell-link-inline {
     display: inline-flex;
@@ -1064,7 +1103,7 @@ label {
 .form-input:focus, input[type="text"]:focus, input[type="password"]:focus, input[type="number"]:focus, input[type="date"]:focus, input[type="email"]:focus, input[type="url"]:focus, input[type="tel"]:focus, input[type="datetime-local"]:focus, select:focus, textarea:focus {
     outline: none;
     border-color: var(--border-focus);
-    box-shadow: 0 0 0 2px var(--accent-light);
+    box-shadow: 0 0 0 2px rgba(80, 80, 80, 0.25);
 }
 textarea { resize: vertical; min-height: 80px; }
 
