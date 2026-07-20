@@ -1491,3 +1491,39 @@ async def scorecard_export_csv(
         media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+# --- Share Link ---
+
+@router.post("/candidate/{candidate_id}/share")
+async def generate_share_link(
+    request: Request,
+    candidate_id: int,
+    hide_salary: str = Form("on"),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import uuid
+    candidate = db.get(Candidate, candidate_id)
+    if not candidate:
+        return RedirectResponse("/candidates", status_code=303)
+    candidate.share_token = str(uuid.uuid4())
+    candidate.share_hide_salary = hide_salary == "on"
+    db.add(candidate)
+    db.commit()
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
+@router.post("/candidate/{candidate_id}/revoke-share")
+async def revoke_share_link(
+    request: Request,
+    candidate_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    candidate = db.get(Candidate, candidate_id)
+    if not candidate:
+        return RedirectResponse("/candidates", status_code=303)
+    candidate.share_token = None
+    db.add(candidate)
+    db.commit()
+    return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
