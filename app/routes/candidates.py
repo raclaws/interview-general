@@ -1498,7 +1498,7 @@ async def scorecard_export_csv(
 async def generate_share_link(
     request: Request,
     candidate_id: int,
-    hide_salary: str = Form("on"),
+    hide_salary: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
