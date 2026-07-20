@@ -110,6 +110,8 @@ class Candidate(SQLModel, table=True):
     notice_period: Optional[str] = None
     cv_link: Optional[str] = None
     nocodb_deleted: bool = Field(default=False)
+    share_token: Optional[str] = Field(default=None, index=True)
+    share_hide_salary: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
