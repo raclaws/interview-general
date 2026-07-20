@@ -13,17 +13,19 @@
     </script>
     <style>
     body { display: flex; justify-content: center; padding: 2rem 1rem; }
-    .share-container { max-width: 640px; width: 100%; }
+    .share-container { max-width: 520px; width: 100%; }
     .share-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
     .share-avatar { width: 48px; height: 48px; min-width: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--bg-card); }
     .share-name { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
     .share-meta { font-size: var(--text-sm); color: var(--text-muted); margin-top: 0.15rem; }
     .share-section { margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); }
     .share-section-title { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem; }
-    .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem 1.5rem; font-size: var(--text-base); }
-    .share-grid dt { color: var(--text-muted); }
+    .share-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; font-size: var(--text-base); align-items: baseline; }
+    .share-grid dt { color: var(--text-muted); white-space: nowrap; }
     .share-grid dd { color: var(--text-primary); }
-    .share-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.3rem; }
+    .share-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
+    .share-field { margin-bottom: 0.5rem; }
+    .share-field-label { font-size: var(--text-sm); color: var(--text-muted); display: block; margin-bottom: 0.2rem; }
     .share-pipeline { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: var(--text-base); }
     .share-pipeline:last-child { border-bottom: none; }
     .share-footer { text-align: center; margin-top: 2rem; font-size: var(--text-sm); color: var(--text-muted); }
@@ -44,21 +46,60 @@
     </div>
 
     <div class="share-section">
-        <div class="share-section-title">Profile</div>
+        <div class="share-section-title">Contact</div>
         <dl class="share-grid">
             {% if candidate.email %}<dt>Email</dt><dd>{{ candidate.email }}</dd>{% endif %}
             {% if candidate.phone %}<dt>Phone</dt><dd>{{ candidate.phone }}</dd>{% endif %}
-            {% if candidate.languages %}<dt>Languages</dt><dd>{{ candidate.languages }}</dd>{% endif %}
-            {% if candidate.cloud %}<dt>Cloud</dt><dd>{{ candidate.cloud }}</dd>{% endif %}
-            {% if candidate.tools %}<dt>Tools</dt><dd>{{ candidate.tools }}</dd>{% endif %}
+            {% if candidate.cv_link %}<dt>CV</dt><dd><a href="{{ candidate.cv_link }}" target="_blank" rel="noopener">View CV</a></dd>{% endif %}
+        </dl>
+    </div>
+
+    <div class="share-section">
+        <div class="share-section-title">Technical</div>
+        {% if candidate.languages %}
+        <div class="share-field">
+            <span class="share-field-label">Languages</span>
+            <div class="share-badges">
+                {% for s in candidate.languages.split(',') %}
+                <span class="badge badge-muted">{{ s.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if candidate.cloud %}
+        <div class="share-field">
+            <span class="share-field-label">Cloud</span>
+            <div class="share-badges">
+                {% for s in candidate.cloud.split(',') %}
+                <span class="badge badge-muted">{{ s.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        {% if candidate.tools %}
+        <div class="share-field">
+            <span class="share-field-label">Tools</span>
+            <div class="share-badges">
+                {% for s in candidate.tools.split(',') %}
+                <span class="badge badge-muted">{{ s.strip() }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if candidate.notice_period or (not hide_salary and (candidate.current_salary or candidate.expected_salary)) %}
+    <div class="share-section">
+        <div class="share-section-title">Availability</div>
+        <dl class="share-grid">
             {% if candidate.notice_period %}<dt>Notice</dt><dd>{{ candidate.notice_period }}</dd>{% endif %}
             {% if not hide_salary %}
             {% if candidate.current_salary %}<dt>Current Salary</dt><dd>{{ candidate.current_salary }}</dd>{% endif %}
             {% if candidate.expected_salary %}<dt>Expected Salary</dt><dd>{{ candidate.expected_salary }}</dd>{% endif %}
             {% endif %}
-            {% if candidate.cv_link %}<dt>CV</dt><dd><a href="{{ candidate.cv_link }}" target="_blank" rel="noopener">View CV</a></dd>{% endif %}
         </dl>
     </div>
+    {% endif %}
 
     {% if signal %}
     <div class="share-section">
