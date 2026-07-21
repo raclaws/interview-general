@@ -1498,7 +1498,6 @@ async def scorecard_export_csv(
 async def generate_share_link(
     request: Request,
     candidate_id: int,
-    hide_salary: str = Form(""),
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
@@ -1507,7 +1506,7 @@ async def generate_share_link(
     if not candidate:
         return RedirectResponse("/candidates", status_code=303)
     candidate.share_token = str(uuid.uuid4())
-    candidate.share_hide_salary = hide_salary == "on"
+    candidate.share_token_full = str(uuid.uuid4())
     db.add(candidate)
     db.commit()
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
@@ -1524,6 +1523,7 @@ async def revoke_share_link(
     if not candidate:
         return RedirectResponse("/candidates", status_code=303)
     candidate.share_token = None
+    candidate.share_token_full = None
     db.add(candidate)
     db.commit()
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)

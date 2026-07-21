@@ -41,6 +41,7 @@ def _migrate():
         ("candidate_signals", "years_band", "TEXT DEFAULT ''"),
         ("candidate_signals", "company_confidence", "TEXT DEFAULT ''"),
         ("candidates", "share_token", "TEXT"),
+        ("candidates", "share_token_full", "TEXT"),
         ("candidates", "share_hide_salary", "BOOLEAN DEFAULT 1"),
     ]
     with engine.connect() as conn:

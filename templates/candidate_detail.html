@@ -16,22 +16,15 @@
     <div class="detail-actions-nav"></div>
     <div class="detail-actions-export">
         {% if candidate.share_token %}
-        <button type="button" class="btn-icon" title="Copy share link" onclick="navigator.clipboard.writeText(window.location.origin + '/s/{{ candidate.share_token }}'); window.toast && window.toast('Link copied');">⎘ Share</button>
+        <button type="button" class="btn-icon" title="Copy link (no salary)" onclick="navigator.clipboard.writeText(window.location.origin + '/s/{{ candidate.share_token }}'); window.toast && window.toast('Link copied (no salary)');">⎘</button>
+        <button type="button" class="btn-icon" title="Copy link (with salary)" onclick="navigator.clipboard.writeText(window.location.origin + '/s/{{ candidate.share_token_full }}'); window.toast && window.toast('Link copied (with salary)');">⎘$</button>
         <form method="post" action="/candidate/{{ candidate.id }}/revoke-share" style="display:inline;" hx-boost="false">
-            <button type="submit" class="btn-icon btn-icon-danger" title="Revoke share link">✕</button>
+            <button type="submit" class="btn-icon btn-icon-danger" title="Revoke share links">✕</button>
         </form>
         {% else %}
-        <div class="dropdown" hx-boost="false" style="display: inline-block; position: relative;">
-            <button type="button" onclick="this.nextElementSibling.classList.toggle('show')">Share</button>
-            <div class="dropdown-menu" style="padding: 0.75rem; min-width: 200px;">
-                <form method="post" action="/candidate/{{ candidate.id }}/share">
-                    <label style="display:flex; align-items:center; gap:0.5rem; font-size:var(--text-sm); cursor:pointer; margin-bottom:0.5rem;">
-                        <input type="checkbox" name="hide_salary" value="on" checked> Hide salary info
-                    </label>
-                    <button type="submit" class="btn btn--sm">Generate Link</button>
-                </form>
-            </div>
-        </div>
+        <form method="post" action="/candidate/{{ candidate.id }}/share" style="display:inline;" hx-boost="false">
+            <button type="submit" class="btn-icon" title="Generate share links">Share</button>
+        </form>
         {% endif %}
     </div>
     <div class="detail-actions-mutate">

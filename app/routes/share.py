@@ -22,6 +22,14 @@ async def shared_candidate_view(
     candidate = db.exec(
         select(Candidate).where(Candidate.share_token == token)
     ).first()
+    hide_salary = True
+
+    if not candidate:
+        candidate = db.exec(
+            select(Candidate).where(Candidate.share_token_full == token)
+        ).first()
+        hide_salary = False
+
     if not candidate:
         return HTMLResponse("<h1>Link expired or invalid</h1>", status_code=404)
 
@@ -47,5 +55,5 @@ async def shared_candidate_view(
         "signal": signal,
         "pipelines": pipelines,
         "pipeline_jobs": pipeline_jobs,
-        "hide_salary": candidate.share_hide_salary,
+        "hide_salary": hide_salary,
     })
