@@ -2,7 +2,7 @@
 
 A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pipelines, and generating AI-powered assessment summaries. Admin creates jobs, adds candidates, manages pipeline stages, creates interview sessions, shares token links with interviewers, and views auto-aggregated scorecards.
 
-**Current version: v1.1**
+**Current version: v1.2**
 
 ## Features
 
@@ -52,9 +52,19 @@ A lightweight self-hosted ATS webapp for managing jobs, candidates, interview pi
 - **NocoDB bulk sync** — one-click import all candidates + webhook for real-time create/update/delete
 - **Render-limit tables** — load all data, render 100 rows + "Show more", viewport-filling skeleton
 
+- **Signal engine** — 5-band salary positioning (WELL_BELOW→WELL_ABOVE), CV-extracted skills, boolean keyword search
+- **Task system** — lightweight to-dos linked to jobs/pipelines, sync-list, inline status change
+- **Shareable candidate profiles** — public `/s/{token}` links with salary show/hide toggle
+- **Searchable picker** — combobox replacement for long select lists (ARIA-compliant)
+- **Collapsible group headers** — click to collapse/expand grouped table rows
+- **BU portal** — manpower requests, job/pipeline visibility, comments
+- **LinkedIn post generation** — LLM-powered job post from structured data
+- **User guide** — `/guide` with 10 pages in Bahasa Indonesia
+
 ### Integrations
 - **NocoDB** — bulk import + real-time webhook sync (optional, manual entry supported)
-- **MCP server** — agent access for session management
+- **MCP server** — 12 tools: sessions, jobs, pipelines, candidates, tasks
+- **Signal engine** — pre-computed salary positioning + CV skills via `recompute.py` worker
 - **Offer letter generation** — salary calc, 4-variant template (BPJS × probation), HTML + PDF via weasyprint
 - **Webhook receiver** — `/api/webhooks/nocodb` with HMAC secret auth, handles insert/update/delete
 
@@ -276,6 +286,23 @@ LLM settings (base URL, API key, model, system prompt) can be changed from `/set
 - **Python ≥3.12** required. FastAPI ≥0.115, SQLModel 0.0.22.
 
 ## Changelog
+
+### v1.2 (2026-07-21)
+- Signal engine integration — 5-band salary positioning, CV-extracted skills, boolean keyword search (AND/OR/NOT)
+- Task system — lightweight to-dos linked to jobs/pipelines, sync-list with inline status change
+- Shareable candidate profiles — public `/s/{token}` links with salary show/hide toggle, revokable
+- Searchable picker (combobox) — ARIA-compliant replacement for long select lists
+- Collapsible group headers — click to collapse/expand on all sync-list pages
+- Security hardening — rate-limited login (5/5min), 7-day cookie expiry, session invalidation on password change, security headers (HSTS, X-Frame-Options, nosniff, Referrer-Policy), SRI on htmx CDN, OpenAPI docs disabled
+- Password change — Settings → Account tab, invalidates all other sessions
+- Auto-create admin from `ADMIN_USERNAME`/`ADMIN_PASSWORD` env vars on startup
+- Accessibility — visible focus indicators (:focus-visible), muted text contrast fixed to 4.5:1+
+- Jinja2 macros — `inline_edit`, `inline_select`, `detail_actions`, `comment_section` (templates/macros/detail.html)
+- Recompute worker — `candidate-search/recompute.py` with --full, --incremental, --watch modes
+- WAL mode enabled for concurrent SQLite read/write
+- User guide at `/guide` — 10 pages in Bahasa Indonesia with Playwright screenshots
+- MCP server expanded to 12 tools (jobs, pipelines, candidates, tasks)
+- Design system documentation (DESIGN_SYSTEM.md) + component inventory (COMPONENTS.md)
 
 ### v1.1 (2026-07-02)
 - Offer letter generation module — salary calc, 4-variant Jinja2 template (BPJS × probation change), HTML + PDF via weasyprint
