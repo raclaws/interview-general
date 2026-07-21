@@ -18,22 +18,28 @@
         <div class="form-row form-row--2col">
             <div class="form-field">
                 <label class="form-label">Position <span class="required">*</span></label>
-                <select name="position" required class="form-input">
-                    <option value="">Select position...</option>
+                <select id="position-source" style="display:none">
                     {% for p in positions %}
                     <option value="{{ p.title }}" {% if editing and job.position == p.title %}selected{% endif %}>{{ p.title }}</option>
                     {% endfor %}
                 </select>
+                <div data-picker-name="position" data-picker-source="position-source" data-picker-required data-picker-add-url="/settings/api/positions/add" data-picker-add-label="+ Add position" {% if editing %}data-picker-value="{{ job.position }}"{% endif %}>
+                    <input type="text" class="picker-search form-input" placeholder="Search or add position..." aria-label="Position">
+                    <div class="picker-list" role="listbox"></div>
+                </div>
             </div>
 
             <div class="form-field">
                 <label class="form-label">Level <span class="required">*</span></label>
-                <select name="level" required class="form-input">
-                    <option value="">Select level...</option>
+                <select id="level-source" style="display:none">
                     {% for l in levels %}
                     <option value="{{ l.label }}" {% if editing and job.level == l.label %}selected{% endif %}>{{ l.label }}</option>
                     {% endfor %}
                 </select>
+                <div data-picker-name="level" data-picker-source="level-source" data-picker-required data-picker-add-url="/settings/api/levels/add" data-picker-add-label="+ Add level" {% if editing %}data-picker-value="{{ job.level }}"{% endif %}>
+                    <input type="text" class="picker-search form-input" placeholder="Search or add level..." aria-label="Level">
+                    <div class="picker-list" role="listbox"></div>
+                </div>
             </div>
         </div>
 

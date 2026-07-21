@@ -30,6 +30,8 @@
         var filtered = [];
         var activeIdx = -1;
         var isOpen = false;
+        var addUrl = container.dataset.pickerAddUrl || '';
+        var addLabel = container.dataset.pickerAddLabel || '+ Add new';
 
         var source = container.dataset.pickerSource;
         if (source) {
@@ -66,8 +68,11 @@
                 if (opt.meta) html += '<span class="picker-option-meta">' + esc(opt.meta) + '</span>';
                 html += '</div>';
             });
-            if (filtered.length === 0) {
+            if (filtered.length === 0 && !addUrl) {
                 html = '<div class="picker-empty">No results</div>';
+            }
+            if (addUrl) {
+                html += '<div class="picker-option picker-add" data-add="true">' + esc(addLabel) + '</div>';
             }
             list.innerHTML = html;
             if (activeIdx >= 0) {
@@ -147,6 +152,24 @@
         });
 
         list.addEventListener('click', function(e) {
+            var addEl = e.target.closest('[data-add]');
+            if (addEl && addUrl) {
+                var val = search.value.trim() || prompt(addLabel + ':');
+                if (!val) return;
+                fetch(addUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    credentials: 'include',
+                    body: 'value=' + encodeURIComponent(val),
+                }).then(function(r) { return r.json(); }).then(function(data) {
+                    if (data && data.value) {
+                        var newOpt = {value: data.value, label: data.label || data.value, meta: data.meta || ''};
+                        options.push(newOpt);
+                        select(newOpt);
+                    }
+                }).catch(function() {});
+                return;
+            }
             var el = e.target.closest('.picker-option');
             if (!el) return;
             var idx = parseInt(el.dataset.idx);

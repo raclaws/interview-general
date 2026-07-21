@@ -17,12 +17,15 @@
         <div class="form-field">
             <label class="form-label">Candidate <span class="required">*</span></label>
             {% if candidates %}
-            <select name="candidate_id" required class="form-input">
-                <option value="">Select candidate...</option>
+            <select id="candidate-source" style="display:none">
                 {% for c in candidates %}
-                <option value="{{ c.id }}" {% if prefill_candidate_id == c.id %}selected{% endif %}>{{ c.name }} ({{ c.email }})</option>
+                <option value="{{ c.id }}" data-meta="{{ c.email }}" {% if prefill_candidate_id == c.id %}selected{% endif %}>{{ c.name }}</option>
                 {% endfor %}
             </select>
+            <div data-picker-name="candidate_id" data-picker-source="candidate-source" data-picker-required {% if prefill_candidate_id %}data-picker-value="{{ prefill_candidate_id }}"{% endif %}>
+                <input type="text" class="picker-search form-input" placeholder="Search candidates..." aria-label="Candidate">
+                <div class="picker-list" role="listbox"></div>
+            </div>
             {% else %}
             <p class="form-hint" style="padding: var(--space-md) 0;">No candidates yet. <a href="/candidate/new" hx-boost="false">Add a candidate first.</a></p>
             {% endif %}
@@ -31,12 +34,15 @@
         <div class="form-field">
             <label class="form-label">Job <span class="required">*</span></label>
             {% if jobs %}
-            <select name="job_id" required class="form-input">
-                <option value="">Select job...</option>
+            <select id="job-source" style="display:none">
                 {% for j in jobs %}
                 <option value="{{ j.id }}" {% if prefill_job_id == j.id %}selected{% endif %}>{{ j.title }}</option>
                 {% endfor %}
             </select>
+            <div data-picker-name="job_id" data-picker-source="job-source" data-picker-required {% if prefill_job_id %}data-picker-value="{{ prefill_job_id }}"{% endif %}>
+                <input type="text" class="picker-search form-input" placeholder="Search jobs..." aria-label="Job">
+                <div class="picker-list" role="listbox"></div>
+            </div>
             {% else %}
             <p class="form-hint" style="padding: var(--space-md) 0;">No open jobs. <a href="/job/new" hx-boost="false">Create a job first.</a></p>
             {% endif %}

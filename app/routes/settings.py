@@ -572,3 +572,47 @@ async def settings_account_password(
     )
     response.set_cookie(COOKIE_NAME, create_session_cookie(admin.username, admin.session_version), httponly=True, secure=True, samesite="Lax", max_age=COOKIE_MAX_AGE)
     return response
+
+
+# --- JSON API for inline picker add ---
+
+@router.post("/api/positions/add")
+async def api_add_position(
+    request: Request,
+    value: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from fastapi.responses import JSONResponse
+    v = value.strip()
+    if not v:
+        return JSONResponse({"error": "empty"}, status_code=400)
+    existing = db.exec(select(ManagedPosition).where(ManagedPosition.title == v)).first()
+    if existing:
+        return JSONResponse({"value": v, "label": v})
+    max_order = db.exec(select(ManagedPosition).order_by(ManagedPosition.order.desc())).first()
+    order = (max_order.order + 1) if max_order else 0
+    db.add(ManagedPosition(title=v, order=order))
+    db.commit()
+    return JSONResponse({"value": v, "label": v})
+
+
+@router.post("/api/levels/add")
+async def api_add_level(
+    request: Request,
+    value: str = Form(...),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from fastapi.responses import JSONResponse
+    v = value.strip()
+    if not v:
+        return JSONResponse({"error": "empty"}, status_code=400)
+    existing = db.exec(select(ManagedLevel).where(ManagedLevel.label == v)).first()
+    if existing:
+        return JSONResponse({"value": v, "label": v})
+    max_order = db.exec(select(ManagedLevel).order_by(ManagedLevel.order.desc())).first()
+    order = (max_order.order + 1) if max_order else 0
+    db.add(ManagedLevel(label=v, order=order))
+    db.commit()
+    return JSONResponse({"value": v, "label": v})

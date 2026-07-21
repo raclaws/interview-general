@@ -796,6 +796,7 @@ tr:hover td { background: var(--bg-muted); }
 .picker-option--selected { font-weight: 600; }
 .picker-option-meta { font-size: var(--text-sm); color: var(--text-muted); }
 .picker-empty { padding: var(--space-xl); text-align: center; color: var(--text-muted); font-size: var(--text-sm); }
+.picker-add { border-top: 1px solid var(--border); color: var(--accent); font-weight: 500; font-size: var(--text-sm); }
 
 /* Cell type — link (truncated URL with icon) */
 .cell-link a, .cell-link-inline {
