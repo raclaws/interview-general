@@ -17,7 +17,9 @@
     <div class="detail-actions-export">
         {% if candidate.share_token %}
         <button type="button" class="btn-icon" title="Copy link (no salary)" onclick="navigator.clipboard.writeText(window.location.origin + '/s/{{ candidate.share_token }}'); window.toast && window.toast('Link copied (no salary)');">⎘</button>
+        {% if candidate.share_token_full %}
         <button type="button" class="btn-icon" title="Copy link (with salary)" onclick="navigator.clipboard.writeText(window.location.origin + '/s/{{ candidate.share_token_full }}'); window.toast && window.toast('Link copied (with salary)');">⎘$</button>
+        {% endif %}
         <form method="post" action="/candidate/{{ candidate.id }}/revoke-share" style="display:inline;" hx-boost="false">
             <button type="submit" class="btn-icon btn-icon-danger" title="Revoke share links">✕</button>
         </form>
