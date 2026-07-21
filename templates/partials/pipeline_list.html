@@ -18,7 +18,7 @@
                     {% endfor %}
                 </select>
             </form>
-            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-score" title="View scorecard">◈ Score</a>
+            <a href="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/score" class="btn-ghost" title="View scorecard">◈ Score</a>
             <form method="post" action="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-post="/candidate/{{ candidate.id }}/pipeline/{{ p.id }}/delete"
                   hx-target="#pipeline-section"
@@ -27,7 +27,7 @@
                   hx-confirm="Remove this pipeline entry?"
                   hx-on::before-request="this.closest('.pipeline-entry').style.opacity='0.3'"
                   style="display: inline;">
-                <button type="submit" class="btn-danger-sm" title="Remove pipeline entry">✕</button>
+                <button type="submit" class="btn-icon btn-icon-danger" title="Remove pipeline entry">✕</button>
             </form>
         </div>
     </div>

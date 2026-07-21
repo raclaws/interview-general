@@ -16,7 +16,7 @@
     <p class="row-meta" style="margin-bottom: 1.5rem;">Only 1 HR interview is allowed per pipeline. You can delete the existing one to create a new one.</p>
 
     <div style="display: flex; gap: 1rem; justify-content: center;">
-        <a href="/sessions" class="btn-score">← Back</a>
+        <a href="/sessions" class="btn-ghost">← Back</a>
         <form method="post" action="/session/{{ existing_session.id }}/delete?next=/session/new{% if candidate_id %}?candidate_id={{ candidate_id }}%26pipeline_id={{ pipeline.id }}{% endif %}" style="display:inline;" hx-post="/session/{{ existing_session.id }}/delete?next=/session/new{% if candidate_id %}?candidate_id={{ candidate_id }}%26pipeline_id={{ pipeline.id }}{% endif %}" hx-swap="none" hx-confirm="Delete the existing HR session? All responses will be lost.">
             <button type="submit" class="btn" style="background: var(--danger);">Delete & Retry</button>
         </form>

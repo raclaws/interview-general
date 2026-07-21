@@ -128,7 +128,7 @@
                           hx-post="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/cancel"
                           hx-confirm="Cancel this test assignment?"
                           hx-swap="none">
-                        <button type="submit" class="icon-btn icon-btn-warn" style="font-size: 0.7rem;" title="Cancel">⊘</button>
+                        <button type="submit" class="btn-icon btn-icon-warn" style="font-size: 0.7rem;" title="Cancel">⊘</button>
                     </form>
                     {% endif %}
                     <form method="post" action="/pipeline/{{ pipeline.id }}/test/{{ t.id }}/delete" style="display: inline;"
@@ -136,7 +136,7 @@
                           hx-confirm="Delete this test assignment?"
                           hx-swap="none"
                           hx-on::after-request="this.closest('tr').remove(); toast('Test deleted')">
-                        <button type="submit" class="icon-btn icon-btn-danger" style="font-size: 0.7rem;" title="Delete">✕</button>
+                        <button type="submit" class="btn-icon btn-icon-danger" style="font-size: 0.7rem;" title="Delete">✕</button>
                     </form>
                 </td>
             </tr>

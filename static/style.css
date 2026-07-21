@@ -538,19 +538,6 @@ main { max-width: 960px; margin: 2rem auto; padding: 0 1.5rem; }
 .btn--full { width: 100%; text-align: center; }
 .btn--loading { opacity: 0.6; pointer-events: none; }
 
-/* Legacy compat — aliases (remove after full migration) */
-.btn-secondary { background: none; border: none; color: var(--accent); padding: var(--space-md) var(--space-xl); font-size: var(--text-base); font-weight: 500; cursor: pointer; text-decoration: none; }
-.btn-secondary:hover { text-decoration: underline; color: var(--accent-hover); transform: none; }
-.btn-copy { opacity: 0.5; background: none; border: none; color: var(--text-muted); font-size: var(--text-xs); padding: var(--space-xs) var(--space-sm); cursor: pointer; }
-.btn-copy:hover { opacity: 1; color: var(--accent); }
-.btn-score { display: inline-block; background: none; border: none; color: var(--accent); padding: var(--space-md) var(--space-xl); font-size: var(--text-base); font-weight: 500; cursor: pointer; text-decoration: none; }
-.btn-score:hover { text-decoration: underline; color: var(--accent-hover); }
-.icon-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75rem; height: 1.75rem; font-size: var(--text-md); color: var(--text-muted); background: none; border: none; border-radius: var(--radius-sm); cursor: pointer; text-decoration: none; opacity: 0.5; padding: 0; transition: all 0.15s; }
-.icon-btn:hover { opacity: 1; color: var(--accent); text-decoration: none; transform: none; }
-.icon-btn.icon-btn-warn:hover { color: var(--warning); }
-.icon-btn.icon-btn-danger:hover { color: var(--danger); }
-.btn-danger-sm { opacity: 0.5; background: none; border: none; color: var(--text-muted); font-size: var(--text-xs); padding: var(--space-xs) var(--space-sm); cursor: pointer; }
-.btn-danger-sm:hover { opacity: 1; color: var(--danger); transform: none; }
 
 /* Page header */
 .page-header {
