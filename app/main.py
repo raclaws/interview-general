@@ -26,6 +26,7 @@ from app.routes.requests import router as requests_router
 from app.routes.tasks import router as tasks_router
 from app.routes.docs import router as docs_router
 from app.routes.share import router as share_router
+from app.routes.benchmark import router as benchmark_router
 
 app = FastAPI(title="Interview Form Summarizer", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -76,6 +77,7 @@ app.include_router(requests_router)
 app.include_router(tasks_router)
 app.include_router(docs_router)
 app.include_router(share_router)
+app.include_router(benchmark_router)
 
 
 @app.on_event("startup")

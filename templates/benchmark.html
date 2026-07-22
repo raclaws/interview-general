@@ -1,0 +1,163 @@
+{% extends "base_app.html" %}
+{% block title %}Salary Benchmark{% endblock %}
+{% block breadcrumb %}
+<nav class="breadcrumb">
+    <span>Salary Benchmark</span>
+</nav>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1>Salary Benchmark</h1>
+</div>
+
+<div id="bench-controls" style="display:flex; gap:0.75rem; margin-bottom:1rem; flex-wrap:wrap;">
+    <select id="role-filter" class="form-input" style="width:auto;">
+        <option value="">All Roles</option>
+    </select>
+    <select id="band-filter" class="form-input" style="width:auto;">
+        <option value="">All Bands</option>
+    </select>
+</div>
+
+<div class="detail-section" style="overflow-x:auto;">
+    <table class="table-clean" id="bench-table">
+        <thead>
+            <tr style="border-bottom:1px solid var(--border);">
+                <th style="text-align:left; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">Role</th>
+                <th style="text-align:left; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">Band</th>
+                <th style="text-align:right; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">n</th>
+                <th style="text-align:right; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">P25</th>
+                <th style="text-align:right; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">P50</th>
+                <th style="text-align:right; padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">P75</th>
+                <th style="padding:0.5rem; font-size:var(--text-sm); color:var(--text-muted);">Distribution</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+
+<div id="bench-detail" class="detail-section" style="display:none; margin-top:1rem;">
+    <div class="detail-section-label" id="bench-detail-title"></div>
+    <div id="bench-chart" style="height:200px; position:relative;"></div>
+    <div id="bench-detail-meta" style="margin-top:0.75rem; font-size:var(--text-sm); color:var(--text-muted);"></div>
+</div>
+
+<script>
+(function() {
+    var data = null;
+
+    async function load() {
+        var resp = await fetch('/api/salary-stats', {credentials: 'include'});
+        if (!resp.ok) return;
+        data = await resp.json();
+        populateFilters();
+        renderTable();
+    }
+
+    function populateFilters() {
+        var roleEl = document.getElementById('role-filter');
+        var bandEl = document.getElementById('band-filter');
+        data.roles.forEach(function(r) {
+            var opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = r.replace(/_/g, ' ');
+            roleEl.appendChild(opt);
+        });
+        data.bands.forEach(function(b) {
+            var opt = document.createElement('option');
+            opt.value = b;
+            opt.textContent = b;
+            bandEl.appendChild(opt);
+        });
+        roleEl.addEventListener('change', renderTable);
+        bandEl.addEventListener('change', renderTable);
+    }
+
+    function renderTable() {
+        var role = document.getElementById('role-filter').value;
+        var band = document.getElementById('band-filter').value;
+        var filtered = data.buckets.filter(function(b) {
+            if (role && b.role !== role) return false;
+            if (band && b.band !== band) return false;
+            return true;
+        });
+
+        var tbody = document.querySelector('#bench-table tbody');
+        tbody.innerHTML = '';
+        filtered.forEach(function(b) {
+            var tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.innerHTML =
+                '<td style="padding:0.5rem; font-weight:500;">' + b.role.replace(/_/g, ' ') + '</td>' +
+                '<td style="padding:0.5rem; color:var(--text-secondary);">' + b.band + '</td>' +
+                '<td style="padding:0.5rem; text-align:right;">' + b.count + '</td>' +
+                '<td style="padding:0.5rem; text-align:right;">' + (b.p25 != null ? b.p25.toFixed(0) : '—') + '</td>' +
+                '<td style="padding:0.5rem; text-align:right; font-weight:600;">' + (b.p50 != null ? b.p50.toFixed(0) : '—') + '</td>' +
+                '<td style="padding:0.5rem; text-align:right;">' + (b.p75 != null ? b.p75.toFixed(0) : '—') + '</td>' +
+                '<td style="padding:0.5rem;">' + renderMiniBar(b.distribution) + '</td>';
+            tr.addEventListener('click', function() { showDetail(b); });
+            tbody.appendChild(tr);
+        });
+
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="7" style="padding:2rem; text-align:center; color:var(--text-muted);">No data for this filter.</td></tr>';
+        }
+    }
+
+    function renderMiniBar(dist) {
+        var total = Object.values(dist).reduce(function(a, b) { return a + b; }, 0);
+        if (!total) return '';
+        var colors = {WELL_BELOW:'var(--success)', BELOW:'var(--success)', MARKET:'var(--text-muted)', ABOVE:'var(--warning)', WELL_ABOVE:'var(--danger)'};
+        var order = ['WELL_BELOW', 'BELOW', 'MARKET', 'ABOVE', 'WELL_ABOVE'];
+        var html = '<div style="display:flex; height:14px; border-radius:3px; overflow:hidden; width:120px;">';
+        order.forEach(function(k) {
+            var pct = ((dist[k] || 0) / total * 100);
+            if (pct > 0) {
+                html += '<div style="width:' + pct + '%; background:' + (colors[k] || 'var(--border)') + '; opacity:0.7;" title="' + k.replace(/_/g,' ') + ': ' + (dist[k]||0) + '"></div>';
+            }
+        });
+        html += '</div>';
+        return html;
+    }
+
+    function showDetail(bucket) {
+        var panel = document.getElementById('bench-detail');
+        var title = document.getElementById('bench-detail-title');
+        var chart = document.getElementById('bench-chart');
+        var meta = document.getElementById('bench-detail-meta');
+
+        panel.style.display = 'block';
+        title.textContent = bucket.role.replace(/_/g, ' ') + ' — ' + bucket.band + ' (n=' + bucket.count + ')';
+
+        var dist = bucket.distribution;
+        var order = ['WELL_BELOW', 'BELOW', 'MARKET', 'ABOVE', 'WELL_ABOVE'];
+        var colors = {WELL_BELOW:'var(--success)', BELOW:'var(--success)', MARKET:'var(--text-muted)', ABOVE:'var(--warning)', WELL_ABOVE:'var(--danger)'};
+        var max = Math.max.apply(null, order.map(function(k) { return dist[k] || 0; }));
+
+        var html = '<div style="display:flex; align-items:flex-end; gap:0.5rem; height:180px; padding-top:1rem;">';
+        order.forEach(function(k) {
+            var val = dist[k] || 0;
+            var h = max > 0 ? (val / max * 150) : 0;
+            html += '<div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:0.25rem;">';
+            html += '<span style="font-size:var(--text-xs); color:var(--text-primary); font-weight:600;">' + val + '</span>';
+            html += '<div style="width:100%; height:' + h + 'px; background:' + (colors[k]) + '; border-radius:3px 3px 0 0; opacity:0.8; min-height:2px;"></div>';
+            html += '<span style="font-size:var(--text-xs); color:var(--text-muted); white-space:nowrap;">' + k.replace(/_/g, ' ').toLowerCase() + '</span>';
+            html += '</div>';
+        });
+        html += '</div>';
+        chart.innerHTML = html;
+
+        var cats = bucket.categories;
+        if (Object.keys(cats).length) {
+            meta.innerHTML = '<strong>Company types:</strong> ' + Object.entries(cats).map(function(e) { return e[0].replace(/_/g,' ') + ' (' + e[1] + ')'; }).join(', ');
+        } else {
+            meta.innerHTML = 'No company category data for this bucket.';
+        }
+
+        panel.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+
+    load();
+})();
+</script>
+{% endblock %}
