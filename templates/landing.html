@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insignia HR Platform</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        .landing-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 3rem;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .landing-brand {
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.08em;
+            color: #808080;
+        }
+        .landing-user {
+            font-size: 0.8rem;
+            color: #555;
+        }
+        .landing-hero {
+            padding: 5rem 3rem 3rem;
+            max-width: 720px;
+        }
+        .landing-hero h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.25;
+            margin-bottom: 0.75rem;
+        }
+        .landing-hero p {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+            max-width: 480px;
+        }
+        .landing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1px;
+            background: #1a1a1a;
+            margin: 2rem 3rem;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .landing-card {
+            background: #0f0f0f;
+            padding: 1.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .landing-card:hover {
+            background: #141414;
+        }
+        .landing-card-icon {
+            font-size: 1.25rem;
+            margin-bottom: 0.25rem;
+        }
+        .landing-card h3 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #ffffff;
+        }
+        .landing-card p {
+            font-size: 0.8rem;
+            color: #555;
+            line-height: 1.5;
+        }
+        .landing-card-arrow {
+            margin-top: auto;
+            padding-top: 0.75rem;
+            font-size: 0.75rem;
+            color: #444;
+            transition: color 0.15s;
+        }
+        .landing-card:hover .landing-card-arrow {
+            color: #888;
+        }
+        .landing-card--disabled {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .landing-footer {
+            padding: 3rem;
+            font-size: 0.75rem;
+            color: #333;
+        }
+        @media (max-width: 640px) {
+            .landing-nav, .landing-hero, .landing-footer { padding-left: 1.5rem; padding-right: 1.5rem; }
+            .landing-grid { margin: 2rem 1.5rem; grid-template-columns: 1fr; }
+            .landing-hero h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="landing-nav">
+        <div class="landing-brand">INSIGNIA</div>
+        <div class="landing-user"></div>
+    </nav>
+
+    <section class="landing-hero">
+        <h1>HR Platform</h1>
+        <p>Internal tools for recruitment, compensation, and people operations.</p>
+    </section>
+
+    <div class="landing-grid">
+        <a href="/login" class="landing-card">
+            <div class="landing-card-icon">&#9635;</div>
+            <h3>Applicant Tracking</h3>
+            <p>Jobs, candidates, pipelines, interviews, scorecards, and offers.</p>
+            <div class="landing-card-arrow">&rarr;</div>
+        </a>
+
+        <a href="#" class="landing-card">
+            <div class="landing-card-icon">&#9638;</div>
+            <h3>Salary Benchmark</h3>
+            <p>Market positioning by role, band, and company tier. Interactive explorer.</p>
+            <div class="landing-card-arrow">&rarr;</div>
+        </a>
+
+        <a href="#" class="landing-card landing-card--disabled">
+            <div class="landing-card-icon">&#9634;</div>
+            <h3>SOPs & Policies</h3>
+            <p>Standard operating procedures, employment policies, and handbooks.</p>
+            <div class="landing-card-arrow">Coming soon</div>
+        </a>
+
+        <a href="#" class="landing-card landing-card--disabled">
+            <div class="landing-card-icon">&#9671;</div>
+            <h3>Compliance</h3>
+            <p>Labor law obligations, contract checklists, and audit trails.</p>
+            <div class="landing-card-arrow">Coming soon</div>
+        </a>
+
+        <a href="/reports" class="landing-card">
+            <div class="landing-card-icon">&#9632;</div>
+            <h3>Reports</h3>
+            <p>Hiring pipeline analytics, time-to-hire, and headcount tracking.</p>
+            <div class="landing-card-arrow">&rarr;</div>
+        </a>
+
+        <a href="/guide" class="landing-card">
+            <div class="landing-card-icon">&#9673;</div>
+            <h3>Documentation</h3>
+            <p>User guides, feature reference, and setup instructions.</p>
+            <div class="landing-card-arrow">&rarr;</div>
+        </a>
+    </div>
+
+    <footer class="landing-footer">
+        Insignia &middot; Internal use only
+    </footer>
+</body>
+</html>
