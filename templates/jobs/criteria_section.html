@@ -1,0 +1,61 @@
+<div class="detail-section" id="criteria-section">
+    <div class="detail-section-label">Criteria ({{ criteria | length }})</div>
+
+    {% if criteria %}
+    <table class="table-clean" style="font-size: var(--text-sm);">
+        <tbody>
+        {% for c in criteria %}
+        <tr>
+            <td style="width:50px;">
+                <span class="badge badge-{{ 'urgent' if c.tier == 'r1' else 'low' }}">{{ c.tier | upper }}</span>
+            </td>
+            <td style="width:60px;">
+                <span class="row-meta">{{ c.type }}</span>
+            </td>
+            <td class="col-primary">{{ c.label }}{% if c.description %} <span class="row-meta">— {{ c.description }}</span>{% endif %}</td>
+            <td style="width:30px;">
+                <form method="post" action="/job/{{ job.id }}/criteria/{{ c.id }}/delete" style="display:inline;"
+                      hx-post="/job/{{ job.id }}/criteria/{{ c.id }}/delete" hx-target="#criteria-section" hx-swap="outerHTML" hx-select="#criteria-section" hx-confirm="Remove this criterion?" hx-boost="false">
+                    <button type="submit" class="btn-icon btn-icon-danger" title="Remove">✕</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="detail-section-empty">No criteria defined yet.</p>
+    {% endif %}
+
+    <details class="inline-expand" style="margin-top: 0.75rem;">
+        <summary class="btn-pill">+ Add criterion</summary>
+        <div class="inline-expand-body">
+            <form method="post" action="/job/{{ job.id }}/criteria"
+                  hx-post="/job/{{ job.id }}/criteria" hx-target="#criteria-section" hx-swap="outerHTML" hx-select="#criteria-section" hx-boost="false"
+                  hx-on::after-request="this.reset(); this.closest('details').removeAttribute('open')">
+                <div class="form-row form-row--2col" style="margin-bottom: 0.5rem;">
+                    <div class="form-field">
+                        <select name="tier" class="form-input">
+                            <option value="r1">R1 — Mandatory</option>
+                            <option value="r2">R2 — Preferred</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <select name="type" class="form-input">
+                            <option value="skill">Skill</option>
+                            <option value="experience">Experience</option>
+                            <option value="trait">Trait</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row" style="margin-bottom: 0.5rem;">
+                    <input type="text" name="label" required class="form-input" placeholder="e.g. Python, 5+ years fintech, Ownership mindset" maxlength="200">
+                </div>
+                <div class="form-row" style="margin-bottom: 0.5rem;">
+                    <input type="text" name="description" class="form-input" placeholder="Optional description..." maxlength="500">
+                </div>
+                <button type="submit" class="btn btn--sm">Add</button>
+            </form>
+        </div>
+    </details>
+</div>

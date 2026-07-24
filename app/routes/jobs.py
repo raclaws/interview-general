@@ -179,10 +179,13 @@ async def job_detail(
         candidate = db.get(Candidate, p.candidate_id)
         pipeline_data.append({"pipeline": p, "candidate": candidate})
 
-    from app.models import Task
+    from app.models import Task, JobCriteria
     tasks = db.exec(
         select(Task).where(Task.entity_type == "job", Task.entity_id == job_id, not_deleted(Task))
         .order_by(Task.due_date.asc(), Task.created_at.desc())
+    ).all()
+    criteria = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order)
     ).all()
     assignee_options = set()
     if job.recruiter:
@@ -200,6 +203,7 @@ async def job_detail(
         "pipeline_data": pipeline_data,
         "filled": filled,
         "tasks": tasks,
+        "criteria": criteria,
         "assignee_options": sorted(assignee_options),
         "entity_type": "job",
         "entity_id": job.id,
@@ -686,3 +690,77 @@ async def job_post_generate(
         "target_candidate": target_candidate, "tools_stack": tools_stack,
         "hook_angle": hook_angle, "hashtags": hashtags,
     })
+
+
+# --- Job Criteria ---
+
+@router.get("/job/{job_id}/criteria", response_class=HTMLResponse)
+async def job_criteria_section(
+    request: Request,
+    job_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import JobCriteria, not_deleted
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Not found", status_code=404)
+    criteria = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order)
+    ).all()
+    return _render(request, "jobs/criteria_section.html", {"job": job, "criteria": criteria, "admin": admin})
+
+
+@router.post("/job/{job_id}/criteria")
+async def add_job_criteria(
+    request: Request,
+    job_id: int,
+    label: str = Form(...),
+    tier: str = Form("r1"),
+    type: str = Form("skill"),
+    description: str = Form(""),
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import JobCriteria, not_deleted
+    job = db.get(Job, job_id)
+    if not job:
+        return HTMLResponse("Not found", status_code=404)
+    if not label.strip():
+        return HTMLResponse("Label required", status_code=422)
+    if tier not in ("r1", "r2"):
+        tier = "r1"
+    if type not in ("skill", "experience", "trait"):
+        type = "skill"
+    max_order = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order.desc())
+    ).first()
+    order = (max_order.order + 1) if max_order else 0
+    db.add(JobCriteria(job_id=job_id, tier=tier, type=type, label=label.strip(), description=description.strip() or None, order=order))
+    db.commit()
+    criteria = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order)
+    ).all()
+    return _render(request, "jobs/criteria_section.html", {"job": job, "criteria": criteria, "admin": admin})
+
+
+@router.post("/job/{job_id}/criteria/{criteria_id}/delete")
+async def delete_job_criteria(
+    request: Request,
+    job_id: int,
+    criteria_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    from app.models import JobCriteria, not_deleted
+    from datetime import datetime
+    item = db.get(JobCriteria, criteria_id)
+    if item and item.job_id == job_id:
+        item.deleted_at = datetime.utcnow()
+        db.add(item)
+        db.commit()
+    job = db.get(Job, job_id)
+    criteria = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order)
+    ).all()
+    return _render(request, "jobs/criteria_section.html", {"job": job, "criteria": criteria, "admin": admin})
