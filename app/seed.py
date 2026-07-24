@@ -539,3 +539,43 @@ def backfill_section_guidance(engine):
 
         db.add(Setting(key="backfill_guidance_done", value="1"))
         db.commit()
+
+
+def backfill_hr_evidence_sections(engine):
+    """Add Roles & Responsibilities + Success Stories sections to HR Interview template."""
+    from app.models import Setting, Template, TemplateSection
+
+    with Session(engine) as db:
+        done = db.exec(select(Setting).where(Setting.key == "backfill_hr_evidence_done")).first()
+        if done:
+            return
+
+        hr_template = db.exec(select(Template).where(Template.name == "HR Interview")).first()
+        if not hr_template:
+            return
+
+        existing = db.exec(
+            select(TemplateSection).where(TemplateSection.template_id == hr_template.id)
+        ).all()
+        existing_titles = {s.title for s in existing}
+        max_order = max((s.order for s in existing), default=0)
+
+        new_sections = [
+            ("Roles & Responsibilities", "Capture what the candidate currently does — scope, team size, decision authority. Context for scoring Ownership and Maturity."),
+            ("Success Stories", "Concrete achievements with measurable outcomes. Evidence for Execution Excellence and Impact Over Activity."),
+        ]
+
+        for title, desc in new_sections:
+            if title in existing_titles:
+                continue
+            max_order += 1
+            db.add(TemplateSection(
+                template_id=hr_template.id,
+                order=max_order,
+                title=title,
+                description=desc,
+                measurement_type="long_text",
+            ))
+
+        db.add(Setting(key="backfill_hr_evidence_done", value="1"))
+        db.commit()

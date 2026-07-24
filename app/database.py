@@ -80,6 +80,8 @@ def create_tables():
     migrate_legacy_job_ids(engine)
     from app.seed import backfill_section_guidance
     backfill_section_guidance(engine)
+    from app.seed import backfill_hr_evidence_sections
+    backfill_hr_evidence_sections(engine)
 
 
 def _purge_soft_deleted():
