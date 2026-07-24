@@ -28,6 +28,23 @@
     .share-field-label { font-size: var(--text-sm); color: var(--text-muted); display: block; margin-bottom: 0.2rem; }
     .share-pipeline { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border); font-size: var(--text-base); }
     .share-pipeline:last-child { border-bottom: none; }
+    .share-pipeline-group { margin-bottom: 0.75rem; }
+    .share-pipeline-group:last-child { margin-bottom: 0; }
+    .share-session { margin: 0.4rem 0 0 0.75rem; }
+    .share-session-header { cursor: pointer; font-size: var(--text-sm); padding: 0.4rem 0; color: var(--text-secondary); list-style: none; display: flex; justify-content: space-between; }
+    .share-session-header::-webkit-details-marker { display: none; }
+    .share-session-header::before { content: '▸ '; color: var(--text-muted); }
+    details[open] > .share-session-header::before { content: '▾ '; }
+    .share-session-meta { color: var(--text-muted); font-size: var(--text-xs); }
+    .share-session-body { padding: 0.5rem 0 0.5rem 1rem; border-left: 2px solid var(--border); margin-left: 0.25rem; }
+    .share-response { margin-bottom: 0.75rem; }
+    .share-response:last-child { margin-bottom: 0; }
+    .share-response-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+    .share-scores { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 1rem; font-size: var(--text-sm); }
+    .share-score-dim { color: var(--text-secondary); }
+    .share-score-val { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .share-response-notes { margin-top: 0.3rem; font-size: var(--text-sm); color: var(--text-muted); font-style: italic; }
+    .share-session-empty { font-size: var(--text-sm); color: var(--text-muted); padding: 0.3rem 0; }
     .share-footer { text-align: center; margin-top: 2rem; font-size: var(--text-sm); color: var(--text-muted); }
     </style>
 </head>
@@ -140,9 +157,46 @@
     <div class="share-section">
         <div class="share-section-title">Pipelines</div>
         {% for p in pipelines %}
-        <div class="share-pipeline">
-            <span>{{ pipeline_jobs[p.id].title if p.id in pipeline_jobs else 'Unknown Job' }}</span>
-            <span class="badge badge-{{ p.stage }}">{{ p.stage.replace('_', ' ') | title }}</span>
+        <div class="share-pipeline-group">
+            <div class="share-pipeline">
+                <span>{{ pipeline_jobs[p.id].title if p.id in pipeline_jobs else 'Unknown Job' }}</span>
+                <span class="badge badge-{{ p.stage }}">{{ p.stage.replace('_', ' ') | title }}</span>
+            </div>
+            {% set sessions = pipeline_sessions.get(p.id, []) %}
+            {% if sessions %}
+            {% for s in sessions %}
+            <details class="share-session">
+                <summary class="share-session-header">
+                    <span>{{ s.template.name if s.template else 'Interview' }}</span>
+                    <span class="share-session-meta">{{ s.interviewers | length }} interviewer{{ 's' if s.interviewers | length != 1 else '' }} · {{ s.session.status }}</span>
+                </summary>
+                <div class="share-session-body">
+                    {% for resp in s.responses %}
+                    <div class="share-response">
+                        <div class="share-response-name">{{ resp.interviewer_name }}</div>
+                        {% set scores = s.scores.get(resp.id, []) %}
+                        {% if scores %}
+                        <div class="share-scores">
+                            {% for sc in scores %}
+                            <div class="share-score-row">
+                                <span class="share-score-dim">{{ sc.dimension }}</span>
+                                <span class="share-score-val">{{ sc.score }}/4</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if resp.notes %}
+                        <div class="share-response-notes">{{ resp.notes }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if not s.responses %}
+                    <div class="share-session-empty">No responses submitted yet.</div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endfor %}
+            {% endif %}
         </div>
         {% endfor %}
     </div>
