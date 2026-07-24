@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import (
     Candidate, CandidatePipeline, CandidateSignal, Job,
-    InterviewSession, SessionInterviewer, Response, ResponseScore, Template,
+    InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection,
     not_deleted,
 )
 
@@ -67,23 +67,34 @@ async def shared_candidate_view(
             interviewers = db.exec(
                 select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)
             ).all()
-            responses = db.exec(
-                select(Response).where(Response.session_id == s.id)
-            ).all()
-
-            scores_by_resp = {}
-            for resp in responses:
-                resp_scores = db.exec(
-                    select(ResponseScore).where(ResponseScore.response_id == resp.id)
-                ).all()
-                scores_by_resp[resp.id] = resp_scores
+            # Response links through SessionInterviewer, not directly to session
+            responses_data = []
+            for iv in interviewers:
+                resp = db.exec(
+                    select(Response).where(Response.session_interviewer_id == iv.id)
+                ).first()
+                if resp:
+                    raw_scores = db.exec(
+                        select(ResponseScore).where(ResponseScore.response_id == resp.id)
+                    ).all()
+                    scores = []
+                    for rs in raw_scores:
+                        section = db.get(TemplateSection, rs.section_id)
+                        scores.append({
+                            "dimension": section.title if section else f"Section {rs.section_id}",
+                            "score": rs.value,
+                        })
+                    responses_data.append({
+                        "interviewer_name": iv.interviewer_name,
+                        "scores": scores,
+                        "notes": resp.free_text or "",
+                    })
 
             sess_list.append({
                 "session": s,
                 "template": template,
                 "interviewers": interviewers,
-                "responses": responses,
-                "scores": scores_by_resp,
+                "responses": responses_data,
             })
         pipeline_sessions[p.id] = sess_list
 

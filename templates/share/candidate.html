@@ -174,13 +174,12 @@
                     {% for resp in s.responses %}
                     <div class="share-response">
                         <div class="share-response-name">{{ resp.interviewer_name }}</div>
-                        {% set scores = s.scores.get(resp.id, []) %}
-                        {% if scores %}
+                        {% if resp.scores %}
                         <div class="share-scores">
-                            {% for sc in scores %}
+                            {% for sc in resp.scores %}
                             <div class="share-score-row">
                                 <span class="share-score-dim">{{ sc.dimension }}</span>
-                                <span class="share-score-val">{{ sc.score }}/4</span>
+                                <span class="share-score-val">{{ sc.score }}</span>
                             </div>
                             {% endfor %}
                         </div>
