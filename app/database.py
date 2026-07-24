@@ -67,7 +67,7 @@ def _migrate():
 
 
 def create_tables():
-    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest, Task, CandidateSignal  # noqa
+    from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Setting, Template, TemplateSection, PipelineScore, TableView, TestAssignment, ReviewBatch, ReviewScore, BusinessUnit, Job, ManagedPosition, ManagedLevel, ManagedJobType, Comment, ReportHistory, OfferLetter, ManpowerRequest, Task, CandidateSignal, JobCriteria, CriteriaScore  # noqa
     SQLModel.metadata.create_all(engine)
     _enable_wal()
     _migrate()

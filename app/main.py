@@ -58,6 +58,55 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 templates.env.filters["from_json"] = lambda s: __import__("json").loads(s) if s else []
+
+
+def _format_text(text):
+    """Lightweight bullet/number formatting for long_text fields."""
+    import re
+    from markupsafe import Markup
+    if not text:
+        return ""
+    lines = text.split("\n")
+    html = []
+    in_ul = False
+    in_ol = False
+    for line in lines:
+        stripped = line.strip()
+        if re.match(r"^[-*]\s+", stripped):
+            if not in_ul:
+                html.append("<ul>")
+                in_ul = True
+            if in_ol:
+                html.append("</ol>")
+                in_ol = False
+            content = re.sub(r"^[-*]\s+", "", stripped)
+            html.append(f"<li>{Markup.escape(content)}</li>")
+        elif re.match(r"^\d+\.\s+", stripped):
+            if not in_ol:
+                html.append("<ol>")
+                in_ol = True
+            if in_ul:
+                html.append("</ul>")
+                in_ul = False
+            content = re.sub(r"^\d+\.\s+", "", stripped)
+            html.append(f"<li>{Markup.escape(content)}</li>")
+        else:
+            if in_ul:
+                html.append("</ul>")
+                in_ul = False
+            if in_ol:
+                html.append("</ol>")
+                in_ol = False
+            if stripped:
+                html.append(f"<p>{Markup.escape(stripped)}</p>")
+    if in_ul:
+        html.append("</ul>")
+    if in_ol:
+        html.append("</ol>")
+    return Markup("\n".join(html))
+
+
+templates.env.filters["format_text"] = _format_text
 app.state.templates = templates
 
 app.include_router(admin_router)

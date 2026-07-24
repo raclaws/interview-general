@@ -478,3 +478,25 @@ class CandidateSignal(SQLModel, table=True):
 
     employment_status: str = Field(default="")
     computed_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class JobCriteria(SQLModel, table=True):
+    __tablename__ = "job_criteria"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="jobs.id", index=True)
+    tier: str = Field(default="r1")
+    type: str = Field(default="skill")
+    label: str
+    description: Optional[str] = None
+    order: int = Field(default=0)
+    deleted_at: Optional[datetime] = None
+
+
+class CriteriaScore(SQLModel, table=True):
+    __tablename__ = "criteria_scores"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    session_interviewer_id: int = Field(foreign_key="session_interviewers.id", index=True)
+    criteria_id: int = Field(foreign_key="job_criteria.id", index=True)
+    value: int = Field(default=0)
