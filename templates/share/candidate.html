@@ -153,6 +153,37 @@
     </div>
     {% endif %}
 
+    {% if fit %}
+    <div class="share-section">
+        <div class="share-section-title">Fit Analysis</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+            {% if fit.salary %}
+            <span class="badge badge-{{ 'completed' if fit.salary.status == 'WITHIN' else ('pending' if fit.salary.status == 'UNDER_BUDGET' else 'cancelled') }}">Salary: {{ fit.salary.label }}</span>
+            {% endif %}
+            {% if fit.notice %}
+            <span class="badge badge-{{ 'completed' if fit.notice.status == 'ON_TIME' else 'pending' }}">Notice: {{ fit.notice.label }}</span>
+            {% endif %}
+            {% if fit.criteria %}
+            <span class="badge badge-{{ 'completed' if fit.criteria.r1_pass else ('pending' if fit.criteria.r1_incomplete else 'cancelled') }}">R1: {{ 'Pass' if fit.criteria.r1_pass else ('Incomplete' if fit.criteria.r1_incomplete else 'Fail') }}</span>
+            <span class="badge badge-muted">{{ fit.criteria.assessed }}/{{ fit.criteria.total }} assessed</span>
+            {% endif %}
+        </div>
+        {% if fit.criteria and fit.criteria.scores %}
+        <div style="font-size: var(--text-sm);">
+            {% for cid, sc in fit.criteria.scores.items() %}
+            <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--border);">
+                <span>{{ sc.label }} <span class="row-meta">({{ sc.tier | upper }})</span></span>
+                {% if sc.value is none %}<span class="row-meta">—</span>
+                {% elif sc.value == 0 %}<span style="color: var(--danger);">No Match</span>
+                {% elif sc.value == 1 %}<span style="color: var(--warning);">Partial</span>
+                {% else %}<span style="color: var(--success);">Strong</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
     {% if pipelines %}
     <div class="share-section">
         <div class="share-section-title">Pipelines</div>

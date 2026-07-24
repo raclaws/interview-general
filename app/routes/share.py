@@ -98,11 +98,20 @@ async def shared_candidate_view(
             })
         pipeline_sessions[p.id] = sess_list
 
+    # Compute fit for first pipeline with a job
+    from app.helpers import compute_fit
+    fit = {}
+    for p in pipelines:
+        if p.job_id and p.id in pipeline_jobs:
+            fit = compute_fit(db, p, pipeline_jobs[p.id], candidate)
+            break
+
     return _render(request, "share/candidate.html", {
         "candidate": candidate,
         "signal": signal,
         "pipelines": pipelines,
         "pipeline_jobs": pipeline_jobs,
         "pipeline_sessions": pipeline_sessions,
+        "fit": fit,
         "hide_salary": hide_salary,
     })
