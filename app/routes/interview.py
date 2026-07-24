@@ -37,11 +37,22 @@ async def interview_form(request: Request, token: str, db: Session = Depends(get
             select(TemplateSection).where(TemplateSection.template_id == session.template_id).order_by(TemplateSection.order)
         ).all()
 
+    # Load job criteria if session is linked to a pipeline with a job
+    from app.models import CandidatePipeline, JobCriteria, not_deleted
+    criteria = []
+    if session.pipeline_id:
+        pipeline = db.get(CandidatePipeline, session.pipeline_id)
+        if pipeline and pipeline.job_id:
+            criteria = db.exec(
+                select(JobCriteria).where(JobCriteria.job_id == pipeline.job_id, not_deleted(JobCriteria)).order_by(JobCriteria.order)
+            ).all()
+
     return _render(request, "interview_form.html", {
         "session": session,
         "interviewer": interviewer,
         "template": template,
         "sections": sections,
+        "criteria": criteria,
     })
 
 
@@ -95,6 +106,23 @@ async def interview_submit(
             value=value if value else "",
         )
         db.add(score)
+
+    # Save criteria scores
+    from app.models import CandidatePipeline, JobCriteria, CriteriaScore, not_deleted
+    if session.pipeline_id:
+        pipeline = db.get(CandidatePipeline, session.pipeline_id)
+        if pipeline and pipeline.job_id:
+            criteria = db.exec(
+                select(JobCriteria).where(JobCriteria.job_id == pipeline.job_id, not_deleted(JobCriteria))
+            ).all()
+            for c in criteria:
+                cval = form_data.get(f"criteria_{c.id}")
+                if cval is not None and cval in ("0", "1", "2"):
+                    db.add(CriteriaScore(
+                        session_interviewer_id=interviewer.id,
+                        criteria_id=c.id,
+                        value=int(cval),
+                    ))
 
     interviewer.status = "completed"
     db.add(interviewer)

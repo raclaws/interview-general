@@ -1265,6 +1265,14 @@ textarea { resize: vertical; min-height: 80px; }
 .interviewer-guide { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; line-height: 1.5; padding: 0.4rem 0.6rem; background: var(--bg-muted); border-radius: 4px; }
 .interviewer-guide strong { color: var(--text-primary); font-size: 0.78rem; }
 
+/* Criteria scoring buttons */
+.criteria-btn { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.35rem 0.75rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: var(--text-sm); cursor: pointer; transition: all 0.15s; color: var(--text-secondary); }
+.criteria-btn input[type="radio"] { display: none; }
+.criteria-btn:has(input:checked) { font-weight: 600; }
+.criteria-btn--no:has(input:checked) { border-color: var(--danger); color: var(--danger); background: var(--danger-bg); }
+.criteria-btn--partial:has(input:checked) { border-color: var(--warning); color: var(--warning); background: var(--warning-bg); }
+.criteria-btn--strong:has(input:checked) { border-color: var(--success); color: var(--success); background: var(--success-bg); }
+
 /* Rating group */
 .rating-group { display: flex; gap: 0.6rem; margin-bottom: 0.3rem; flex-wrap: wrap; }
 .rating-label {

@@ -120,6 +120,27 @@
         </div>
         {% endfor %}
 
+        {% if criteria %}
+        <div class="question-block" style="border-top: 2px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+            <h3>Job Criteria Assessment</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Score each criterion based on what you observed during the interview.</p>
+            {% for c in criteria %}
+            <div class="criteria-row" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <span style="font-weight: 500;">{{ c.label }}</span>
+                    <span class="badge badge-{{ 'urgent' if c.tier == 'r1' else 'low' }}" style="font-size: 0.65rem;">{{ c.tier | upper }}{% if c.type %} · {{ c.type }}{% endif %}</span>
+                </div>
+                {% if c.description %}<p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">{{ c.description }}</p>{% endif %}
+                <div class="criteria-buttons" style="display: flex; gap: 0.5rem;">
+                    <label class="criteria-btn criteria-btn--no"><input type="radio" name="criteria_{{ c.id }}" value="0"> No Match</label>
+                    <label class="criteria-btn criteria-btn--partial"><input type="radio" name="criteria_{{ c.id }}" value="1"> Partial</label>
+                    <label class="criteria-btn criteria-btn--strong"><input type="radio" name="criteria_{{ c.id }}" value="2"> Strong Match</label>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div class="question-block">
             <h3>Additional Notes <span class="optional">(optional)</span></h3>
             <textarea name="free_text" rows="4" placeholder="Anything that adds signal beyond the scores..."></textarea>
