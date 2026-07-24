@@ -1016,6 +1016,15 @@ async def pipeline_detail(
     ).all()
     ctx["entity_type"] = "pipeline"
     ctx["entity_id"] = pipeline_id
+
+    # Fit card
+    from app.helpers import compute_fit
+    job = ctx["job"]
+    if job:
+        ctx["fit"] = compute_fit(db, pipeline, job, candidate)
+    else:
+        ctx["fit"] = {}
+
     assignee_options = set()
     job = ctx["job"]
     if job:

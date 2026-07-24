@@ -1,0 +1,64 @@
+<div class="detail-section" id="fit-card">
+    <div class="detail-section-label">Fit Analysis</div>
+    {% if fit %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; font-size: var(--text-sm);">
+        {% if fit.salary %}
+        <div style="padding: 0.6rem; background: var(--bg-muted); border-radius: var(--radius-sm);">
+            <div class="row-meta" style="margin-bottom: 0.2rem;">Salary</div>
+            <span class="badge badge-{{ 'completed' if fit.salary.status == 'WITHIN' else ('pending' if fit.salary.status == 'UNDER_BUDGET' else 'cancelled') }}">{{ fit.salary.label }}</span>
+        </div>
+        {% endif %}
+        {% if fit.notice %}
+        <div style="padding: 0.6rem; background: var(--bg-muted); border-radius: var(--radius-sm);">
+            <div class="row-meta" style="margin-bottom: 0.2rem;">Notice Period</div>
+            <span class="badge badge-{{ 'completed' if fit.notice.status == 'ON_TIME' else 'pending' }}">{{ fit.notice.label }}</span>
+        </div>
+        {% endif %}
+        {% if fit.criteria %}
+        <div style="padding: 0.6rem; background: var(--bg-muted); border-radius: var(--radius-sm);">
+            <div class="row-meta" style="margin-bottom: 0.2rem;">Criteria Coverage</div>
+            <span>{{ fit.criteria.assessed }}/{{ fit.criteria.total }} assessed</span>
+        </div>
+        <div style="padding: 0.6rem; background: var(--bg-muted); border-radius: var(--radius-sm);">
+            <div class="row-meta" style="margin-bottom: 0.2rem;">R1 Gate</div>
+            {% if fit.criteria.r1_incomplete %}
+            <span class="badge badge-pending">Incomplete</span>
+            {% elif fit.criteria.r1_pass %}
+            <span class="badge badge-completed">Pass</span>
+            {% else %}
+            <span class="badge badge-cancelled">Fail</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if fit.criteria and fit.criteria.scores %}
+    <div style="margin-top: 0.75rem;">
+        <table class="table-clean" style="font-size: var(--text-sm);">
+            <tbody>
+            {% for cid, sc in fit.criteria.scores.items() %}
+            <tr>
+                <td style="width: 50px;"><span class="badge badge-{{ 'urgent' if sc.tier == 'r1' else 'low' }}">{{ sc.tier | upper }}</span></td>
+                <td class="col-primary">{{ sc.label }}</td>
+                <td style="width: 90px; text-align: right;">
+                    {% if sc.value is none %}
+                    <span class="row-meta">—</span>
+                    {% elif sc.value == 0 %}
+                    <span style="color: var(--danger); font-weight: 500;">No Match</span>
+                    {% elif sc.value == 1 %}
+                    <span style="color: var(--warning); font-weight: 500;">Partial</span>
+                    {% else %}
+                    <span style="color: var(--success); font-weight: 500;">Strong</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <p class="detail-section-empty">No fit data available. Add job criteria and salary range to enable.</p>
+    {% endif %}
+</div>

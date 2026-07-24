@@ -79,3 +79,94 @@ def compute_pipeline_scores(db, pipeline_ids):
             "culture_avg": round(culture_total / culture_count, 1) if culture_count else 0,
         }
     return results
+
+
+def compute_fit(db, pipeline, job, candidate):
+    """Compute fit insights for a candidate × job pair.
+    Returns dict with salary_fit, notice_fit, criteria_coverage, r1_gate."""
+    from sqlmodel import select
+    from app.models import JobCriteria, CriteriaScore, SessionInterviewer, InterviewSession, not_deleted
+    import re
+
+    fit = {}
+
+    # Salary fit
+    if job.salary_range_min and job.salary_range_max and candidate.expected_salary:
+        try:
+            expected = int(re.sub(r"[^\d]", "", str(candidate.expected_salary)))
+            if expected > 0:
+                if expected < job.salary_range_min:
+                    delta = round((job.salary_range_min - expected) / job.salary_range_min * 100)
+                    fit["salary"] = {"status": "UNDER_BUDGET", "delta": -delta, "label": f"{delta}% under min"}
+                elif expected > job.salary_range_max:
+                    delta = round((expected - job.salary_range_max) / job.salary_range_max * 100)
+                    fit["salary"] = {"status": "OVER_BUDGET", "delta": delta, "label": f"{delta}% over max"}
+                else:
+                    fit["salary"] = {"status": "WITHIN", "delta": 0, "label": "Within range"}
+        except (ValueError, TypeError):
+            pass
+
+    # Notice fit
+    if candidate.notice_period and job.target_date:
+        notice_days = 0
+        np_lower = (candidate.notice_period or "").lower()
+        if "asap" in np_lower or "immediate" in np_lower:
+            notice_days = 0
+        elif "1 month" in np_lower or "< 1 month" in np_lower:
+            notice_days = 30
+        elif "2 month" in np_lower:
+            notice_days = 60
+        elif "3 month" in np_lower or "> 1 month" in np_lower:
+            notice_days = 45
+        from datetime import datetime, timedelta
+        try:
+            target = datetime.strptime(job.target_date, "%Y-%m-%d")
+            available = datetime.utcnow() + timedelta(days=notice_days)
+            if available <= target:
+                fit["notice"] = {"status": "ON_TIME", "label": "Can start in time"}
+            else:
+                weeks_late = max(1, (available - target).days // 7)
+                fit["notice"] = {"status": "LATE", "label": f"~{weeks_late} week{'s' if weeks_late > 1 else ''} late"}
+        except (ValueError, TypeError):
+            pass
+
+    # Criteria coverage + R1 gate
+    criteria = db.exec(
+        select(JobCriteria).where(JobCriteria.job_id == job.id, not_deleted(JobCriteria))
+    ).all()
+    if criteria:
+        # Get all session_interviewer_ids for this pipeline
+        sessions = db.exec(
+            select(InterviewSession).where(InterviewSession.pipeline_id == pipeline.id, not_deleted(InterviewSession))
+        ).all()
+        iv_ids = []
+        for s in sessions:
+            ivs = db.exec(select(SessionInterviewer).where(SessionInterviewer.session_id == s.id)).all()
+            iv_ids.extend([iv.id for iv in ivs])
+
+        scores = {}
+        if iv_ids:
+            all_scores = db.exec(
+                select(CriteriaScore).where(CriteriaScore.session_interviewer_id.in_(iv_ids))
+            ).all()
+            for sc in all_scores:
+                if sc.criteria_id not in scores or sc.value > scores[sc.criteria_id]:
+                    scores[sc.criteria_id] = sc.value
+
+        r1_criteria = [c for c in criteria if c.tier == "r1"]
+        r2_criteria = [c for c in criteria if c.tier == "r2"]
+        assessed = [c for c in criteria if c.id in scores]
+
+        r1_pass = all(scores.get(c.id, -1) >= 1 for c in r1_criteria) if r1_criteria else True
+        r1_assessed = all(c.id in scores for c in r1_criteria) if r1_criteria else True
+
+        fit["criteria"] = {
+            "total": len(criteria),
+            "assessed": len(assessed),
+            "r1_total": len(r1_criteria),
+            "r1_pass": r1_pass and r1_assessed,
+            "r1_incomplete": not r1_assessed,
+            "scores": {c.id: {"label": c.label, "tier": c.tier, "value": scores.get(c.id)} for c in criteria},
+        }
+
+    return fit
