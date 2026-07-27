@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ candidate.name if candidate else 'Pipeline' }} — {{ job.title if job else 'Shared Pipeline' }}</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/style.css?v=14">
+    <script>
+    var t = localStorage.getItem('theme');
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+    else if (window.matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark');
+    </script>
+    <style>
+    body { display: flex; justify-content: center; padding: 2rem 1rem; }
+    .share-container { max-width: 520px; width: 100%; }
+    .share-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .share-avatar { width: 48px; height: 48px; min-width: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; background: var(--accent); color: var(--bg-card); }
+    .share-name { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+    .share-meta { font-size: var(--text-sm); color: var(--text-muted); margin-top: 0.15rem; }
+    .share-section { margin-bottom: 1.25rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .share-section-title { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.6rem; }
+    .share-grid { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; font-size: var(--text-base); align-items: baseline; }
+    .share-grid dt { color: var(--text-muted); white-space: nowrap; }
+    .share-grid dd { color: var(--text-primary); }
+    .share-badges { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.25rem; }
+    .share-session { margin: 0.5rem 0; }
+    .share-session-header { cursor: pointer; font-size: var(--text-sm); padding: 0.5rem 0; color: var(--text-secondary); list-style: none; display: flex; justify-content: space-between; }
+    .share-session-header::-webkit-details-marker { display: none; }
+    .share-session-header::before { content: '▸ '; color: var(--text-muted); }
+    details[open] > .share-session-header::before { content: '▾ '; }
+    .share-session-meta { color: var(--text-muted); font-size: var(--text-xs); }
+    .share-session-body { padding: 0.5rem 0 0.5rem 1rem; border-left: 2px solid var(--border); margin-left: 0.25rem; }
+    .share-response { margin-bottom: 0.75rem; }
+    .share-response:last-child { margin-bottom: 0; }
+    .share-response-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-primary); margin-bottom: 0.3rem; }
+    .share-scores { display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 1rem; font-size: var(--text-sm); }
+    .share-score-dim { color: var(--text-secondary); }
+    .share-score-val { color: var(--text-primary); font-weight: 500; font-variant-numeric: tabular-nums; }
+    .share-response-notes { margin-top: 0.3rem; font-size: var(--text-sm); color: var(--text-muted); font-style: italic; }
+    .share-session-empty { font-size: var(--text-sm); color: var(--text-muted); padding: 0.3rem 0; }
+    .share-footer { text-align: center; margin-top: 2rem; font-size: var(--text-sm); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+<div class="share-container">
+    {% if candidate %}
+    <div class="share-header">
+        <div class="share-avatar">{{ candidate.name[:2] | upper }}</div>
+        <div>
+            <div class="share-name">{{ candidate.name }}</div>
+            <div class="share-meta">
+                {{ candidate.current_position or '' }}
+                {% if candidate.yoe %}· {{ candidate.yoe }} yrs{% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="share-section">
+        <div class="share-section-title">Pipeline</div>
+        <dl class="share-grid">
+            {% if job %}<dt>Job</dt><dd>{{ job.title }}</dd>{% endif %}
+            <dt>Stage</dt><dd><span class="badge badge-{{ pipeline.stage }}">{{ pipeline.stage.replace('_', ' ') | title }}</span></dd>
+            {% if pipeline.notes %}<dt>Notes</dt><dd>{{ pipeline.notes }}</dd>{% endif %}
+        </dl>
+    </div>
+
+    {% if candidate %}
+    <div class="share-section">
+        <div class="share-section-title">Contact</div>
+        <dl class="share-grid">
+            {% if candidate.email %}<dt>Email</dt><dd>{{ candidate.email }}</dd>{% endif %}
+            {% if candidate.phone %}<dt>Phone</dt><dd>{{ candidate.phone }}</dd>{% endif %}
+            {% if candidate.cv_link %}<dt>CV</dt><dd><a href="{{ candidate.cv_link }}" target="_blank" rel="noopener">View CV</a></dd>{% endif %}
+        </dl>
+    </div>
+    {% endif %}
+
+    {% if not hide_salary and candidate and (candidate.current_salary or candidate.expected_salary or candidate.notice_period) %}
+    <div class="share-section">
+        <div class="share-section-title">Availability & Compensation</div>
+        <dl class="share-grid">
+            {% if candidate.notice_period %}<dt>Notice</dt><dd>{{ candidate.notice_period }}</dd>{% endif %}
+            {% if candidate.current_salary %}<dt>Current Salary</dt><dd>{{ candidate.current_salary }}</dd>{% endif %}
+            {% if candidate.expected_salary %}<dt>Expected Salary</dt><dd>{{ candidate.expected_salary }}</dd>{% endif %}
+        </dl>
+    </div>
+    {% elif candidate and candidate.notice_period %}
+    <div class="share-section">
+        <div class="share-section-title">Availability</div>
+        <dl class="share-grid">
+            <dt>Notice</dt><dd>{{ candidate.notice_period }}</dd>
+        </dl>
+    </div>
+    {% endif %}
+
+    {% if fit %}
+    <div class="share-section">
+        <div class="share-section-title">Fit Analysis</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+            {% if fit.salary %}
+            <span class="badge badge-{{ 'completed' if fit.salary.status == 'WITHIN' else ('pending' if fit.salary.status == 'UNDER_BUDGET' else 'cancelled') }}">Salary: {{ fit.salary.label }}</span>
+            {% endif %}
+            {% if fit.notice %}
+            <span class="badge badge-{{ 'completed' if fit.notice.status == 'ON_TIME' else 'pending' }}">Notice: {{ fit.notice.label }}</span>
+            {% endif %}
+            {% if fit.criteria %}
+            <span class="badge badge-{{ 'completed' if fit.criteria.r1_pass else ('pending' if fit.criteria.r1_incomplete else 'cancelled') }}">R1: {{ 'Pass' if fit.criteria.r1_pass else ('Incomplete' if fit.criteria.r1_incomplete else 'Fail') }}</span>
+            <span class="badge badge-muted">{{ fit.criteria.assessed }}/{{ fit.criteria.total }} assessed</span>
+            {% endif %}
+        </div>
+        {% if fit.criteria and fit.criteria.scores %}
+        <div style="font-size: var(--text-sm);">
+            {% for cid, sc in fit.criteria.scores.items() %}
+            <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--border);">
+                <span>{{ sc.label }} <span class="row-meta">({{ sc.tier | upper }})</span></span>
+                {% if sc.value is none %}<span class="row-meta">—</span>
+                {% elif sc.value == 0 %}<span style="color: var(--danger);">No Match</span>
+                {% elif sc.value == 1 %}<span style="color: var(--warning);">Partial</span>
+                {% else %}<span style="color: var(--success);">Strong</span>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if signal %}
+    <div class="share-section">
+        <div class="share-section-title">Signal Analysis</div>
+        <dl class="share-grid">
+            {% if not hide_salary %}
+            <dt>Salary Band</dt>
+            <dd><span class="band-pill band-{{ signal.salary_label.lower().replace('_', '-') or 'none' }}">{{ signal.salary_label.replace('_', ' ') }}{% if signal.percentile is not none %} P{{ signal.percentile | int }}{% endif %}</span></dd>
+            {% if signal.comparison_source %}<dt>Comparison</dt><dd>{{ signal.comparison_source }}{% if signal.bucket_size %} (n={{ signal.bucket_size }}){% endif %}</dd>{% endif %}
+            {% endif %}
+            {% if signal.role_bucket %}<dt>Role</dt><dd>{{ signal.role_bucket.replace('_', ' ') }}</dd>{% endif %}
+            {% if signal.total_years %}<dt>Total Years</dt><dd>{{ signal.total_years | int }}</dd>{% endif %}
+            {% if signal.trajectory %}<dt>Trajectory</dt><dd>{{ signal.trajectory }}</dd>{% endif %}
+            {% if signal.company_category %}<dt>Company Type</dt><dd>{{ signal.company_category.replace('_', ' ') }}</dd>{% endif %}
+        </dl>
+        {% if signal.skills_explicit %}
+        <div style="margin-top: 0.6rem;">
+            <span class="share-section-title" style="display:inline;">Skills</span>
+            <div class="share-badges">
+                {% for s in signal.skills_explicit.split(',') if s %}
+                <span class="badge badge-muted">{{ s }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if sessions %}
+    <div class="share-section">
+        <div class="share-section-title">Interview Sessions</div>
+        {% for s in sessions %}
+        <details class="share-session" {% if loop.first %}open{% endif %}>
+            <summary class="share-session-header">
+                <span>{{ s.template.name if s.template else 'Interview' }}</span>
+                <span class="share-session-meta">{{ s.interviewers | length }} interviewer{{ 's' if s.interviewers | length != 1 else '' }} · {{ s.session.status }}</span>
+            </summary>
+            <div class="share-session-body">
+                {% for resp in s.responses %}
+                <div class="share-response">
+                    <div class="share-response-name">{{ resp.interviewer_name }}</div>
+                    {% if resp.scores %}
+                    <div class="share-scores">
+                        {% for sc in resp.scores %}
+                        <div class="share-score-row">
+                            <span class="share-score-dim">{{ sc.dimension }}</span>
+                            <span class="share-score-val">{{ sc.score }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if resp.notes %}
+                    <div class="share-response-notes">{{ resp.notes }}</div>
+                    {% endif %}
+                    {% if resp.long_texts %}
+                    {% for field_name, field_value in resp.long_texts.items() %}
+                    <div style="margin-top: 0.4rem;">
+                        <span style="font-size: var(--text-xs); color: var(--text-muted); display: block;">{{ field_name }}</span>
+                        <div style="font-size: var(--text-sm); white-space: pre-wrap;">{{ field_value }}</div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if not s.responses %}
+                <div class="share-session-empty">No responses submitted yet.</div>
+                {% endif %}
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="share-section">
+        <div class="share-section-title">Interview Sessions</div>
+        <p style="font-size: var(--text-sm); color: var(--text-muted);">No sessions yet.</p>
+    </div>
+    {% endif %}
+
+    <div class="share-footer">
+        Shared via INS ATS
+    </div>
+</div>
+</body>
+</html>

@@ -61,14 +61,13 @@
         <div class="form-field">
             <label class="form-label">Pipeline <span class="required">*</span></label>
             {% if pipelines %}
-            <select name="pipeline_id" required class="form-input">
+            <select id="pipeline-select-source" style="display:none">
                 <option value="">Select pipeline...</option>
                 {% for p in pipelines %}
-                <option value="{{ p.pipeline.id }}" {% if prefill_pipeline_id == p.pipeline.id %}selected{% endif %}>
-                    {{ p.candidate.name }} — {{ p.pipeline.display_name or "—" }}
-                </option>
+                <option value="{{ p.pipeline.id }}">{{ p.candidate.name }} — {{ p.pipeline.display_name or "—" }}</option>
                 {% endfor %}
             </select>
+            <div data-picker-name="pipeline_id" data-picker-source="pipeline-select-source" data-picker-required {% if prefill_pipeline_id %}data-picker-value="{{ prefill_pipeline_id }}"{% endif %} data-picker-placeholder="Search pipelines..."></div>
             <p class="form-hint">Candidate + Job context inherited from pipeline.</p>
             {% else %}
             <p class="form-hint" style="padding: var(--space-md) 0;">No eligible pipelines found. <a href="/candidates" hx-boost="false">Add a candidate to a job first.</a></p>

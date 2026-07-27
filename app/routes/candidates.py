@@ -591,6 +591,7 @@ async def pipeline_score_view(
 
             scores = {}
             drive_dream = []
+            long_texts = {}
             for sr in score_rows:
                 section = section_map.get(sr.section_id)
                 if not section:
@@ -608,11 +609,15 @@ async def pipeline_score_view(
                 if section.title == "Drive & Dream" and sr.value:
                     drive_dream = [v.strip() for v in sr.value.split(",") if v.strip()]
 
+                if section.measurement_type == "long_text" and sr.value:
+                    long_texts[section.title] = sr.value
+
             entry = {
                 "name": iv.interviewer_name,
                 "scores": scores,
                 "drive_dream": drive_dream,
                 "free_text": response.free_text,
+                "long_texts": long_texts,
             }
 
             if is_hr:
@@ -1536,3 +1541,40 @@ async def revoke_share_link(
     db.add(candidate)
     db.commit()
     return RedirectResponse(f"/candidate/{candidate_id}", status_code=303)
+
+
+# --- Pipeline Share Link ---
+
+@router.post("/pipeline/{pipeline_id}/share")
+async def generate_pipeline_share_link(
+    request: Request,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    import uuid
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return RedirectResponse("/pipelines", status_code=303)
+    pipeline.share_token = str(uuid.uuid4())
+    pipeline.share_token_full = str(uuid.uuid4())
+    db.add(pipeline)
+    db.commit()
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)
+
+
+@router.post("/pipeline/{pipeline_id}/revoke-share")
+async def revoke_pipeline_share_link(
+    request: Request,
+    pipeline_id: int,
+    admin: AdminUser = Depends(get_current_admin),
+    db: Session = Depends(get_session),
+):
+    pipeline = db.get(CandidatePipeline, pipeline_id)
+    if not pipeline:
+        return RedirectResponse("/pipelines", status_code=303)
+    pipeline.share_token = None
+    pipeline.share_token_full = None
+    db.add(pipeline)
+    db.commit()
+    return RedirectResponse(f"/pipeline/{pipeline_id}", status_code=303)

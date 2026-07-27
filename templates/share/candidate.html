@@ -153,37 +153,6 @@
     </div>
     {% endif %}
 
-    {% if fit %}
-    <div class="share-section">
-        <div class="share-section-title">Fit Analysis</div>
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
-            {% if fit.salary %}
-            <span class="badge badge-{{ 'completed' if fit.salary.status == 'WITHIN' else ('pending' if fit.salary.status == 'UNDER_BUDGET' else 'cancelled') }}">Salary: {{ fit.salary.label }}</span>
-            {% endif %}
-            {% if fit.notice %}
-            <span class="badge badge-{{ 'completed' if fit.notice.status == 'ON_TIME' else 'pending' }}">Notice: {{ fit.notice.label }}</span>
-            {% endif %}
-            {% if fit.criteria %}
-            <span class="badge badge-{{ 'completed' if fit.criteria.r1_pass else ('pending' if fit.criteria.r1_incomplete else 'cancelled') }}">R1: {{ 'Pass' if fit.criteria.r1_pass else ('Incomplete' if fit.criteria.r1_incomplete else 'Fail') }}</span>
-            <span class="badge badge-muted">{{ fit.criteria.assessed }}/{{ fit.criteria.total }} assessed</span>
-            {% endif %}
-        </div>
-        {% if fit.criteria and fit.criteria.scores %}
-        <div style="font-size: var(--text-sm);">
-            {% for cid, sc in fit.criteria.scores.items() %}
-            <div style="display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid var(--border);">
-                <span>{{ sc.label }} <span class="row-meta">({{ sc.tier | upper }})</span></span>
-                {% if sc.value is none %}<span class="row-meta">—</span>
-                {% elif sc.value == 0 %}<span style="color: var(--danger);">No Match</span>
-                {% elif sc.value == 1 %}<span style="color: var(--warning);">Partial</span>
-                {% else %}<span style="color: var(--success);">Strong</span>{% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
     {% if pipelines %}
     <div class="share-section">
         <div class="share-section-title">Pipelines</div>
@@ -193,6 +162,21 @@
                 <span>{{ pipeline_jobs[p.id].title if p.id in pipeline_jobs else 'Unknown Job' }}</span>
                 <span class="badge badge-{{ p.stage }}">{{ p.stage.replace('_', ' ') | title }}</span>
             </div>
+            {% set fit = pipeline_fits.get(p.id, {}) %}
+            {% if fit %}
+            <div style="display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.5rem 0 0.5rem 0.75rem; font-size: var(--text-sm);">
+                {% if fit.salary %}
+                <span class="badge badge-{{ 'completed' if fit.salary.status == 'WITHIN' else ('pending' if fit.salary.status == 'UNDER_BUDGET' else 'cancelled') }}">Salary: {{ fit.salary.label }}</span>
+                {% endif %}
+                {% if fit.notice %}
+                <span class="badge badge-{{ 'completed' if fit.notice.status == 'ON_TIME' else 'pending' }}">Notice: {{ fit.notice.label }}</span>
+                {% endif %}
+                {% if fit.criteria %}
+                <span class="badge badge-{{ 'completed' if fit.criteria.r1_pass else ('pending' if fit.criteria.r1_incomplete else 'cancelled') }}">R1: {{ 'Pass' if fit.criteria.r1_pass else ('Incomplete' if fit.criteria.r1_incomplete else 'Fail') }}</span>
+                <span class="badge badge-muted">{{ fit.criteria.assessed }}/{{ fit.criteria.total }} criteria</span>
+                {% endif %}
+            </div>
+            {% endif %}
             {% set sessions = pipeline_sessions.get(p.id, []) %}
             {% if sessions %}
             {% for s in sessions %}
@@ -217,6 +201,14 @@
                         {% endif %}
                         {% if resp.notes %}
                         <div class="share-response-notes">{{ resp.notes }}</div>
+                        {% endif %}
+                        {% if resp.long_texts %}
+                        {% for field_name, field_value in resp.long_texts.items() %}
+                        <div style="margin-top: 0.4rem;">
+                            <span style="font-size: var(--text-xs); color: var(--text-muted); display: block;">{{ field_name }}</span>
+                            <div style="font-size: var(--text-sm); white-space: pre-wrap;">{{ field_value }}</div>
+                        </div>
+                        {% endfor %}
                         {% endif %}
                     </div>
                     {% endfor %}

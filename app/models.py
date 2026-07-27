@@ -159,6 +159,8 @@ class CandidatePipeline(SQLModel, table=True):
     position: Optional[str] = None
     stage: str = Field(default="screening")
     notes: Optional[str] = None
+    share_token: Optional[str] = Field(default=None, index=True)
+    share_token_full: Optional[str] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = None

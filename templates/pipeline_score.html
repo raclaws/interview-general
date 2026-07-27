@@ -85,6 +85,19 @@
 </div>
 {% endif %}
 
+{% set all_long_text_keys = [] %}
+{% for entry in hr_data %}{% for k in entry.long_texts.keys() %}{% if k not in all_long_text_keys %}{% set _ = all_long_text_keys.append(k) %}{% endif %}{% endfor %}{% endfor %}
+{% for field_name in all_long_text_keys %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">{{ field_name }}:</strong>
+    {% for entry in hr_data %}
+    {% if entry.long_texts.get(field_name) %}
+    <p class="hint" style="margin: 0.25rem 0; white-space: pre-wrap;"><strong>{{ entry.name }}:</strong> {{ entry.long_texts.get(field_name) }}</p>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endfor %}
+
 {% else %}
 <p class="hint">No completed HR sessions for this pipeline.</p>
 {% endif %}
@@ -148,6 +161,19 @@
     {% endfor %}
 </div>
 {% endif %}
+
+{% set culture_long_text_keys = [] %}
+{% for entry in culture_data %}{% for k in entry.long_texts.keys() %}{% if k not in culture_long_text_keys %}{% set _ = culture_long_text_keys.append(k) %}{% endif %}{% endfor %}{% endfor %}
+{% for field_name in culture_long_text_keys %}
+<div style="margin-top: 0.75rem;">
+    <strong style="font-size: 0.85rem;">{{ field_name }}:</strong>
+    {% for entry in culture_data %}
+    {% if entry.long_texts.get(field_name) %}
+    <p class="hint" style="margin: 0.25rem 0; white-space: pre-wrap;"><strong>{{ entry.name }}:</strong> {{ entry.long_texts.get(field_name) }}</p>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endfor %}
 
 {% else %}
 <p class="hint">No completed Culture sessions for this pipeline.</p>

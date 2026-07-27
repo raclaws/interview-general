@@ -43,6 +43,8 @@ def _migrate():
         ("candidates", "share_token", "TEXT"),
         ("candidates", "share_token_full", "TEXT"),
         ("candidates", "share_hide_salary", "BOOLEAN DEFAULT 1"),
+        ("candidate_pipelines", "share_token", "TEXT"),
+        ("candidate_pipelines", "share_token_full", "TEXT"),
     ]
     with engine.connect() as conn:
         inspector = inspect(engine)
