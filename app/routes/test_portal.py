@@ -168,7 +168,7 @@ async def test_submit(
                     })
                 f.write(chunk)
 
-        assignment.submission_url = save_path
+        assignment.submission_url = f"/static/uploads/tests/{token}_{safe_name}"
     elif submission_url:
         assignment.submission_url = submission_url
     else:
