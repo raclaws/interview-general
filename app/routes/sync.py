@@ -63,7 +63,7 @@ class SyncHub:
         for entry in self._connections:
             if table in entry["tables"]:
                 try:
-                    await entry["ws"].send_text(message)
+                    await asyncio.wait_for(entry["ws"].send_text(message), timeout=3.0)
                 except Exception:
                     dead.append(entry)
         for d in dead:
