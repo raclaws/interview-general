@@ -66,6 +66,16 @@ def _migrate():
                     except Exception:
                         pass
         conn.commit()
+    # Fix submission_url stored as filesystem path instead of web URL (one-time)
+    with engine.connect() as conn:
+        conn.execute(text(
+            "UPDATE test_assignments SET submission_url = '/' || submission_url "
+            "WHERE submission_url IS NOT NULL "
+            "AND submission_url NOT LIKE '/%' "
+            "AND submission_url NOT LIKE 'http%' "
+            "AND submission_url LIKE 'static/%'"
+        ))
+        conn.commit()
 
 
 def create_tables():

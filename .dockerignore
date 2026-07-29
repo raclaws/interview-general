@@ -1,0 +1,13 @@
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+static/uploads/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.github/
+venv/
+.venv/

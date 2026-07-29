@@ -10,4 +10,5 @@ services:
       - .env.staging
     volumes:
       - ./interview_staging.db:/app/interview.db
+      - ./static/uploads:/app/static/uploads
     restart: unless-stopped

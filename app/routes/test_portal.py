@@ -1,6 +1,7 @@
 import os
 import re
 import asyncio
+from pathlib import Path
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, Request, Form, UploadFile, File
@@ -14,12 +15,14 @@ from app.routes.sync import hub as sync_hub
 
 router = APIRouter()
 
-UPLOAD_DIR = os.path.join("static", "uploads", "tests")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+UPLOAD_DIR = BASE_DIR / "static" / "uploads" / "tests"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 DEFAULT_MAX_MB = 25
 HARD_CAP_MB = 100
 BLOCKED_EXTENSIONS = {"exe", "bat", "sh", "cmd", "ps1", "com", "scr", "msi", "vbs", "wsf"}
+ALLOWED_URL_SCHEMES = ("https://", "http://")
 
 
 def _render(request: Request, name: str, context: dict = None):
@@ -158,7 +161,10 @@ async def test_submit(
                 total_size += len(chunk)
                 if total_size > max_bytes:
                     f.close()
-                    os.remove(save_path)
+                    try:
+                        os.remove(save_path)
+                    except OSError:
+                        pass
                     return _render(request, "test_portal.html", {
                         "assignment": assignment,
                         "token": token,
@@ -170,6 +176,14 @@ async def test_submit(
 
         assignment.submission_url = f"/static/uploads/tests/{token}_{safe_name}"
     elif submission_url:
+        if not submission_url.startswith(("https://", "http://")):
+            return _render(request, "test_portal.html", {
+                "assignment": assignment,
+                "token": token,
+                "key": key,
+                "past_deadline": _is_past_deadline(assignment),
+                "error": "Submission link must start with https:// or http://",
+            })
         assignment.submission_url = submission_url
     else:
         return _render(request, "test_portal.html", {
