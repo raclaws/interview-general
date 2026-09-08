@@ -1,0 +1,46 @@
+<div class="settings-panel">
+    <div class="detail-section-label">Neon Connection</div>
+    <div class="detail-section">
+        <div class="col-primary" style="margin-bottom: 0.25rem;">
+            {% if neon_configured %}
+            <span style="color: var(--green);">Connected</span> — {{ neon_url }}
+            {% else %}
+            <span style="color: var(--text-muted);">Not configured</span> — Set NEON_DATABASE_URL in .env
+            {% endif %}
+        </div>
+        {% if last_sync %}
+        <p class="row-meta">Last import: {{ last_sync }}</p>
+        {% endif %}
+    </div>
+
+    <div class="detail-section-label" style="margin-top: 1.5rem;">Bulk Import</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Pull all candidates from Neon into the local database. Matches by email — existing candidates get updated, new ones are created.</p>
+    <div id="neon-import-result"></div>
+    <form hx-post="/settings/neon/import"
+          hx-target="#neon-import-result"
+          hx-swap="innerHTML"
+          hx-indicator="this">
+        <button type="submit" class="btn" {% if not neon_configured %}disabled{% endif %}>Import All Candidates</button>
+    </form>
+
+    <div class="detail-section-label" style="margin-top: 1.5rem;">Webhook</div>
+    <p class="row-meta" style="margin-bottom: 0.75rem;">Configure this URL in your CF Worker to receive candidate create/update/delete events automatically.</p>
+    <div class="form-card" style="margin-bottom: 0;">
+        <div class="form-field">
+            <label class="form-label">Webhook URL</label>
+            <input type="text" value="{{ webhook_url }}" readonly class="form-input" style="font-family: monospace; font-size: 0.8125rem;">
+        </div>
+    </div>
+    <form hx-post="/settings/neon/secret"
+          hx-swap="outerHTML"
+          hx-target="next .row-meta"
+          style="margin-top: 0.75rem;">
+        <div class="form-row" style="display: flex; gap: var(--space-sm); align-items: flex-end;">
+            <div class="form-field" style="flex: 1; margin-bottom: 0;">
+                <label class="form-label">Webhook Secret</label>
+                <input type="text" name="secret" value="{{ webhook_secret }}" class="form-input" placeholder="Set a shared secret...">
+            </div>
+            <button type="submit" class="btn">Save</button>
+        </div>
+    </form>
+</div>

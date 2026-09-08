@@ -146,7 +146,7 @@ async def candidate_new_submit(
     admin: AdminUser = Depends(get_current_admin),
     db: Session = Depends(get_session),
 ):
-    if mode == "nocodb" and candidate_id:
+    if mode == "existing" and candidate_id:
         existing = db.get(Candidate, candidate_id)
         if not existing:
             return _render(request, "candidate_new.html", {
@@ -155,17 +155,17 @@ async def candidate_new_submit(
             })
         return RedirectResponse(next or f"/candidate/{existing.id}", status_code=303)
 
-    if mode == "nocodb_import" and candidate_id:
-        from app.nocodb import fetch_candidate
-        snapshot = await fetch_candidate(candidate_id)
+    if mode == "neon_import" and candidate_id:
+        from app.neon import fetch_candidate
+        snapshot = await fetch_candidate(int(candidate_id))
         if not snapshot or snapshot.get("_error") or not snapshot.get("email"):
-            error_msg = snapshot.get("_error", "Candidate not found in NocoDB.") if snapshot else "Candidate not found in NocoDB."
+            error_msg = snapshot.get("_error", "Candidate not found in Neon.") if snapshot else "Candidate not found in Neon."
             return _render(request, "candidate_new.html", {
                 "admin": admin,
                 "error": error_msg,
             })
-        from app.nocodb import upsert_candidate_from_nocodb
-        candidate = upsert_candidate_from_nocodb(snapshot, candidate_id)
+        from app.neon import upsert_candidate_from_neon
+        candidate = upsert_candidate_from_neon(snapshot, int(candidate_id))
         asyncio.create_task(sync_hub.broadcast("candidates", "insert", str(candidate.id), _candidate_broadcast(candidate, db)))
         return RedirectResponse(next or f"/candidate/{candidate.id}", status_code=303)
 

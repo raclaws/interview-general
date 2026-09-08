@@ -108,24 +108,24 @@
         <div id="new-section" style="display: none;">
             <div class="toggle-group" style="margin-bottom: 0.5rem;">
                 <label class="toggle-label">
-                    <input type="radio" name="new_source" value="nocodb" checked onchange="document.getElementById('job-nocodb-section').style.display='block';document.getElementById('job-manual-section').style.display='none';">
-                    Import from NocoDB
+                    <input type="radio" name="new_source" value="neon" checked onchange="document.getElementById('job-neon-section').style.display='block';document.getElementById('job-manual-section').style.display='none';">
+                    Import from Neon
                 </label>
                 <label class="toggle-label">
-                    <input type="radio" name="new_source" value="manual" onchange="document.getElementById('job-nocodb-section').style.display='none';document.getElementById('job-manual-section').style.display='block';">
+                    <input type="radio" name="new_source" value="manual" onchange="document.getElementById('job-neon-section').style.display='none';document.getElementById('job-manual-section').style.display='block';">
                     Manual Entry
                 </label>
             </div>
 
-            <div id="job-nocodb-section">
+            <div id="job-neon-section">
                 <form method="post" action="/job/{{ job.id }}/add-candidate"
                       hx-post="/job/{{ job.id }}/add-candidate" hx-target="this" hx-swap="outerHTML" hx-disinherit="*">
-                    <input type="hidden" name="mode" value="nocodb">
-                    <label class="form-label">Search NocoDB</label>
-                    <input type="text" id="job-nocodb-input" placeholder="Type name..." autocomplete="off" class="form-input">
-                    <div id="job-nocodb-results" style="margin: 0.5rem 0;"></div>
-                    <input type="hidden" id="job-nocodb-id" name="nocodb_id">
-                    <p id="job-nocodb-selected" class="hint"></p>
+                    <input type="hidden" name="mode" value="neon">
+                    <label class="form-label">Search Neon</label>
+                    <input type="text" id="job-neon-input" placeholder="Type name..." autocomplete="off" class="form-input">
+                    <div id="job-neon-results" style="margin: 0.5rem 0;"></div>
+                    <input type="hidden" id="job-neon-id" name="neon_id">
+                    <p id="job-neon-selected" class="hint"></p>
                     <button type="submit" class="btn" style="margin-top: 0.5rem;">Import & Add to Pipeline</button>
                 </form>
             </div>
@@ -207,40 +207,40 @@
         });
     }
 
-    // NocoDB search
-    const nocoInput = document.getElementById("job-nocodb-input");
-    const nocoResults = document.getElementById("job-nocodb-results");
-    const nocoIdInput = document.getElementById("job-nocodb-id");
-    const nocoHint = document.getElementById("job-nocodb-selected");
-    let nocoDebounce;
-    if (nocoInput) {
-        nocoInput.addEventListener("input", function() {
-            clearTimeout(nocoDebounce);
+    // Neon search
+    const neonInput = document.getElementById("job-neon-input");
+    const neonResults = document.getElementById("job-neon-results");
+    const neonIdInput = document.getElementById("job-neon-id");
+    const neonHint = document.getElementById("job-neon-selected");
+    let neonDebounce;
+    if (neonInput) {
+        neonInput.addEventListener("input", function() {
+            clearTimeout(neonDebounce);
             const q = this.value.trim();
-            if (q.length < 2) { nocoResults.innerHTML = ""; return; }
-            nocoDebounce = setTimeout(async () => {
+            if (q.length < 2) { neonResults.innerHTML = ""; return; }
+            neonDebounce = setTimeout(async () => {
                 try {
-                    const resp = await fetch(`/api/candidates?q=${encodeURIComponent(q)}`);
+                    const resp = await fetch(`/api/neon-search?q=${encodeURIComponent(q)}`);
                     const data = await resp.json();
                     if (data.length && data[0]._error) {
-                        nocoResults.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
+                        neonResults.innerHTML = `<div class="form-error" style="font-size:0.8rem;">${data[0]._error}</div>`;
                         return;
                     }
-                    nocoResults.innerHTML = data.map(c =>
+                    neonResults.innerHTML = data.map(c =>
                         `<div class="candidate-item" data-id="${c.id}" data-name="${c.name}" style="cursor:pointer;padding:0.3rem 0;">
                             <strong>${c.name}</strong> <span class="row-meta">${c.email || ""}</span>
                         </div>`
                     ).join("");
-                    nocoResults.querySelectorAll(".candidate-item").forEach(el => {
+                    neonResults.querySelectorAll(".candidate-item").forEach(el => {
                         el.addEventListener("click", () => {
-                            nocoIdInput.value = el.dataset.id;
-                            nocoHint.textContent = `Selected: ${el.dataset.name}`;
-                            nocoResults.innerHTML = "";
-                            nocoInput.value = el.dataset.name;
+                            neonIdInput.value = el.dataset.id;
+                            neonHint.textContent = `Selected: ${el.dataset.name}`;
+                            neonResults.innerHTML = "";
+                            neonInput.value = el.dataset.name;
                         });
                     });
                 } catch(e) {
-                    nocoResults.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
+                    neonResults.innerHTML = '<div class="form-error" style="font-size:0.8rem;">Search failed — check network connection.</div>';
                 }
             }, 300);
         });

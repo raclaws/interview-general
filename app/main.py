@@ -153,3 +153,9 @@ def on_startup():
             if not existing:
                 db.add(AdminUser(username=username, hashed_password=hash_password(password)))
                 db.commit()
+
+
+@app.on_event("shutdown")
+async def on_shutdown():
+    from app.neon import close_pool
+    await close_pool()

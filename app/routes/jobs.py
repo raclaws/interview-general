@@ -463,7 +463,7 @@ async def job_add_candidate(
     job_id: int,
     mode: str = Form(...),
     candidate_id: int = Form(None),
-    nocodb_id: int = Form(None),
+    neon_id: int = Form(None),
     name: str = Form(""),
     email: str = Form(""),
     phone: str = Form(""),
@@ -484,13 +484,13 @@ async def job_add_candidate(
         candidate = db.get(Candidate, candidate_id)
         if not candidate:
             return HTMLResponse('<div class="form-error">Candidate not found.</div>')
-    elif mode == "nocodb":
-        if not nocodb_id:
-            return HTMLResponse('<div class="form-error">Please select a candidate from NocoDB.</div>')
-        from app.nocodb import fetch_candidate
-        snapshot = await fetch_candidate(nocodb_id)
+    elif mode == "neon":
+        if not neon_id:
+            return HTMLResponse('<div class="form-error">Please select a candidate from Neon.</div>')
+        from app.neon import fetch_candidate
+        snapshot = await fetch_candidate(neon_id)
         if not snapshot or snapshot.get("_error") or not snapshot.get("email"):
-            error_msg = snapshot.get("_error", "Candidate not found in NocoDB.") if snapshot else "Candidate not found in NocoDB."
+            error_msg = snapshot.get("_error", "Candidate not found in Neon.") if snapshot else "Candidate not found in Neon."
             return HTMLResponse(f'<div class="form-error">{error_msg}</div>')
         email_val = snapshot.get("email", "").strip()
         candidate = db.exec(select(Candidate).where(Candidate.email == email_val)).first()
@@ -499,7 +499,7 @@ async def job_add_candidate(
                 name=snapshot.get("name", ""),
                 email=email_val,
                 phone=snapshot.get("phone") or None,
-                nocodb_id=nocodb_id,
+                external_id=neon_id,
                 current_position=snapshot.get("current_position") or None,
                 yoe=snapshot.get("yoe") or None,
                 languages=snapshot.get("languages") or None,
