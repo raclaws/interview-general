@@ -10,7 +10,7 @@ from app.models import (
     InterviewSession, SessionInterviewer, Response, BusinessUnit, Job,
     Candidate, CandidatePipeline, Task, not_deleted,
 )
-from app.nocodb import fetch_candidate
+from app.neon import fetch_candidate
 
 mcp = FastMCP("INS ATS")
 

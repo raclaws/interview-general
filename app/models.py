@@ -99,6 +99,7 @@ class Candidate(SQLModel, table=True):
     email: str = Field(unique=True, index=True)
     phone: Optional[str] = None
     nocodb_id: Optional[int] = None
+    external_id: Optional[int] = Field(default=None, index=True)
     current_position: Optional[str] = None
     yoe: Optional[str] = None
     languages: Optional[str] = None
@@ -456,6 +457,7 @@ class CandidateSignal(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     candidate_id: int = Field(index=True, unique=True)
     nocodb_id: Optional[int] = Field(default=None, index=True)
+    external_id: Optional[int] = Field(default=None, index=True)
     years_band: str = Field(default="")
     company_confidence: str = Field(default="")
 

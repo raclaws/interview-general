@@ -10,7 +10,6 @@ from sqlmodel import Session, select, func, col
 from app.database import get_session
 from app.auth import get_current_admin
 from app.models import AdminUser, Candidate, CandidatePipeline, InterviewSession, SessionInterviewer, Response, ResponseScore, Template, TemplateSection, PIPELINE_ENDED_STAGES, TableView, Comment, not_deleted
-from app.nocodb import fetch_candidate
 from app.llm import generate_summary_dynamic, get_llm_config, set_setting, DEFAULT_SYSTEM_PROMPT
 from app.routes.sync import hub as sync_hub
 from app.activity import record_activity
@@ -619,17 +618,18 @@ async def session_new_submit(
         candidate_id = candidate_record.id
         if not job_title.strip():
             job_title = snapshot.get("current_position", "")
-    elif entry_mode == "nocodb":
+    elif entry_mode == "neon":
         if not candidate_id:
             if is_htmx:
                 return HTMLResponse('<div class="form-error">Please select a candidate.</div>')
             return RedirectResponse("/session/new?error=no_candidate_selected", status_code=303)
-        snapshot = await fetch_candidate(candidate_id)
-        if not snapshot:
+        from app.neon import fetch_candidate as fetch_neon_candidate
+        snapshot = await fetch_neon_candidate(int(candidate_id))
+        if not snapshot or snapshot.get("_error"):
+            error_msg = snapshot.get("_error", "Candidate not found in Neon.") if snapshot else "Candidate not found in Neon."
             if is_htmx:
-                return HTMLResponse('<div class="form-error">Candidate not found in NocoDB.</div>')
+                return HTMLResponse(f'<div class="form-error">{error_msg}</div>')
             return RedirectResponse("/session/new?error=candidate_not_found", status_code=303)
-        # Pull job_title from snapshot if not provided
         if not job_title.strip():
             job_title = snapshot.get("current_position", "")
     else:
@@ -693,7 +693,8 @@ async def session_new_submit(
             name=snapshot.get("name", "").strip(),
             email=email or f"{secrets.token_hex(4)}@placeholder.local",
             phone=snapshot.get("phone") or None,
-            nocodb_id=candidate_id,
+            nocodb_id=candidate_id if entry_mode != "neon" else None,
+            external_id=int(candidate_id) if entry_mode == "neon" and candidate_id else None,
             current_position=snapshot.get("current_position") or None,
             yoe=snapshot.get("yoe") or None,
             languages=snapshot.get("languages") or None,
@@ -1143,11 +1144,11 @@ async def api_candidates(q: str = "", admin: AdminUser = Depends(get_current_adm
     return [{"id": c.id, "name": c.name, "email": c.email or ""} for c in candidates]
 
 
-@router.get("/api/nocodb-search")
-async def api_nocodb_search(q: str = "", admin: AdminUser = Depends(get_current_admin)):
+@router.get("/api/neon-search")
+async def api_neon_search(q: str = "", admin: AdminUser = Depends(get_current_admin)):
     if len(q) < 2:
         return []
-    from app.nocodb import search_candidates
+    from app.neon import search_candidates
     return await search_candidates(q)
 
 

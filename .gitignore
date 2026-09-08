@@ -4,4 +4,9 @@ __pycache__/
 .env.staging
 interview.db
 *.db
+*.db-shm
+*.db-wal
 perf.jsonl
+cookies.txt
+static/offers/
+static/reports/

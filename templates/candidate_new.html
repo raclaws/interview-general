@@ -17,22 +17,22 @@
 <div class="form-card">
     <div class="toggle-group">
         <label class="toggle-label">
-            <input type="radio" name="entry_toggle" value="local" checked onchange="document.getElementById('nocodb-section').style.display='block';document.getElementById('manual-section').style.display='none';document.getElementById('nocodb-import-section').style.display='none';">
+            <input type="radio" name="entry_toggle" value="local" checked onchange="document.getElementById('local-section').style.display='block';document.getElementById('manual-section').style.display='none';document.getElementById('neon-import-section').style.display='none';">
             Search Existing
         </label>
         <label class="toggle-label">
-            <input type="radio" name="entry_toggle" value="nocodb" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='none';document.getElementById('nocodb-import-section').style.display='block';">
-            Import from NocoDB
+            <input type="radio" name="entry_toggle" value="neon" onchange="document.getElementById('local-section').style.display='none';document.getElementById('manual-section').style.display='none';document.getElementById('neon-import-section').style.display='block';">
+            Import from Neon
         </label>
         <label class="toggle-label">
-            <input type="radio" name="entry_toggle" value="manual" onchange="document.getElementById('nocodb-section').style.display='none';document.getElementById('manual-section').style.display='block';document.getElementById('nocodb-import-section').style.display='none';">
+            <input type="radio" name="entry_toggle" value="manual" onchange="document.getElementById('local-section').style.display='none';document.getElementById('manual-section').style.display='block';document.getElementById('neon-import-section').style.display='none';">
             Manual Entry
         </label>
     </div>
 
-    <div id="nocodb-section">
+    <div id="local-section">
         <form method="post" action="/candidate/new">
-            <input type="hidden" name="mode" value="nocodb">
+            <input type="hidden" name="mode" value="existing">
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="form-field">
                 <label class="form-label">Search local candidates</label>
@@ -47,16 +47,16 @@
         </form>
     </div>
 
-    <div id="nocodb-import-section" style="display: none;">
+    <div id="neon-import-section" style="display: none;">
         <form method="post" action="/candidate/new">
-            <input type="hidden" name="mode" value="nocodb_import">
+            <input type="hidden" name="mode" value="neon_import">
             {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
             <div class="form-field">
-                <label class="form-label">Search NocoDB</label>
-                <input type="text" id="nocodb_search" placeholder="Type name..." autocomplete="off" class="form-input">
-                <div id="nocodb_results"></div>
-                <input type="hidden" id="nocodb_id" name="candidate_id">
-                <p id="nocodb_selected" class="form-hint"></p>
+                <label class="form-label">Search Neon</label>
+                <input type="text" id="neon_search" placeholder="Type name..." autocomplete="off" class="form-input">
+                <div id="neon_results"></div>
+                <input type="hidden" id="neon_id" name="candidate_id">
+                <p id="neon_selected" class="form-hint"></p>
             </div>
             <div class="form-footer">
                 <button type="submit" class="btn">Import Candidate</button>
@@ -206,7 +206,7 @@
     }
 
     wireSearch("candidate_search", "candidate_results", "candidate_id", "candidate_selected", "/api/candidates");
-    wireSearch("nocodb_search", "nocodb_results", "nocodb_id", "nocodb_selected", "/api/nocodb-search");
+    wireSearch("neon_search", "neon_results", "neon_id", "neon_selected", "/api/neon-search");
 })();
 </script>
 {% endblock %}
